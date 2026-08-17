@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="beru-github-banner.png" alt="Beru — turn a rough idea into a prompt your LLM will follow" width="100%">
+</p>
+
 # Beru
 
 Select a rough idea, press a hotkey, and Beru turns it into a prompt your LLM will actually follow — aimed at Cursor, Claude, Codex, Gemini, ChatGPT, and the rest.
