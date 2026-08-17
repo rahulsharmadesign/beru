@@ -2,46 +2,67 @@
 #
 # Build a Release Beru.app and wrap it in a distributable DMG.
 #
-# IMPORTANT — Gatekeeper on the receiving Mac:
+# Signing identity (first match wins):
+#   1. BERU_SIGN_IDENTITY env var
+#   2. Developer ID Application identity in the keychain (release / CI)
+#   3. "Beru Local Signing" local dev certificate
 #
-# This signs with the same self-signed "Beru Local Signing" certificate
-# that scripts/install.sh uses. That certificate exists only in THIS machine's
-# keychain, so to any other Mac the app is unsigned by an unknown developer.
-# macOS will refuse to open it on a double-click. The receiving user has to
-# right-click the app once and choose Open, or run:
+# Notarization (optional, for public distribution):
+#   NOTARIZE=1 plus either NOTARY_PROFILE or APPLE_ID + APPLE_APP_SPECIFIC_PASSWORD + APPLE_TEAM_ID
 #
-#     xattr -dr com.apple.quarantine /Applications/Beru.app
-#
-# Distributing without that friction needs a paid Apple Developer ID plus
-# notarisation. Do not present an unsigned or locally signed DMG as the
-# recommended install path for public users.
-#
-# Hardened Runtime:
-# The app is built with ENABLE_HARDENED_RUNTIME: YES. This script re-signs
-# with --options runtime and --entitlements to preserve hardened runtime for
-# notarization readiness. When using a Developer ID, Apple's notary service
-# requires hardened runtime to be enabled.
+# Local dev builds use a self-signed certificate. Other Macs will block Gatekeeper
+# until the user right-clicks > Open. Public releases need Developer ID + notarization.
 #
 set -euo pipefail
 
-IDENTITY="${BERU_SIGN_IDENTITY:-Beru Local Signing}"
 cd "$(dirname "$0")/.."
 
+pick_identity() {
+    if [[ -n "${BERU_SIGN_IDENTITY:-}" ]]; then
+        echo "$BERU_SIGN_IDENTITY"
+        return
+    fi
+    local dev_id
+    dev_id=$(security find-identity -v -p codesigning 2>/dev/null \
+        | awk -F'"' '/Developer ID Application/ {print $2; exit}')
+    if [[ -n "$dev_id" ]]; then
+        echo "$dev_id"
+        return
+    fi
+    echo "Beru Local Signing"
+}
+
+IDENTITY="$(pick_identity)"
 VERSION=$(awk '/MARKETING_VERSION/ {print $2; exit}' project.yml | tr -d '"')
 STAGE=$(mktemp -d)
-OUT="build/Beru-${VERSION}.dmg"
+OUT="${BERU_DMG_OUT:-build/Beru-${VERSION}.dmg}"
 trap 'rm -rf "$STAGE"' EXIT
 
-echo "==> generating project"
-xcodegen generate >/dev/null
+if [[ "$IDENTITY" != "-" ]] \
+    && ! security find-identity -v -p codesigning 2>/dev/null | grep -Fq "$IDENTITY"; then
+    if [[ "$IDENTITY" == "Beru Local Signing" ]]; then
+        echo "error: signing certificate '$IDENTITY' not found." >&2
+        echo "       run scripts/make-signing-cert.sh for local builds, or import a" >&2
+        echo "       Developer ID Application certificate for release builds." >&2
+        exit 1
+    fi
+    echo "error: signing identity not found: $IDENTITY" >&2
+    exit 1
+fi
 
-# `archive`, not `build`. A Release *scheme* build also compiles the test
-# target, and Release turns testability off, so every `@testable import
-# Beru` fails to resolve. Restricting to `-target Beru` avoids the
-# tests but then SPM dependencies stop resolving, because package resolution
-# comes from the scheme. Archiving builds the app and its packages and skips
-# the tests, which is exactly what a distributable build wants.
-echo "==> building Release"
+echo "==> generating project"
+XCODEGEN=""
+if command -v xcodegen >/dev/null 2>&1; then
+    XCODEGEN="xcodegen"
+elif [[ -x .tools/xcodegen/bin/xcodegen ]]; then
+    XCODEGEN=".tools/xcodegen/bin/xcodegen"
+else
+    echo "error: xcodegen is required. Install it with: brew install xcodegen" >&2
+    exit 1
+fi
+"$XCODEGEN" generate >/dev/null
+
+echo "==> building Release (identity: $IDENTITY)"
 ARCHIVE="$STAGE/Beru.xcarchive"
 xcodebuild -scheme Beru -configuration Release archive \
     -archivePath "$ARCHIVE" -destination 'generic/platform=macOS' \
@@ -50,31 +71,39 @@ xcodebuild -scheme Beru -configuration Release archive \
 
 APP="$ARCHIVE/Products/Applications/Beru.app"
 
-echo "==> signing with '$IDENTITY' (hardened runtime)"
+echo "==> signing Beru.app"
 mkdir -p "$STAGE/dmg"
 cp -R "$APP" "$STAGE/dmg/Beru.app"
-# --options runtime preserves hardened runtime flag for notarization.
-# --deep signs all nested code (frameworks, helpers).
-# --entitlements includes runtime exceptions.
 codesign -f -s "$IDENTITY" --deep --options runtime \
     --entitlements Resources/Beru.entitlements \
     "$STAGE/dmg/Beru.app"
 codesign --verify --strict "$STAGE/dmg/Beru.app"
-echo "==> hardened runtime status:"
-codesign -dvvv "$STAGE/dmg/Beru.app" 2>&1 | grep -E "(Runtime|Flags)"
 
-# Drag-to-install layout.
+if [[ "${NOTARIZE:-}" == "1" && "$IDENTITY" != "-" ]]; then
+    echo "==> notarizing Beru.app before packaging"
+    ./scripts/notarize.sh "$STAGE/dmg/Beru.app"
+fi
+
 ln -s /Applications "$STAGE/dmg/Applications"
 
 echo "==> building $OUT"
-mkdir -p build
+mkdir -p "$(dirname "$OUT")"
 rm -f "$OUT"
 hdiutil create -volname "Beru" -srcfolder "$STAGE/dmg" -ov -format UDZO "$OUT" >/dev/null
 
+if [[ "${NOTARIZE:-}" == "1" && "$IDENTITY" != "-" ]]; then
+    echo "==> notarizing DMG"
+    ./scripts/notarize.sh "$OUT"
+fi
+
 echo "==> done: $OUT ($(du -h "$OUT" | cut -f1))"
-echo ""
-echo "==> Distribution notes:"
-echo "    - This DMG is signed with a local certificate."
-echo "    - Recipients must right-click > Open or run:"
-echo "      xattr -dr com.apple.quarantine /Applications/Beru.app"
-echo "    - For frictionless install, use Apple Developer ID + notarization."
+if [[ "$IDENTITY" == "-" ]]; then
+    echo ""
+    echo "==> Ad-hoc build — not suitable for public download. Add Apple Developer"
+    echo "    ID secrets to GitHub Actions before publishing a release."
+elif [[ "$IDENTITY" == "Beru Local Signing" ]]; then
+    echo ""
+    echo "==> Local certificate build — recipients must right-click > Open once,"
+    echo "    or run: xattr -dr com.apple.quarantine /Applications/Beru.app"
+    echo "    For public download, rebuild with Developer ID + NOTARIZE=1."
+fi
