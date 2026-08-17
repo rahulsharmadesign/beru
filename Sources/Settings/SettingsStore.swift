@@ -25,9 +25,9 @@ enum ProviderKind: String, CaseIterable, Codable {
 /// - 14,400 requests/day
 /// - 6,000 tokens/minute
 ///
-/// For Beru's text enhancement use case, this is more than sufficient. The
-/// `llama-3.3-70b-versatile` model provides excellent quality for prompt
-/// engineering and grammar correction at Groq's signature speed.
+/// For Beru's text enhancement use case, this is more than sufficient. Groq
+/// retired `llama-3.3-70b-versatile` on 16 Aug 2026; `openai/gpt-oss-120b`
+/// is the production replacement.
 enum CompatibleAPIPreset: String, CaseIterable, Identifiable {
     case groq
     case openAI
@@ -55,16 +55,24 @@ enum CompatibleAPIPreset: String, CaseIterable, Identifiable {
     }
 
     /// Sensible default model id; user can edit after applying.
-    /// Groq's llama-3.3-70b-versatile balances quality and speed for text
-    /// enhancement tasks. Users on the free tier should stay within rate limits.
     var defaultModel: String {
         switch self {
-        case .groq: return "llama-3.3-70b-versatile"
+        case .groq: return "openai/gpt-oss-120b"
         case .openAI: return "gpt-4o-mini"
         case .openRouter: return "openai/gpt-4o-mini"
         case .custom: return ""
         }
     }
+
+    /// Groq ids that 404 as of the 16 Aug 2026 deprecation. Existing installs
+    /// that still have these saved are rewritten to `defaultModel`.
+    static let retiredGroqModels: Set<String> = [
+        "llama-3.3-70b-versatile",
+        "llama-3.1-8b-instant",
+        "llama-3.1-70b-versatile",
+        "llama3-70b-8192",
+        "llama3-8b-8192"
+    ]
 }
 
 /// Persisted app settings. Everything here lives in UserDefaults except API
@@ -166,6 +174,11 @@ final class SettingsStore {
         didSet { defaults.set(lastTargetByApp, forKey: Keys.lastTargetByApp) }
     }
 
+    /// First-run Get Started has been finished or dismissed after Accessibility.
+    var hasCompletedGetStarted: Bool {
+        didSet { defaults.set(hasCompletedGetStarted, forKey: Keys.hasCompletedGetStarted) }
+    }
+
     private enum Keys {
         static let activeProvider = "activeProvider"
         static let ollamaBaseURL = "ollamaBaseURL"
@@ -186,6 +199,7 @@ final class SettingsStore {
         static let lastTargetID = "lastTargetID"
         static let lastTargetByApp = "lastTargetByApp"
         static let hasLaunchedBefore = "hasLaunchedBefore"
+        static let hasCompletedGetStarted = "hasCompletedGetStarted"
     }
 
     private init() {
@@ -204,8 +218,18 @@ final class SettingsStore {
         // costs seconds; one resident model serves both instantly.
         ollamaGrammarModel = defaults.string(forKey: Keys.ollamaGrammarModel) ?? "qwen2.5:7b"
         customBaseURL = defaults.string(forKey: Keys.customBaseURL) ?? ""
-        customEnhanceModel = defaults.string(forKey: Keys.customEnhanceModel) ?? ""
-        customGrammarModel = defaults.string(forKey: Keys.customGrammarModel) ?? ""
+        var enhanceModel = defaults.string(forKey: Keys.customEnhanceModel) ?? ""
+        var grammarModel = defaults.string(forKey: Keys.customGrammarModel) ?? ""
+        if CompatibleAPIPreset.retiredGroqModels.contains(enhanceModel) {
+            enhanceModel = CompatibleAPIPreset.groq.defaultModel
+            defaults.set(enhanceModel, forKey: Keys.customEnhanceModel)
+        }
+        if CompatibleAPIPreset.retiredGroqModels.contains(grammarModel) {
+            grammarModel = CompatibleAPIPreset.groq.defaultModel
+            defaults.set(grammarModel, forKey: Keys.customGrammarModel)
+        }
+        customEnhanceModel = enhanceModel
+        customGrammarModel = grammarModel
         launchAtLogin = defaults.bool(forKey: Keys.launchAtLogin)
         userName = defaults.string(forKey: Keys.userName) ?? ""
         primaryColorID = defaults.string(forKey: PrimaryColor.storageKey) ?? PrimaryColor.indigo.rawValue
@@ -228,6 +252,7 @@ final class SettingsStore {
         historyMaxMegabytes = storedMax > 0 ? storedMax : 200
         lastTargetID = defaults.string(forKey: Keys.lastTargetID) ?? TargetProfile.genericID
         lastTargetByApp = defaults.dictionary(forKey: Keys.lastTargetByApp) as? [String: String] ?? [:]
+        hasCompletedGetStarted = defaults.bool(forKey: Keys.hasCompletedGetStarted)
     }
 
     /// Whether a provider has everything it needs to answer a request, so the

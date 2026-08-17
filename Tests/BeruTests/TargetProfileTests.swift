@@ -212,7 +212,7 @@ final class TargetInventionRuleTests: XCTestCase {
         }
         // It must also say what to do instead, or the model has only a
         // prohibition and no legal way to satisfy the bullet above it.
-        XCTAssertTrue(rule.contains("instruct the reader to establish"))
+        XCTAssertTrue(rule.contains("leave the missing detail out"))
     }
 
     /// A prompt must ask for the answer, never contain it.

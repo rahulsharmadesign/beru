@@ -6,9 +6,27 @@ import SwiftUI
 private final class RoundedPanelView: NSView {
     override var isOpaque: Bool { true }
 
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        refreshColors()
+    }
+
+    override func viewDidChangeEffectiveAppearance() {
+        super.viewDidChangeEffectiveAppearance()
+        refreshColors()
+    }
+
     override func layout() {
         super.layout()
         updateMask()
+        refreshColors()
+    }
+
+    func refreshColors() {
+        wantsLayer = true
+        effectiveAppearance.performAsCurrentDrawingAppearance { [self] in
+            layer?.backgroundColor = NSColor.windowBackgroundColor.cgColor
+        }
     }
 
     private func updateMask() {
@@ -33,7 +51,6 @@ final class FloatingPanel: NSPanel {
     init(contentRect: NSRect) {
         let card = RoundedPanelView(frame: contentRect)
         card.wantsLayer = true
-        card.layer?.backgroundColor = NSColor.controlBackgroundColor.cgColor
         card.layer?.cornerRadius = PanelMetrics.cornerRadius
         card.layer?.cornerCurve = .circular
         card.autoresizingMask = [.width, .height]
@@ -53,10 +70,20 @@ final class FloatingPanel: NSPanel {
         collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .ignoresCycle]
         isMovableByWindowBackground = true
         isOpaque = true
-        backgroundColor = .controlBackgroundColor
         hasShadow = true
         hidesOnDeactivate = false
         isReleasedWhenClosed = false
+        syncAppearance()
+    }
+
+    /// Keep the AppKit backdrop in lockstep with SwiftUI. Snapshotting
+    /// `controlBackgroundColor.cgColor` at init left a white frame in dark mode.
+    func syncAppearance(with appearance: NSAppearance = NSApp.effectiveAppearance) {
+        self.appearance = appearance
+        appearance.performAsCurrentDrawingAppearance { [self] in
+            backgroundColor = .windowBackgroundColor
+            (backdropView as? RoundedPanelView)?.refreshColors()
+        }
     }
 
     // Required for text entry. canBecomeMain stays false so the app never
@@ -145,6 +172,7 @@ final class PanelController {
 
         let panel = self.panel ?? makePanel(engine: engine)
         self.panel = panel
+        panel.syncAppearance()
 
         let frame = NSRect(origin: origin, size: size)
         pinnedTopY = frame.maxY

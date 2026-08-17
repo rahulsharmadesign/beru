@@ -24,11 +24,11 @@ final class ActionRegistryTests: XCTestCase {
     }
 
     @MainActor
-    func testBuiltInDisplayNamesAreGrammarAndEnhance() {
+    func testBuiltInDisplayNamesAreGrammarAndEnhancePrompt() {
         XCTAssertEqual(EnhancementAction.grammar.name, "Grammar")
-        XCTAssertEqual(EnhancementAction.enhance.name, "Enhance")
+        XCTAssertEqual(EnhancementAction.enhance.name, "Enhance Prompt")
         XCTAssertEqual(ActionRegistry.shared.action(withID: EnhancementAction.grammarID)?.name, "Grammar")
-        XCTAssertEqual(ActionRegistry.shared.action(withID: EnhancementAction.enhanceID)?.name, "Enhance")
+        XCTAssertEqual(ActionRegistry.shared.action(withID: EnhancementAction.enhanceID)?.name, "Enhance Prompt")
     }
 
     @MainActor
@@ -72,6 +72,7 @@ final class ActionRegistryTests: XCTestCase {
         XCTAssertFalse(message.contains(Prompts.clipboardOpenTag))
     }
 
+    @MainActor
     func testOrderedHonorsSavedChipOrderAndKeepsUnknownsAtEnd() {
         let grammar = EnhancementAction.grammar
         let enhance = EnhancementAction.enhance
@@ -83,6 +84,7 @@ final class ActionRegistryTests: XCTestCase {
         XCTAssertEqual(ordered.map(\.id), [reply.id, grammar.id, enhance.id])
     }
 
+    @MainActor
     func testEmptyOrderKeepsBuiltInsFirst() {
         let grammar = EnhancementAction.grammar
         let enhance = EnhancementAction.enhance
@@ -150,6 +152,8 @@ final class ActionRegistryTests: XCTestCase {
         XCTAssertTrue(prompt.contains("Do not invent requirements"))
         XCTAssertTrue(prompt.contains("Omit empty sections"))
         XCTAssertTrue(prompt.contains("Output ONLY"))
+        XCTAssertTrue(prompt.contains("one short natural-language prompt"))
+        XCTAssertTrue(prompt.contains("Why i am getting this error"))
     }
 
     func testPromptsContainOutputOnlyRule() {

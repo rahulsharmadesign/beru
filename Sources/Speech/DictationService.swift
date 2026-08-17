@@ -56,6 +56,18 @@ final class DictationService {
                 return "macOS has no speech recogniser for this language."
             }
         }
+
+        /// Opens the System Settings pane that actually fixes this state.
+        func openSystemSettings() {
+            switch self {
+            case .speechDenied:
+                Permissions.openSpeechRecognitionSettings()
+            case .onDeviceUnavailable, .noRecognizer:
+                Permissions.openKeyboardDictationSettings()
+            default:
+                Permissions.openMicrophoneSettings()
+            }
+        }
     }
 
     /// Longest single recording. A menu bar app runs all day, so the worst
@@ -169,6 +181,11 @@ final class DictationService {
     /// Activates the app first: Beru is an accessory process, and TCC dialogs
     /// do not appear in front of a non-activating panel.
     func requestPermissions() async {
+        // Accessory processes often never surface TCC dialogs. Become a regular
+        // app first so the prompt and System Settings can come to the front.
+        if NSApp.activationPolicy() != .regular {
+            NSApp.setActivationPolicy(.regular)
+        }
         NSApp.activate(ignoringOtherApps: true)
         if AVCaptureDevice.authorizationStatus(for: .audio) == .notDetermined {
             _ = await AVCaptureDevice.requestAccess(for: .audio)

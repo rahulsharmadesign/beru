@@ -102,7 +102,7 @@ struct EnhancementAction: Identifiable, Codable, Equatable {
     /// Built-in prompt-authoring skill (id stays `enhance` for history / defaults).
     static let enhance = EnhancementAction(
         id: enhanceID,
-        name: "Enhance",
+        name: "Enhance Prompt",
         icon: "sparkles",
         role: .enhance,
         systemPrompt: Prompts.enhance,

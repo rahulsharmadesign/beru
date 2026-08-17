@@ -14,18 +14,55 @@ enum Permissions {
     }
 
     static func openAccessibilitySettings() {
-        guard let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") else {
-            return
-        }
-        NSWorkspace.shared.open(url)
+        open(Self.accessibilityURLs)
     }
 
     /// Microphone pane. Speech Recognition is the neighbouring row, so this
     /// lands the user close enough to fix either.
     static func openPrivacySettings() {
-        guard let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone") else {
-            return
+        openMicrophoneSettings()
+    }
+
+    static func openMicrophoneSettings() {
+        open(Self.microphoneURLs)
+    }
+
+    static func openSpeechRecognitionSettings() {
+        open(Self.speechRecognitionURLs)
+    }
+
+    /// On-device language packs live under Keyboard › Dictation.
+    static func openKeyboardDictationSettings() {
+        open(Self.keyboardDictationURLs)
+    }
+
+    /// URLs tried in order. System Settings identifiers changed from the
+    /// pre-Ventura preference pane to `PrivacySecurity.extension`.
+    static let accessibilityURLs = [
+        "x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension?Privacy_Accessibility",
+        "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"
+    ]
+    static let microphoneURLs = [
+        "x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension?Privacy_Microphone",
+        "x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone"
+    ]
+    static let speechRecognitionURLs = [
+        "x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension?Privacy_SpeechRecognition",
+        "x-apple.systempreferences:com.apple.preference.security?Privacy_SpeechRecognition"
+    ]
+    static let keyboardDictationURLs = [
+        "x-apple.systempreferences:com.apple.Keyboard-Settings.extension?Dictation",
+        "x-apple.systempreferences:com.apple.preference.keyboard?Dictation",
+        "x-apple.systempreferences:com.apple.preference.keyboard"
+    ]
+
+    @discardableResult
+    static func open(_ urlStrings: [String]) -> Bool {
+        NSApp.activate(ignoringOtherApps: true)
+        for string in urlStrings {
+            guard let url = URL(string: string) else { continue }
+            if NSWorkspace.shared.open(url) { return true }
         }
-        NSWorkspace.shared.open(url)
+        return false
     }
 }

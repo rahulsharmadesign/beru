@@ -66,9 +66,13 @@ struct ProviderSettingsSections: View {
             anthropicKey = settings.anthropicAPIKey ?? ""
             customKey = settings.customAPIKey ?? ""
             apiPreset = Self.detectPreset(baseURL: settings.customBaseURL)
-            if settings.activeProvider == .custom, settings.customBaseURL.isEmpty {
-                applyAPIPreset(.groq)
-                apiPreset = .groq
+            if settings.activeProvider == .custom {
+                if settings.customBaseURL.isEmpty {
+                    applyAPIPreset(.groq)
+                    apiPreset = .groq
+                } else if apiPreset == .groq, settings.customEnhanceModel.isEmpty {
+                    applyAPIPreset(.groq)
+                }
             }
         }
         .onChange(of: settings.activeProvider) { _, kind in
@@ -478,7 +482,7 @@ struct PermissionsSettingsTab: View {
                         }
                     } else {
                         SettingsPillButton(title: "Open") {
-                            Permissions.openPrivacySettings()
+                            dictation.availability.openSystemSettings()
                         }
                     }
                 }

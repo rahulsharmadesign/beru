@@ -158,7 +158,7 @@ struct TargetsView: View {
 
                     SettingsSection(
                         title: "Conventions",
-                        subtitle: "Appended to Enhance for this environment. Leave empty for Generic."
+                        subtitle: "Appended to Enhance Prompt for this environment. Leave empty for Generic."
                     ) {
                         TextEditor(text: binding(for: profile).promptFragment)
                             .font(BeruSans.mono)

@@ -22,19 +22,22 @@ enum Prompts {
 
     QUALITY
     - The result must be immediately usable: a later model should not need to re-ask anything the author already answered.
-    - Prefer a complete, specific prompt over a short or generic one. Cut filler, not substance.
+    - Completeness means keeping what the author said, not padding what they did not. A one-line ask stays a short prompt. Do not invent an investigation, a process, logs, tests, file hunts, or a report format the author never mentioned.
     - Remove hedges, repeated instructions, meta-commentary, and placeholder templates.
     - Write in imperative language addressed to the model that will execute the work.
 
     OUTPUT SHAPE
-    - For a multi-part or detailed request, organize the result with only the useful labeled sections: Task:, Context:, Requirements:, Constraints:, and Deliverable:.
-    - Omit empty sections. For a simple request, write one tight natural-language prompt that still includes the ask, any real constraints, and the expected output — do not emit a labeled skeleton.
+    - Use labeled Task: / Context: / Requirements: / Constraints: / Deliverable: sections only when the source itself has several distinct asks or a real procedure. Omit empty sections.
+    - For a simple or one-sentence request, write one short natural-language prompt. Do not emit a labeled skeleton, a numbered process, or a template of work the author did not describe.
     - Output ONLY the improved prompt. Do not answer the request, explain your rewrite, add markdown fences, or wrap it in quotes.
 
     Examples:
 
     Input: <text>write a poem about the sea</text>
     Output: Write a short original poem about the sea. Use concrete sensory detail (sound, light, weather) rather than clichés. Keep it under 20 lines. Output only the poem.
+
+    Input: <text>Why i am getting this error.</text>
+    Output: Explain why this error occurs, using only the error text and surrounding code the author provided. If those are missing, say what is needed. Reply with a short cause and the fix — not a project-wide investigation.
 
     Input: <text>before updating the docs, confirm everything still works, then update the docs to match</text>
     Output: Task: Confirm the project still works, then update the documentation so it matches current behavior.
@@ -249,12 +252,13 @@ enum Prompts {
 
     static let targetCursor = """
     - Cursor is an agentic coding IDE working inside a real repository. Write a work order for a coding agent, not a question for a chatbot.
+    - Match the size of the input. A one-line question becomes a short work order in a few sentences, not a five-section spec and not a repo-wide investigation.
     - Open with the outcome in one line: what must be true of the codebase when the agent is done.
-    - Name the code surface only as precisely as the input does. If the input gives file paths, directory globs, or type and function names, carry them through exactly; if it does not, instruct the agent to locate them ("find the module that handles X") and give no path of your own.
+    - Name the code surface only as precisely as the input does. If the input gives file paths, directory globs, or type and function names, carry them through exactly; if it does not, do not invent a hunt ("find the module that handles X") unless the author already described a coding task with a missing location.
     - Carry through whatever stack facts the input states — language and version, framework, package manager, build or test command — and pass over in silence every one it does not. Do not derive the stack from the subject matter: a task about markdown files implies nothing about the language or tooling of the project holding them.
     - Set scope limits the input supports: which files may change, what must not be touched, whether tests, migrations, or docs are in scope. Say nothing about files the input never mentions.
-    - Require verification at the precision available: name the exact command when the input names one, otherwise require that the project's own build and test commands pass, leaving the agent to discover what they are.
-    - Ask for edits to be applied directly to files, with at most a few lines of summary.
+    - Require verification only when the input is a change to the codebase: name the exact command when the input names one, otherwise require that the project's own build and test commands pass, leaving the agent to discover what they are. Do not add verification to a question that only asks why something happened.
+    - Ask for edits to be applied directly to files, with at most a few lines of summary, only when the input asks for a change.
     """
 
     // A second kind of invention: writing the answer instead of asking for it.
@@ -356,7 +360,7 @@ enum Prompts {
     /// so it reads as governing them, and names the concrete consequence, which
     /// this codebase has found repeatedly to hold better than a bare prohibition.
     static let targetInventionRule = """
-    Whatever those conventions ask for, invent no facts to satisfy them. Use only the paths, directory names, file names, commands, languages, frameworks, versions, data, and proper nouns the input actually states. Where the input states none, do not supply a plausible-looking value: no example path, no assumed package manager, no guessed build command, no stand-in data. Instruct the reader to establish the missing detail instead ("locate the files that define X", "run the project's own test suite"), or leave it out. Satisfying a convention above only partly is correct; fabricating a detail to satisfy it fully is not, because a prompt naming a file or command that does not exist sends its reader chasing something that was never there.
+    Whatever those conventions ask for, invent no facts to satisfy them. Use only the paths, directory names, file names, commands, languages, frameworks, versions, data, and proper nouns the input actually states. Where the input states none, do not supply a plausible-looking value: no example path, no assumed package manager, no guessed build command, no stand-in data, and no investigation checklist (logs, tests, file hunts, reproduction steps) the author did not ask for. Leave the missing detail out, or say it is missing. Satisfying a convention above only partly is correct; fabricating a process or a file to satisfy it fully is not.
     """
 
     /// A target describes where a *prompt* is going, so it applies only to

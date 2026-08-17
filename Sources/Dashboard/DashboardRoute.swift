@@ -37,7 +37,7 @@ enum DashboardRoute: String, Identifiable, CaseIterable, Hashable {
         case .vault: return "Local notes and pins. Nothing leaves this Mac."
         case .runs: return "Every recorded invocation, with the diff and the reason."
         case .actions: return "Verb chips in the panel. Built-in jobs plus your own."
-        case .targets: return "Where an enhanced prompt is going, so Enhance can speak that dialect."
+        case .targets: return "Where an enhanced prompt is going, so Enhance Prompt can speak that dialect."
         case .about: return "This build, and how to reach the person who made it."
         }
     }

@@ -20,7 +20,7 @@ struct DictationButton: View {
                 .foregroundStyle(tint)
                 .allowsHitTesting(false)
         }
-        .frame(width: 16, height: 16)
+        .frame(width: 28, height: 28)
         .contentShape(Rectangle())
         .help(helpText)
         .accessibilityLabel(dictation.isRecording ? "Stop dictation" : "Dictate an instruction")
@@ -32,11 +32,11 @@ struct DictationButton: View {
             dictation.stop()
             return
         }
+        // The panel is non-activating. Ask from Settings so the TCC dialog
+        // can actually appear, instead of looking like a dead mic.
         if dictation.availability == .needsPermission {
-            Task {
-                await dictation.requestPermissions()
-                _ = dictation.start()
-            }
+            onNeedsPermission()
+            Task { await dictation.requestPermissions() }
             return
         }
         if !dictation.start(), !dictation.availability.isReady {
@@ -88,6 +88,8 @@ struct DictationPressView: NSViewRepresentable {
 
 final class DictationPressNSView: NSView {
     var onToggle: () -> Void = {}
+
+    override var mouseDownCanMoveWindow: Bool { false }
 
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
 

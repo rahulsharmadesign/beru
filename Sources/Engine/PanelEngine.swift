@@ -82,10 +82,19 @@ final class PanelEngine {
         // Regenerate after a successful result means "give me a different
         // take" — pass the previous output so the model must diverge from it.
         // Retry after an error is a plain re-attempt.
+        // Search / describe need the last question even if the composer was cleared.
+        let instruction: String? = {
+            if actionID == EnhancementAction.searchID || actionID == EnhancementAction.describeID {
+                let live = appState.describeInstruction.trimmingCharacters(in: .whitespacesAndNewlines)
+                if !live.isEmpty { return live }
+                return lastDescribeInstruction
+            }
+            return nil
+        }()
         if case .done(let previous) = appState.resultState(for: actionID) {
-            start(actionID: actionID, previousResult: previous)
+            start(actionID: actionID, previousResult: previous, instruction: instruction)
         } else {
-            start(actionID: actionID)
+            start(actionID: actionID, instruction: instruction)
         }
     }
 
@@ -148,6 +157,7 @@ final class PanelEngine {
         if actionID == EnhancementAction.searchID {
             let effectiveInstruction = instruction ?? appState.describeInstruction
             guard !effectiveInstruction.isEmpty else { return }
+            lastDescribeInstruction = effectiveInstruction
             role = .enhance
             systemPrompt = Prompts.quickSearch(
                 question: effectiveInstruction,
@@ -157,6 +167,7 @@ final class PanelEngine {
         } else if actionID == EnhancementAction.describeID {
             let effectiveInstruction = instruction ?? appState.describeInstruction
             guard !effectiveInstruction.isEmpty else { return }
+            lastDescribeInstruction = effectiveInstruction
             role = .enhance
             systemPrompt = Prompts.describeChange(instruction: effectiveInstruction)
             usesBuiltInPrompt = true

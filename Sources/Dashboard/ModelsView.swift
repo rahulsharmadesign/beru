@@ -19,8 +19,7 @@ struct ModelsView: View {
 
     private static let recommended: [(name: String, size: String, note: String)] = [
         ("qwen3:8b", "~5 GB", "Default. Reasoning suppressed automatically."),
-        ("qwen2.5:7b", "~4.7 GB", "No reasoning pass; slightly faster first token."),
-        ("llama3.2:3b", "~2 GB", "Small and quick; less reliable on structure.")
+        ("qwen2.5:7b", "~4.7 GB", "No reasoning pass; slightly faster first token.")
     ]
 
     private static let defaultEnhanceModel = "qwen2.5:7b"

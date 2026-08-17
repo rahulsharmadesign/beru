@@ -20,7 +20,10 @@ struct BehindWindowBlur: NSViewRepresentable {
     }
 
     private func apply(to view: NSView) {
-        view.layer?.backgroundColor = NSColor.controlBackgroundColor.cgColor
+        view.wantsLayer = true
+        view.effectiveAppearance.performAsCurrentDrawingAppearance {
+            view.layer?.backgroundColor = NSColor.windowBackgroundColor.cgColor
+        }
         view.layer?.cornerRadius = radius
         view.layer?.cornerCurve = .circular
         view.layer?.masksToBounds = true

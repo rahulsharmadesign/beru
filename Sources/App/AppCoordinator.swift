@@ -62,7 +62,7 @@ final class AppCoordinator {
 
         let trusted = Permissions.isAccessibilityTrusted()
         logger.notice("initial accessibility trusted = \(trusted)")
-        if !trusted {
+        if !trusted || !SettingsStore.shared.hasCompletedGetStarted {
             showOnboarding()
         }
 
@@ -349,7 +349,9 @@ final class AppCoordinator {
 
     private func showOnboarding() {
         if onboardingWindow == nil {
-            onboardingWindow = OnboardingWindowController()
+            onboardingWindow = OnboardingWindowController { [weak self] in
+                self?.showDashboard(route: .models)
+            }
         }
         onboardingWindow?.show()
     }

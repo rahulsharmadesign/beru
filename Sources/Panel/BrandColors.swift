@@ -106,8 +106,9 @@ final class AppearanceObserver {
     func refresh() {
         signature = NSApp.effectiveAppearance.name.rawValue
         let appearance = NSApp.effectiveAppearance
-        for window in NSApp.windows where !(window is FloatingPanel) {
+        for window in NSApp.windows {
             window.appearance = appearance
+            (window as? FloatingPanel)?.syncAppearance(with: appearance)
         }
     }
 }

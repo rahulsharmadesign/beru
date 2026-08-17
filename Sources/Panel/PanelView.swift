@@ -29,6 +29,7 @@ struct PanelView: View {
         // only gradient fills change, not layout or text content.
         let frosting = SettingsStore.shared.panelFrosting
         let _ = SettingsStore.shared.primaryColorID
+        let _ = AppearanceObserver.shared.signature
 
         VStack(spacing: PanelMetrics.moduleSpacing) {
             toolbar
@@ -48,6 +49,7 @@ struct PanelView: View {
                 .layoutPriority(1)
                 .contributesPanelHeight()
         }
+        .background(BrandColors.canvas)
         .background(PanelDragRegion())
         .environment(\.panelFrosting, frosting)
         .tint(BrandColors.accentColor)
@@ -383,17 +385,14 @@ struct PanelView: View {
 
     private var footer: some View {
         HStack(spacing: 10) {
-            Button {
+            PanelIconHitButton(
+                icon: "rotate-cw",
+                help: "Regenerate",
+                hint: "Run this action again on the same input",
+                enabled: hasFinishedResult || isErrorState
+            ) {
                 engine.retry(actionID: appState.selectedActionID)
-            } label: {
-                BeruIcon(name: "rotate-cw", size: 16)
             }
-            .buttonStyle(.plain)
-            .help("Regenerate")
-            .accessibilityLabel("Regenerate")
-            .accessibilityHint("Run this action again on the same input")
-            .opacity(hasFinishedResult || isErrorState ? 1 : 0.35)
-            .disabled(!hasFinishedResult && !isErrorState)
 
             if case .done = appState.resultState(for: appState.selectedActionID),
                let savings = appState.savings[appState.selectedActionID] {
@@ -444,19 +443,14 @@ struct PanelView: View {
                     .help("Save this result in the vault")
             }
 
-            Button {
+            PanelIconHitButton(
+                icon: "x",
+                help: "Dismiss",
+                hint: "Close the panel without applying the result",
+                enabled: true
+            ) {
                 engine.cancel()
-            } label: {
-                BeruIcon(name: "x", size: 16)
-                    .frame(width: 16, height: 16)
-                    .padding(8)
-                    .contentShape(Rectangle())
-                    .padding(-8)
             }
-            .buttonStyle(.plain)
-            .help("Dismiss")
-            .accessibilityLabel("Dismiss")
-            .accessibilityHint("Close the panel without applying the result")
         }
         .padding(.horizontal, PanelMetrics.moduleInset)
         .frame(minHeight: PanelMetrics.footerMinHeight, alignment: .center)
@@ -619,6 +613,32 @@ private final class TargetMenuRelay: NSObject {
     @objc func pick(_ sender: NSMenuItem) {
         guard let id = sender.representedObject as? String else { return }
         onPick?(id)
+    }
+}
+
+/// AppKit click target so the panel's window-drag hit test leaves footer icons
+/// alone — the same reason the mic is an `NSView` instead of a SwiftUI `Button`.
+private struct PanelIconHitButton: View {
+    let icon: String
+    let help: String
+    var hint: String = ""
+    var enabled: Bool = true
+    let action: () -> Void
+
+    var body: some View {
+        ZStack {
+            DictationPressView(onToggle: { if enabled { action() } })
+            BeruIcon(name: icon, size: 16)
+                .foregroundStyle(.primary)
+                .opacity(enabled ? 1 : 0.35)
+                .allowsHitTesting(false)
+        }
+        .frame(width: 28, height: 28)
+        .contentShape(Rectangle())
+        .help(help)
+        .accessibilityLabel(help)
+        .accessibilityHint(hint)
+        .accessibilityAddTraits(.isButton)
     }
 }
 

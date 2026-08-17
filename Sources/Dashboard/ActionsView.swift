@@ -134,7 +134,14 @@ struct ActionsView: View {
 
     private func actionRow(_ action: EnhancementAction) -> some View {
         let isSelected = selection == action.id
-        return HStack(spacing: 10) {
+        let canReorder = query.isEmpty
+        let handleColor = isSelected ? SettingsTheme.onActive : SettingsTheme.textPrimary
+        return HStack(spacing: 8) {
+            Image(systemName: "line.3.horizontal")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(handleColor.opacity(canReorder ? 0.9 : 0.35))
+                .frame(width: 16, height: 18)
+                .accessibilityLabel("Reorder")
             BeruIcon(name: action.icon, size: 16)
                 .foregroundStyle(isSelected ? SettingsTheme.onActive : SettingsTheme.textSecondary)
                 .frame(width: 18, height: 18)

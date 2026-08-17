@@ -65,9 +65,31 @@ struct OpenAICompatProvider: LLMProvider {
 
     /// Reasoning models emit a chain-of-thought pass before any answer. For
     /// short editing tasks that is pure latency, so it is switched off.
-    private static func isReasoningModel(_ modelID: String) -> Bool {
+    static func isReasoningModel(_ modelID: String) -> Bool {
         let id = modelID.lowercased()
         return ["qwen3", "deepseek-r1", "gpt-oss", "magistral", "thinking"].contains { id.contains($0) }
+    }
+
+    /// Groq's gpt-oss models reject `none` (only `low` / `medium` / `high`).
+    /// Qwen-style templates honor `none`.
+    static func reasoningEffort(for modelID: String) -> String {
+        modelID.lowercased().contains("gpt-oss") ? "low" : "none"
+    }
+
+    /// OpenAI-compatible `{ "error": { "message": "..." } }` body, if present.
+    static func openAIErrorMessage(from data: Data) -> String? {
+        guard let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            return nil
+        }
+        if let error = obj["error"] as? [String: Any],
+           let message = error["message"] as? String,
+           !message.isEmpty {
+            return message
+        }
+        if let message = obj["error"] as? String, !message.isEmpty {
+            return message
+        }
+        return nil
     }
 
     /// How long Ollama should keep weights resident after a request.
@@ -104,7 +126,8 @@ struct OpenAICompatProvider: LLMProvider {
             // chat_template_kwargs are both ignored. Sent to every local
             // server, not just Ollama, because chat_template_kwargs is the
             // documented switch on LM Studio and llama.cpp.
-            body["reasoning_effort"] = "none"
+            // Groq gpt-oss does not accept `none` — only low/medium/high.
+            body["reasoning_effort"] = Self.reasoningEffort(for: model(for: role))
             if isLoopback {
                 body["chat_template_kwargs"] = ["enable_thinking": false]
             }
@@ -230,10 +253,9 @@ struct OpenAICompatProvider: LLMProvider {
     func testConnection() async -> Result<Void, ProviderError> {
         do {
             let url = try endpoint()
-            // One token, no reasoning pass: this answers "can I talk to this
-            // server and does it know this model", and nothing else. Letting a
-            // thinking model write a full greeting made the button sit spinning
-            // for seconds against a server that was perfectly healthy.
+            // A few tokens, thinking kept short: this answers "can I talk to
+            // this server and does it know this model". One token is not enough
+            // for gpt-oss, which must emit reasoning before any visible output.
             var suppressThinking = isLoopback || Self.isReasoningModel(enhanceModel)
 
             while true {
@@ -246,20 +268,20 @@ struct OpenAICompatProvider: LLMProvider {
                 var body: [String: Any] = [
                     "model": enhanceModel,
                     "stream": false,
-                    "max_tokens": 1,
+                    "max_tokens": 16,
                     "messages": [["role": "user", "content": "hi"]]
                 ]
                 if suppressThinking {
-                    body["reasoning_effort"] = "none"
+                    body["reasoning_effort"] = Self.reasoningEffort(for: enhanceModel)
                     if isLoopback {
                         body["chat_template_kwargs"] = ["enable_thinking": false]
                     }
                 }
                 request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
-                let (_, response): (Data, URLResponse)
+                let (data, response): (Data, URLResponse)
                 do {
-                    (_, response) = try await ProviderHTTP.session().data(for: request)
+                    (data, response) = try await ProviderHTTP.session().data(for: request)
                 } catch {
                     return .failure(connectionError(error))
                 }
@@ -276,18 +298,55 @@ struct OpenAICompatProvider: LLMProvider {
                 switch http.statusCode {
                 case 200..<300: return .success(())
                 case 401: return .failure(.invalidAPIKey)
-                case 404:
-                    return .failure(.badResponse(
-                        "\(displayHost) has no model named \"\(enhanceModel)\" — check the model name in Settings."
-                    ))
+                case 404: return .failure(.badResponse(await unknownModelMessage(serverBody: data)))
                 case 429: return .failure(.rateLimited)
-                default: return .failure(.badResponse("\(displayHost) returned status \(http.statusCode)"))
+                default:
+                    if let message = Self.openAIErrorMessage(from: data) {
+                        return .failure(.badResponse(message))
+                    }
+                    return .failure(.badResponse("\(displayHost) returned status \(http.statusCode)"))
                 }
             }
         } catch let error as ProviderError {
             return .failure(error)
         } catch {
             return .failure(.connectionFailed(error.localizedDescription))
+        }
+    }
+
+    private func unknownModelMessage(serverBody: Data) async -> String {
+        if let message = Self.openAIErrorMessage(from: serverBody), !message.isEmpty {
+            return message
+        }
+        let listed = await listedChatModelIDs()
+        if listed.contains(enhanceModel) {
+            return "\(displayHost) rejected the test request for \"\(enhanceModel)\"."
+        }
+        if !listed.isEmpty {
+            let sample = listed.prefix(8).joined(separator: ", ")
+            return "\(displayHost) has no model named \"\(enhanceModel)\". Available: \(sample)"
+        }
+        return "\(displayHost) has no model named \"\(enhanceModel)\" — check the model name in Settings."
+    }
+
+    private func listedChatModelIDs() async -> [String] {
+        let trimmed = baseURL.trimmingCharacters(in: .whitespacesAndNewlines)
+            .trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+        guard let url = URL(string: trimmed + "/models") else { return [] }
+        var request = URLRequest(url: url)
+        if let apiKey, !apiKey.isEmpty {
+            request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        }
+        guard let (data, response) = try? await ProviderHTTP.session().data(for: request),
+              let http = response as? HTTPURLResponse,
+              (200..<300).contains(http.statusCode),
+              let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let rows = obj["data"] as? [[String: Any]] else {
+            return []
+        }
+        return rows.compactMap { $0["id"] as? String }.filter { id in
+            let lower = id.lowercased()
+            return !lower.contains("whisper") && !lower.contains("guard")
         }
     }
 
