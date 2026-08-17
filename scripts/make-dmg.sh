@@ -2,37 +2,19 @@
 #
 # Build a Release Beru.app and wrap it in a distributable DMG.
 #
-# Signing identity (first match wins):
-#   1. BERU_SIGN_IDENTITY env var
-#   2. Developer ID Application identity in the keychain (release / CI)
-#   3. "Beru Local Signing" local dev certificate
+# Default signing is ad-hoc ("-"). That needs no Apple Developer Program.
+# Recipients clear Gatekeeper once with:
 #
-# Notarization (optional, for public distribution):
-#   NOTARIZE=1 plus either NOTARY_PROFILE or APPLE_ID + APPLE_APP_SPECIFIC_PASSWORD + APPLE_TEAM_ID
+#     xattr -cr /Applications/Beru.app
 #
-# Local dev builds use a self-signed certificate. Other Macs will block Gatekeeper
-# until the user right-clicks > Open. Public releases need Developer ID + notarization.
+# Optional: BERU_SIGN_IDENTITY for a local cert or Developer ID.
+# Optional: NOTARIZE=1 plus Apple notary credentials.
 #
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-pick_identity() {
-    if [[ -n "${BERU_SIGN_IDENTITY:-}" ]]; then
-        echo "$BERU_SIGN_IDENTITY"
-        return
-    fi
-    local dev_id
-    dev_id=$(security find-identity -v -p codesigning 2>/dev/null \
-        | awk -F'"' '/Developer ID Application/ {print $2; exit}')
-    if [[ -n "$dev_id" ]]; then
-        echo "$dev_id"
-        return
-    fi
-    echo "Beru Local Signing"
-}
-
-IDENTITY="$(pick_identity)"
+IDENTITY="${BERU_SIGN_IDENTITY:--}"
 VERSION=$(awk '/MARKETING_VERSION/ {print $2; exit}' project.yml | tr -d '"')
 STAGE=$(mktemp -d)
 OUT="${BERU_DMG_OUT:-build/Beru-${VERSION}.dmg}"
@@ -40,12 +22,6 @@ trap 'rm -rf "$STAGE"' EXIT
 
 if [[ "$IDENTITY" != "-" ]] \
     && ! security find-identity -v -p codesigning 2>/dev/null | grep -Fq "$IDENTITY"; then
-    if [[ "$IDENTITY" == "Beru Local Signing" ]]; then
-        echo "error: signing certificate '$IDENTITY' not found." >&2
-        echo "       run scripts/make-signing-cert.sh for local builds, or import a" >&2
-        echo "       Developer ID Application certificate for release builds." >&2
-        exit 1
-    fi
     echo "error: signing identity not found: $IDENTITY" >&2
     exit 1
 fi
@@ -77,7 +53,7 @@ cp -R "$APP" "$STAGE/dmg/Beru.app"
 codesign -f -s "$IDENTITY" --deep --options runtime \
     --entitlements Resources/Beru.entitlements \
     "$STAGE/dmg/Beru.app"
-codesign --verify --strict "$STAGE/dmg/Beru.app"
+codesign --verify --verbose=2 "$STAGE/dmg/Beru.app"
 
 if [[ "${NOTARIZE:-}" == "1" && "$IDENTITY" != "-" ]]; then
     echo "==> notarizing Beru.app before packaging"
@@ -85,6 +61,18 @@ if [[ "${NOTARIZE:-}" == "1" && "$IDENTITY" != "-" ]]; then
 fi
 
 ln -s /Applications "$STAGE/dmg/Applications"
+cat > "$STAGE/dmg/How to allow Beru.txt" <<'EOF'
+Install
+1. Drag Beru into Applications.
+2. Open Terminal and paste this once:
+
+xattr -cr /Applications/Beru.app
+
+3. Open Beru from Applications.
+
+macOS blocks unsigned downloads. That one line clears the quarantine flag.
+You can also Control-click Beru and choose Open.
+EOF
 
 echo "==> building $OUT"
 mkdir -p "$(dirname "$OUT")"
@@ -99,11 +87,6 @@ fi
 echo "==> done: $OUT ($(du -h "$OUT" | cut -f1))"
 if [[ "$IDENTITY" == "-" ]]; then
     echo ""
-    echo "==> Ad-hoc build — not suitable for public download. Add Apple Developer"
-    echo "    ID secrets to GitHub Actions before publishing a release."
-elif [[ "$IDENTITY" == "Beru Local Signing" ]]; then
-    echo ""
-    echo "==> Local certificate build — recipients must right-click > Open once,"
-    echo "    or run: xattr -dr com.apple.quarantine /Applications/Beru.app"
-    echo "    For public download, rebuild with Developer ID + NOTARIZE=1."
+    echo "==> Recipients: drag Beru to Applications, then run:"
+    echo "    xattr -cr /Applications/Beru.app"
 fi

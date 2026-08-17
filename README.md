@@ -30,17 +30,21 @@ macOS 14+ only.
 
 1. Download **Beru-x.x.x.dmg** from [Releases](https://github.com/rahulsharmadesign/beru/releases).
 2. Open the DMG and drag **Beru** into **Applications**.
-3. Open Beru from Applications.
+3. macOS will block it (unsigned). Allow it once:
 
-No Terminal, Xcode, or Homebrew required. Beru ships as a self-contained app — Swift dependencies are baked in at build time.
+```bash
+xattr -cr /Applications/Beru.app
+```
 
-**First release:** publish one by tagging a version (for example `v1.1.0`). GitHub Actions builds the DMG automatically. See [Publishing a release](#publishing-a-release) below.
+4. Open Beru from Applications.
+
+No Xcode, Homebrew, or Apple Developer account. Dependencies are inside the app.
+
+No Terminal? Control-click Beru → **Open**.
 
 **Optional:** if you use the **Ollama** provider, install [Ollama](https://ollama.com) separately and pull a model. Cloud providers (Groq, Anthropic, etc.) only need an API key in Settings.
 
 ### Build from source (developers)
-
-If you are hacking on Beru or there is no release yet:
 
 ```bash
 xcode-select --install          # skip if Xcode tools are already installed
@@ -53,32 +57,7 @@ cd beru
 
 That builds Beru, signs it on *your* Mac, installs it to `/Applications`, and launches it. The certificate script is one-time. After that, `./scripts/install.sh` is enough.
 
-### Publishing a release
-
-Public DMGs need an [Apple Developer Program](https://developer.apple.com/programs/) membership so macOS Gatekeeper trusts the download. Add these GitHub repository secrets, then push a tag:
-
-| Secret | Purpose |
-|---|---|
-| `APPLE_CERTIFICATE_BASE64` | Base64-encoded `.p12` of your **Developer ID Application** certificate |
-| `APPLE_CERTIFICATE_PASSWORD` | Password for that `.p12` |
-| `APPLE_ID` | Apple ID email (for notarization) |
-| `APPLE_APP_SPECIFIC_PASSWORD` | App-specific password from [appleid.apple.com](https://appleid.apple.com) |
-| `APPLE_TEAM_ID` | 10-character Team ID |
-
-```bash
-git tag v1.1.0
-git push origin v1.1.0
-```
-
-The [Release workflow](.github/workflows/release.yml) builds, signs, notarizes, and attaches the DMG to the GitHub Release.
-
-To build a DMG locally:
-
-```bash
-brew install xcodegen
-./scripts/make-signing-cert.sh   # local dev only
-./scripts/make-dmg.sh            # output: build/Beru-1.1.0.dmg
-```
+To publish a DMG, push a version tag (`v1.1.0`). GitHub Actions builds it. Locally: `./scripts/make-dmg.sh`.
 
 ## First run
 

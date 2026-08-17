@@ -44,4 +44,4 @@ Selected text is framed as content, not as instructions to execute. That is a mi
 
 ### Unsigned downloads
 
-`scripts/make-dmg.sh` signs with a local development certificate. Other Macs will treat that binary as unidentified. Do not distribute it as a public installer until it is notarized with an Apple Developer ID.
+Release DMGs are ad-hoc signed on purpose — no Apple Developer Program. macOS Gatekeeper will block the first launch. Recipients allow it with `xattr -cr /Applications/Beru.app`, or Control-click → Open. Treat a downloaded binary like any other unsigned tool: only install from a source you trust.
