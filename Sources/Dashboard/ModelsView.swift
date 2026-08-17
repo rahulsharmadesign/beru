@@ -4,6 +4,7 @@ struct ModelsView: View {
     @Bindable private var settings = SettingsStore.shared
     @State private var installed: [OllamaAdmin.Model] = []
     @State private var listState: ListState = .loading
+    @State private var setupState: OllamaSetupState = .notInstalled
     @State private var pulling: String?
     @State private var pullProgress: OllamaAdmin.PullProgress?
     @State private var pullError: String?
@@ -22,6 +23,9 @@ struct ModelsView: View {
         ("llama3.2:3b", "~2 GB", "Small and quick; less reliable on structure.")
     ]
 
+    private static let defaultEnhanceModel = "qwen2.5:7b"
+    private static let defaultGrammarModel = "qwen2.5:7b"
+
     private var admin: OllamaAdmin {
         OllamaAdmin(baseURL: settings.ollamaBaseURL)
     }
@@ -34,7 +38,13 @@ struct ModelsView: View {
             }
             ProviderSettingsSections()
         }
-        .task(id: "\(settings.activeProvider.rawValue)|\(settings.ollamaBaseURL)") { await refresh() }
+        .task(id: "\(settings.activeProvider.rawValue)|\(settings.ollamaBaseURL)") {
+            await refresh()
+            while !Task.isCancelled, settings.activeProvider == .ollama, setupState != .running {
+                try? await Task.sleep(for: .seconds(2))
+                await refresh(showLoading: false)
+            }
+        }
         .onDisappear { pullTask?.cancel() }
     }
 
@@ -54,11 +64,11 @@ struct ModelsView: View {
                     SettingsValue(text: "Unavailable")
                 }
             case .unreachable(let host):
-                SettingsRow(title: "Server", caption: "Start Ollama, then refresh.") {
+                SettingsRow(
+                    title: "Server",
+                    caption: "Install or open Ollama below, then pick a model."
+                ) {
                     SettingsValue(text: host)
-                }
-                SettingsRow(title: "Retry") {
-                    SettingsPillButton(title: "Refresh") { Task { await refresh() } }
                 }
             case .ready where installed.isEmpty:
                 SettingsRow(
@@ -106,6 +116,21 @@ struct ModelsView: View {
     @ViewBuilder
     private var installSection: some View {
         SettingsSection(title: "Install a model", subtitle: "Recommended downloads for local inference.") {
+            SettingsRow(title: "Ollama", caption: setupCaption) {
+                switch setupState {
+                case .notInstalled:
+                    SettingsPrimaryButton(title: "Download Ollama") {
+                        OllamaSetup.openDownloadPage()
+                    }
+                case .installedNotRunning:
+                    SettingsPrimaryButton(title: "Open Ollama") {
+                        try? OllamaSetup.launchApp()
+                    }
+                case .running:
+                    SettingsValue(text: "Running")
+                }
+            }
+
             ForEach(Self.recommended, id: \.name) { item in
                 let isInstalled = installed.contains { $0.name == item.name }
                 let isPulling = pulling == item.name
@@ -129,6 +154,17 @@ struct ModelsView: View {
                     SettingsValue(text: "Error")
                 }
             }
+        }
+    }
+
+    private var setupCaption: String {
+        switch setupState {
+        case .notInstalled:
+            return "Download and install Ollama once, then come back here."
+        case .installedNotRunning:
+            return "Ollama is installed. Open it to start the local server."
+        case .running:
+            return "Local server is running. Pick a model below."
         }
     }
 
@@ -157,25 +193,35 @@ struct ModelsView: View {
         return "\(formatter.string(fromByteCount: completed)) of \(formatter.string(fromByteCount: total))"
     }
 
-    private func refresh() async {
+    private func refresh(showLoading: Bool = true) async {
         guard settings.activeProvider == .ollama else { return }
         guard OllamaAdmin.nativeRoot(from: settings.ollamaBaseURL) != nil else {
             listState = .notOllama
+            setupState = OllamaSetup.resolve(serverReachable: false)
             return
         }
-        listState = .loading
+        if showLoading { listState = .loading }
+        var serverReachable = false
         do {
             installed = try await admin.installedModels()
             listState = .ready
+            serverReachable = true
         } catch let error as OllamaAdmin.AdminError {
-            if case .unreachable(let host) = error {
-                listState = .unreachable(host)
+            if case .unreachable = error {
+                listState = .unreachable(adminHostLabel)
             } else {
                 listState = .notOllama
             }
         } catch {
-            listState = .unreachable("the server")
+            listState = .unreachable(adminHostLabel)
         }
+        setupState = OllamaSetup.resolve(serverReachable: serverReachable)
+    }
+
+    private var adminHostLabel: String {
+        guard let root = OllamaAdmin.nativeRoot(from: settings.ollamaBaseURL),
+              let host = root.host else { return "the server" }
+        return root.port.map { "\(host):\($0)" } ?? host
     }
 
     private func startPull(_ name: String) {
@@ -188,12 +234,22 @@ struct ModelsView: View {
                 for try await progress in admin.pull(model: name) {
                     pullProgress = progress
                 }
+                applyModelIfDefaults(name)
                 await refresh()
             } catch {
                 pullError = error.localizedDescription
             }
             pulling = nil
             pullProgress = nil
+        }
+    }
+
+    private func applyModelIfDefaults(_ name: String) {
+        if settings.ollamaEnhanceModel == Self.defaultEnhanceModel {
+            settings.ollamaEnhanceModel = name
+        }
+        if settings.ollamaGrammarModel == Self.defaultGrammarModel {
+            settings.ollamaGrammarModel = name
         }
     }
 
