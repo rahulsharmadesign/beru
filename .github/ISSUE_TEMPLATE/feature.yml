@@ -1,0 +1,16 @@
+name: Feature
+description: A change or addition
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: Proposal
+    validations:
+      required: true

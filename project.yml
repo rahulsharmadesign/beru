@@ -1,0 +1,122 @@
+name: Beru
+options:
+  bundleIdPrefix: com.rahul
+  deploymentTarget:
+    macOS: "14.0"
+  createIntermediateGroups: true
+
+packages:
+  KeyboardShortcuts:
+    url: https://github.com/sindresorhus/KeyboardShortcuts
+    from: 2.2.1
+  Lucide:
+    url: https://github.com/bring-shrubbery/lucide-swift.git
+    from: 1.16.0
+
+targets:
+  Beru:
+    type: application
+    platform: macOS
+    deploymentTarget: "14.0"
+    sources:
+      - path: Sources
+      - path: Resources
+        buildPhase: resources
+        excludes:
+          - Info.plist
+          - Beru.entitlements
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.rahul.beru
+        MARKETING_VERSION: "1.1.0"
+        CURRENT_PROJECT_VERSION: "3"
+        SWIFT_VERSION: "5.10"
+        # Signed with the machine's Apple Development certificate, MANUALLY and
+        # with no provisioning profile.
+        #
+        # This is what stops macOS asking for Accessibility after every build. For
+        # an ad-hoc signature ("-") TCC keys the grant to the binary's cdhash, so
+        # every rebuild is a different app to the system and the grant silently
+        # stops applying. A certificate gives a designated requirement based on
+        # bundle id + certificate, which is identical across rebuilds, so the
+        # grant persists.
+        #
+        # Manual, not Automatic: automatic signing tries to provision a Mac
+        # Development profile, which a free Apple account cannot create — that is
+        # why an earlier attempt at this failed and was reverted. A non-sandboxed
+        # app with no profile-backed entitlements needs no profile at all.
+        CODE_SIGN_STYLE: Automatic
+        CODE_SIGN_IDENTITY: "-"
+        # Hardened Runtime enables runtime security checks that protect against
+        # code injection and exploitation. Required for notarization. Beru does
+        # not use JIT, unsigned libraries, or other features that require
+        # exceptions, so the default hardened runtime is sufficient.
+        ENABLE_HARDENED_RUNTIME: YES
+        # Xcode 16+ Debug builds emit Beru.debug.dylib. Hardened Runtime then
+        # refuses to load it when signed with a local cert that has no Team ID
+        # ("different Team IDs"). A single binary avoids that without weakening
+        # library validation.
+        ENABLE_DEBUG_DYLIB: NO
+        SWIFT_STRICT_CONCURRENCY: complete
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+    dependencies:
+      - package: KeyboardShortcuts
+      - package: Lucide
+        product: Lucide
+    info:
+      path: Resources/Info.plist
+      properties:
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
+        CFBundleIconName: AppIcon
+        LSUIElement: true
+        NSHumanReadableCopyright: "© 2026 Rahul Sharma"
+        NSAccessibilityUsageDescription: "Beru reads and replaces selected text in other apps so it can enhance or correct it."
+        # Both strings are mandatory, not descriptive. Requesting microphone or
+        # speech access without the matching key does not warn or fail — the
+        # system terminates the process, so a missing string is a crash the
+        # first time someone holds the mic button.
+        #
+        # The wording says on-device because that is enforced in code:
+        # DictationService refuses to record unless the recognizer supports
+        # on-device recognition, and never falls back to Apple's servers.
+        NSMicrophoneUsageDescription: "Beru listens only while you hold the dictation key, so you can speak an instruction instead of typing it. Audio is transcribed on this Mac and never leaves it."
+        NSSpeechRecognitionUsageDescription: "Beru transcribes what you say on this Mac so you can speak an instruction instead of typing it. Speech is recognized on-device and is not sent to Apple’s servers."
+    entitlements:
+      path: Resources/Beru.entitlements
+      properties:
+        com.apple.security.app-sandbox: false
+        com.apple.security.device.audio-input: true
+        com.apple.security.network.client: true
+
+  BeruTests:
+    type: bundle.unit-test
+    platform: macOS
+    deploymentTarget: "14.0"
+    sources:
+      - path: Tests/BeruTests
+    settings:
+      base:
+        SWIFT_VERSION: "5.10"
+        GENERATE_INFOPLIST_FILE: YES
+        CODE_SIGN_STYLE: Automatic
+        CODE_SIGN_IDENTITY: "-"
+    dependencies:
+      - target: Beru
+    testTargets:
+      - Beru
+
+# Explicit scheme so the test bundle is built only for the test action.
+#
+# XcodeGen's default scheme builds every target for every action, including
+# archive. Release turns testability off, so archiving then fails on each
+# `@testable import Beru` — which is what blocked building a distributable
+# DMG. Tests still run normally; they just no longer gate a release build.
+schemes:
+  Beru:
+    build:
+      targets:
+        Beru: [run, test, profile, analyze, archive]
+        BeruTests: [test]
+    test:
+      targets: [BeruTests]

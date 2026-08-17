@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!--
+    Privacy Manifest for Beru
+    
+    This file declares the app's privacy practices as required by Apple for
+    macOS 14+ apps. Beru is a local-first application with no analytics,
+    telemetry, or remote data collection. It is not App Sandboxed: Accessibility
+    and synthetic keystrokes require that. User data stays on this Mac unless
+    the user sends selected text to a configured LLM provider.
+    
+    Required Reason APIs:
+    - NSPrivacyAccessedAPICategoryUserDefaults: Used to persist user preferences
+      (provider settings, action configurations, usage history). All of this data
+      stays on-device. The app is not sandboxed.
+    - NSPrivacyAccessedAPICategoryFileTimestamp: Used by VaultStore and UsageLog
+      to track when notes and usage logs were last modified for retention policies.
+    - NSPrivacyAccessedAPICategorySystemBootTime: Not used directly, but AppKit
+      may access this internally for animation timing.
+    -->
+    <key>NSPrivacyTracking</key>
+    <false/>
+    <key>NSPrivacyTrackingDomains</key>
+    <array/>
+    <key>NSPrivacyCollectedDataTypes</key>
+    <array/>
+    <key>NSPrivacyAccessedAPITypes</key>
+    <array>
+        <dict>
+            <key>NSPrivacyAccessedAPIType</key>
+            <string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+            <key>NSPrivacyAccessedAPITypeReasons</key>
+            <array>
+                <!-- CA92.1: Access user defaults to read and write information
+                     that is only accessible to this app. Beru is not sandboxed;
+                     the data still stays in this app's UserDefaults suite. -->
+                <string>CA92.1</string>
+            </array>
+        </dict>
+        <dict>
+            <key>NSPrivacyAccessedAPIType</key>
+            <string>NSPrivacyAccessedAPICategoryFileTimestamp</string>
+            <key>NSPrivacyAccessedAPITypeReasons</key>
+            <array>
+                <!-- C617.1: Access file timestamps to manage local storage
+                     and implement retention policies. -->
+                <string>C617.1</string>
+            </array>
+        </dict>
+    </array>
+</dict>
+</plist>
