@@ -1,13 +1,14 @@
 import AppKit
+import KeyboardShortcuts
 import SwiftUI
 
 @MainActor
 final class OnboardingWindowController: NSWindowController, NSWindowDelegate {
-    private var onOpenModels: () -> Void = {}
-    private var openingModels = false
+    private var onOpenPanel: () -> Void = {}
     private var restoredAccessory = false
+    private var shortcutMonitor: Any?
 
-    convenience init(onOpenModels: @escaping () -> Void = {}) {
+    convenience init(onOpenPanel: @escaping () -> Void = {}) {
         let window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 420, height: 520),
             styleMask: [.titled, .closable, .fullSizeContentView],
@@ -22,36 +23,64 @@ final class OnboardingWindowController: NSWindowController, NSWindowDelegate {
         window.backgroundColor = .windowBackgroundColor
         window.center()
         self.init(window: window)
-        self.onOpenModels = onOpenModels
+        self.onOpenPanel = onOpenPanel
         window.delegate = self
         window.contentView = NSHostingView(rootView: GetStartedView(controller: self))
     }
 
+    var isPresented: Bool { window?.isVisible == true }
+
     func show() {
         restoredAccessory = false
-        openingModels = false
         NSApp.setActivationPolicy(.regular)
         window?.appearance = NSApp.effectiveAppearance
         window?.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
+        installShortcutMonitor()
     }
 
-    func finish(openModels: Bool) {
+    func finish() {
+        removeShortcutMonitor()
         SettingsStore.shared.hasCompletedGetStarted = true
-        openingModels = openModels
         window?.close()
-        if openModels {
-            onOpenModels()
-        }
+    }
+
+    func finishAndOpenPanel() {
+        finish()
+        onOpenPanel()
     }
 
     func windowWillClose(_ notification: Notification) {
+        removeShortcutMonitor()
         if Permissions.isAccessibilityTrusted() {
             SettingsStore.shared.hasCompletedGetStarted = true
         }
-        if !openingModels {
-            restoreAccessoryIfNeeded()
+        restoreAccessoryIfNeeded()
+    }
+
+    /// Get Started is key, so the global hotkey can miss. Swallow the live
+    /// invoke shortcut here and treat it like tapping Start Beru.
+    private func installShortcutMonitor() {
+        guard shortcutMonitor == nil else { return }
+        shortcutMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+            guard let self, self.matchesInvokeShortcut(event) else { return event }
+            self.finishAndOpenPanel()
+            return nil
         }
+    }
+
+    private func removeShortcutMonitor() {
+        if let shortcutMonitor {
+            NSEvent.removeMonitor(shortcutMonitor)
+            self.shortcutMonitor = nil
+        }
+    }
+
+    private func matchesInvokeShortcut(_ event: NSEvent) -> Bool {
+        guard let pressed = KeyboardShortcuts.Shortcut(event: event) else { return false }
+        let expected = KeyboardShortcuts.getShortcut(for: .invokeBeru)
+            ?? KeyboardShortcuts.Shortcut(.p, modifiers: [.control, .option, .command])
+        return pressed == expected
     }
 
     private func restoreAccessoryIfNeeded() {
@@ -70,7 +99,7 @@ private enum GetStartedStep: Int, CaseIterable {
     case welcome
     case accessibility
     case microphone
-    case models
+    case startBeru
 }
 
 struct GetStartedView: View {
@@ -94,7 +123,7 @@ struct GetStartedView: View {
                 case .welcome: welcome
                 case .accessibility: accessibility
                 case .microphone: microphone
-                case .models: models
+                case .startBeru: startBeru
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -141,7 +170,7 @@ struct GetStartedView: View {
     private var welcome: some View {
         stepLayout(
             title: "Get started with Beru",
-            body: "Beru lives in the menu bar. Select text in any app, press the shortcut, and it refines the writing in place — grammar, prompts, replies, and questions."
+            body: "Beru lives in your menu bar. Select text in any app, press the shortcut, and improve it instantly. Fix grammar, refine prompts, write replies, or ask questions."
         ) {
             OnboardContinueButton("Continue") { step = .accessibility }
         }
@@ -150,59 +179,49 @@ struct GetStartedView: View {
     private var accessibility: some View {
         stepLayout(
             title: "Allow Accessibility",
-            body: "Beru reads and replaces selected text in other apps. Grant access in System Settings. This window stays open until you continue."
+            body: "Beru needs Accessibility access to read and replace selected text in other apps. You can enable it from System Settings."
         ) {
             VStack(spacing: 12) {
-                statusLine(isTrusted ? "Granted" : "Needed")
-                OnboardContinueButton("Open System Settings") {
-                    Permissions.requestAccessibilityIfNeeded()
-                    Permissions.openAccessibilitySettings()
+                if !isTrusted {
+                    OnboardContinueButton("Open System Settings", prominent: false) {
+                        Permissions.requestAccessibilityIfNeeded()
+                        Permissions.openAccessibilitySettings()
+                    }
                 }
-                OnboardContinueButton("Continue", prominent: false, enabled: isTrusted) {
-                    step = .microphone
-                }
+                OnboardContinueButton("Continue") { step = .microphone }
             }
         }
     }
 
     private var microphone: some View {
-        let ready = dictation.availability.isReady
-        return stepLayout(
+        stepLayout(
             title: "Microphone (optional)",
-            body: "Speak an instruction instead of typing. Transcription stays on this Mac — Beru will not send your voice to Apple."
+            body: "Use your voice instead of typing. Your speech is transcribed right on your Mac and never sent to Apple."
         ) {
             VStack(spacing: 12) {
-                statusLine(ready ? "Ready" : (dictation.availability.message ?? "Not set up yet"))
                 if dictation.availability == .needsPermission {
-                    OnboardContinueButton("Allow Microphone") {
+                    OnboardContinueButton("Allow Microphone", prominent: false) {
                         Task { await dictation.requestPermissions() }
                     }
-                } else if !ready {
-                    OnboardContinueButton("Open System Settings") {
-                        dictation.availability.openSystemSettings()
-                    }
                 }
-                OnboardContinueButton(ready ? "Continue" : "Skip", prominent: !ready ? false : true) {
-                    step = .models
-                }
+                OnboardContinueButton("Continue") { step = .startBeru }
             }
         }
     }
 
-    private var models: some View {
+    private var startBeru: some View {
         stepLayout(
-            title: "Pick a model",
-            body: "Use a local model with Ollama, or connect Anthropic / Groq in Settings. qwen3:8b is the recommended local default."
+            title: "Start Beru",
+            body: "Press the shortcut to open Beru anytime, right from the app you're working in."
         ) {
-            VStack(spacing: 12) {
-                OnboardContinueButton("Open Models") {
-                    controller?.finish(openModels: true)
-                }
-                OnboardContinueButton("Done", prominent: false) {
-                    controller?.finish(openModels: false)
-                }
+            OnboardContinueButton("Press \(shortcutLabel)") {
+                controller?.finishAndOpenPanel()
             }
         }
+    }
+
+    private var shortcutLabel: String {
+        KeyboardShortcuts.getShortcut(for: .invokeBeru)?.description ?? "⌃⌥⌘P"
     }
 
     private func stepLayout<Footer: View>(
@@ -235,14 +254,6 @@ struct GetStartedView: View {
             Spacer(minLength: 12)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-
-    private func statusLine(_ text: String) -> some View {
-        Text(text)
-            .font(.system(size: 12, weight: .medium))
-            .foregroundStyle(SettingsTheme.textSecondary)
-            .multilineTextAlignment(.center)
-            .fixedSize(horizontal: false, vertical: true)
     }
 }
 

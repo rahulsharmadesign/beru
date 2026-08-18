@@ -13,6 +13,7 @@ final class AppCoordinator {
     }
     private var onboardingWindow: OnboardingWindowController?
     private var dashboardWindow: DashboardWindowController?
+    private var openingPanelAfterGetStarted = false
 
     /// Where the next transcript should land. Dictation drives two different
     /// fields — the instruction, and the text being worked on — and the
@@ -44,7 +45,7 @@ final class AppCoordinator {
         }
         KeyboardShortcuts.onKeyDown(for: .invokeBeru) { [weak self] in
             logger.notice("hotkey fired")
-            self?.invoke()
+            self?.handleInvokeHotkey()
         }
         KeyboardShortcuts.onKeyDown(for: .dictateToBeru) { [weak self] in
             logger.notice("dictate hotkey fired")
@@ -53,6 +54,12 @@ final class AppCoordinator {
 
         engine.onRequestDictationPermission = { [weak self] in
             self?.showDashboard(route: .permissions)
+        }
+        engine.onRequestProviderSetup = { [weak self] preferLocal in
+            if preferLocal {
+                SettingsStore.shared.selectProvider(.ollama)
+            }
+            self?.showDashboard(route: .models)
         }
         DictationService.shared.onText = { [weak self] text in
             self?.applyDictated(text)
@@ -88,6 +95,14 @@ final class AppCoordinator {
         }
     }
 
+    func handleInvokeHotkey() {
+        if onboardingWindow?.isPresented == true || openingPanelAfterGetStarted {
+            openPanelAfterGetStarted()
+            return
+        }
+        invoke()
+    }
+
     func invoke() {
         let trusted = Permissions.isAccessibilityTrusted()
         logger.notice("invoke() accessibility trusted = \(trusted)")
@@ -95,6 +110,7 @@ final class AppCoordinator {
             showOnboarding()
             return
         }
+        completeOnboardingIfPresented()
 
         // Overlap the model load with text capture (up to 150 ms) so a model
         // idled out by Ollama's keep-alive is loading while we read the
@@ -203,7 +219,9 @@ final class AppCoordinator {
         }
         // Empty hotkey → AI Search. Text selected in Cursor / Claude / ChatGPT
         // → Enhance with that target. Anything else → Settings default skill.
-        if openOnSearch {
+        // Unconfigured installs stay on AI Search so setup copy is visible.
+        let needsSetup = !SettingsStore.shared.isConfigured(SettingsStore.shared.activeProvider)
+        if openOnSearch || needsSetup {
             appState.selectAction(EnhancementAction.searchID)
         } else if host.flatMap({ TargetProfile.seededID(forBundleID: $0.bundleID, name: $0.name) }) != nil {
             appState.selectAction(EnhancementAction.enhanceID)
@@ -351,10 +369,31 @@ final class AppCoordinator {
     private func showOnboarding() {
         if onboardingWindow == nil {
             onboardingWindow = OnboardingWindowController { [weak self] in
-                self?.showDashboard(route: .models)
+                self?.openPanelAfterGetStarted()
             }
         }
         onboardingWindow?.show()
+    }
+
+    private func completeOnboardingIfPresented() {
+        guard onboardingWindow?.isPresented == true else { return }
+        onboardingWindow?.finish()
+    }
+
+    /// Closes Get Started and shows the panel. Used by the Start Beru button
+    /// and by the live shortcut while that window is key.
+    private func openPanelAfterGetStarted() {
+        guard !openingPanelAfterGetStarted else { return }
+        openingPanelAfterGetStarted = true
+        onboardingWindow?.finish()
+        presentPanel(
+            with: "",
+            recordEmptySelection: true,
+            openOnSearch: true
+        )
+        DispatchQueue.main.async { [weak self] in
+            self?.openingPanelAfterGetStarted = false
+        }
     }
 
     /// Opens the dashboard, creating it on first use so an install that never

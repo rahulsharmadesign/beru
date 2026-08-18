@@ -25,6 +25,14 @@ final class PanelEngine {
     func requestDictationPermission() {
         onRequestDictationPermission?()
     }
+
+    /// Opens Settings → Models. `preferLocal` switches the active provider to Ollama first.
+    var onRequestProviderSetup: ((Bool) -> Void)?
+
+    func requestProviderSetup(preferLocal: Bool) {
+        onRequestProviderSetup?(preferLocal)
+    }
+
     private let powerActivity = PowerActivity()
     private var lastDescribeInstruction: String?
     /// Regeneration count per action within the current invocation.

@@ -297,7 +297,18 @@ struct PanelView: View {
         .transition(.opacity)
     }
 
+    @ViewBuilder
     private var idlePlaceholder: some View {
+        let needsSetup = appState.selectedActionID == EnhancementAction.searchID
+            && !SettingsStore.shared.isConfigured(SettingsStore.shared.activeProvider)
+        if needsSetup {
+            providerSetupPlaceholder
+        } else {
+            regularIdlePlaceholder
+        }
+    }
+
+    private var regularIdlePlaceholder: some View {
         let actionID = appState.selectedActionID
         let name = registry.action(withID: actionID)?.name
             ?? (actionID == EnhancementAction.searchID ? "AI Search" : "This action")
@@ -311,6 +322,36 @@ struct PanelView: View {
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(.horizontal, 24)
+        .padding(.vertical, 28)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(PanelDragRegion())
+    }
+
+    private var providerSetupPlaceholder: some View {
+        VStack(spacing: 10) {
+            Text("Choose your AI model")
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(.primary.opacity(0.85))
+            Text("Connect an AI provider or choose a local model to start using Beru.")
+                .font(.system(size: 12))
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+            VStack(spacing: 8) {
+                Button("Connect a provider") {
+                    engine.requestProviderSetup(preferLocal: false)
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.small)
+                Button("Use a local model") {
+                    engine.requestProviderSetup(preferLocal: true)
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+            }
+            .padding(.top, 4)
         }
         .padding(.horizontal, 24)
         .padding(.vertical, 28)
