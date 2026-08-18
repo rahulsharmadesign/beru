@@ -70,30 +70,26 @@ enum BrandColors {
     static let lightCanvas = Color(red: 0.982, green: 0.983, blue: 0.990)
     static let lightSurface = Color.white
     static let lightBorder = Color(red: 0.900, green: 0.902, blue: 0.920)
-    static let darkCanvas = Color(red: 0.075, green: 0.078, blue: 0.098)
+    static let darkCanvas = Color(red: 0.125, green: 0.130, blue: 0.160)
     static let darkSurface = Color(red: 0.125, green: 0.130, blue: 0.160)
     static let darkBorder = Color.white.opacity(0.14)
     static let softShadow = Color.black.opacity(0.075)
 
-    /// Frozen product fills. Do not map these to `windowBackgroundColor` or
-    /// `controlBackgroundColor` — those resolve grey (and greyer on inactive
-    /// floating panels) and regress across macOS versions.
+    /// One frozen fill for the widget window, its cards, Settings, and the
+    /// sidebar. The 10pt widget inset and the Settings titlebar must use this
+    /// same paint — a second grey is what made those surfaces look broken.
+    /// Do not map this to `windowBackgroundColor`.
     static let canvasNSColor = NSColor(name: "BeruCanvas") { appearance in
         let dark = appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
         return dark
-            ? NSColor(srgbRed: 0.075, green: 0.078, blue: 0.098, alpha: 1)
+            ? NSColor(srgbRed: 0.125, green: 0.130, blue: 0.160, alpha: 1)
             : NSColor(srgbRed: 0.982, green: 0.983, blue: 0.990, alpha: 1)
     }
-    static let surfaceNSColor = NSColor(name: "BeruSurface") { appearance in
-        let dark = appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
-        return dark
-            ? NSColor(srgbRed: 0.125, green: 0.130, blue: 0.160, alpha: 1)
-            : NSColor.white
-    }
+    static var surfaceNSColor: NSColor { canvasNSColor }
 
     static var canvas: Color { Color(nsColor: canvasNSColor) }
-    static var surface: Color { Color(nsColor: surfaceNSColor) }
-    static var input: Color { Color(nsColor: surfaceNSColor) }
+    static var surface: Color { canvas }
+    static var input: Color { canvas }
     static var border: Color { Color(nsColor: .separatorColor) }
     static var strongBorder: Color { Color(nsColor: .gridColor) }
 }

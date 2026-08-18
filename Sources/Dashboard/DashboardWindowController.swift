@@ -58,7 +58,7 @@ final class DashboardWindowController: NSWindowController, NSWindowDelegate {
         )
         window.title = "Beru"
         window.titleVisibility = .visible
-        window.titlebarAppearsTransparent = false
+        window.titlebarAppearsTransparent = true
         window.toolbar = nil
         window.isOpaque = true
         window.hasShadow = true

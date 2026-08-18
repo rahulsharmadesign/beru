@@ -6,8 +6,8 @@ import SwiftUI
 /// Window and sidebar fills come from frozen BrandColors canvas/surface tokens.
 enum SettingsTheme {
     static var window: Color { BrandColors.canvas }
-    static var sidebar: Color { BrandColors.surface }
-    static var surface: Color { BrandColors.surface }
+    static var sidebar: Color { BrandColors.canvas }
+    static var surface: Color { BrandColors.canvas }
     static var border: Color { BrandColors.border }
     static var textPrimary: Color { Color(nsColor: .labelColor) }
     static var textSecondary: Color { Color(nsColor: .secondaryLabelColor) }
