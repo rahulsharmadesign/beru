@@ -1,10 +1,10 @@
 <p align="center">
-  <img src="beru-github-banner.png" alt="Beru — turn a rough idea into a prompt your LLM will follow" width="100%">
+  <img src="beru-github-banner.png" alt="Beru - turn a rough idea into a prompt your LLM will follow" width="100%">
 </p>
 
 # Beru
 
-Select a rough idea, press a hotkey, and Beru turns it into a prompt your LLM will actually follow — aimed at Cursor, Claude, Codex, Gemini, ChatGPT, and the rest.
+Select a rough idea, press a hotkey, and Beru turns it into a prompt your LLM will actually follow, aimed at Cursor, Claude, Codex, Gemini, ChatGPT, and the rest.
 
 ![macOS 14+](https://img.shields.io/badge/macOS-14%2B-blue)
 ![Swift 5.10](https://img.shields.io/badge/Swift-5.10-orange)
@@ -14,7 +14,7 @@ Beru lives in the menu bar. It does not take over the app you are writing in.
 
 ## How it works
 
-1. Select the rough thought, notes, or half-written prompt — in Notes, Cursor, a browser, anywhere.
+1. Select the rough thought, notes, or half-written prompt, in Notes, Cursor, a browser, anywhere.
 2. Press **⌃⌥⌘P** (you can change this).
 3. **Enhance** rewrites it as a clear prompt, using that tool’s guides and Markdown conventions. **Replace** writes it back, or **Copy** takes it to the clipboard.
 
