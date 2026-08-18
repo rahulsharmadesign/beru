@@ -1,8 +1,8 @@
 import SwiftUI
 
-/// Per-run token accounting, shown in the panel footer once a result lands.
+/// Per-run token accounting, shown on the outcome strip once a result lands.
 ///
-/// Deliberately quiet. It sits next to Regenerate as a side note, not as a
+/// Deliberately quiet. It sits to the left of Replace as a side note, not as a
 /// badge competing with the result text — this is a number you glance at, and
 /// the panel is on screen for a couple of seconds at a time.
 ///

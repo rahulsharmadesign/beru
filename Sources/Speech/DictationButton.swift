@@ -16,12 +16,14 @@ struct DictationButton: View {
     var body: some View {
         ZStack {
             DictationPressView(onToggle: toggle)
-            BeruIcon(name: symbol, size: 16, strokeWidth: 2)
+            Circle()
+                .strokeBorder(BrandColors.border, lineWidth: 1)
+            BeruIcon(name: symbol, size: 14, strokeWidth: 2)
                 .foregroundStyle(tint)
                 .allowsHitTesting(false)
         }
         .frame(width: 28, height: 28)
-        .contentShape(Rectangle())
+        .contentShape(Circle())
         .help(helpText)
         .accessibilityLabel(dictation.isRecording ? "Stop dictation" : "Dictate an instruction")
         .accessibilityHint(helpText)
@@ -49,13 +51,13 @@ struct DictationButton: View {
     }
 
     private var symbol: String {
-        if dictation.isRecording { return "mic" }
-        return isActionable ? "mic" : "mic-off"
+        if dictation.isRecording { return "audio-lines" }
+        return isActionable ? "audio-lines" : "mic-off"
     }
 
     private var tint: AnyShapeStyle {
         if dictation.isRecording { return AnyShapeStyle(.red) }
-        return isActionable ? AnyShapeStyle(.tint) : AnyShapeStyle(.tertiary)
+        return isActionable ? AnyShapeStyle(BrandColors.accentColor) : AnyShapeStyle(.tertiary)
     }
 
     private var helpText: String {

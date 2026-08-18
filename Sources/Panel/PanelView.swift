@@ -29,6 +29,7 @@ struct PanelView: View {
         // only gradient fills change, not layout or text content.
         let frosting = SettingsStore.shared.panelFrosting
         let _ = SettingsStore.shared.primaryColorID
+        let _ = SettingsStore.shared.activeProvider
         let _ = AppearanceObserver.shared.signature
 
         VStack(spacing: 0) {
@@ -41,14 +42,7 @@ struct PanelView: View {
                     .layoutPriority(1)
                     .contributesPanelHeight()
                 resultModule
-                footer
-                    .glassModule()
-                    .fixedSize(horizontal: false, vertical: true)
-                    .layoutPriority(1)
-                    .contributesPanelHeight()
-                intentField
-                    .glassModule(radius: PanelMetrics.moduleRadius, focusRing: describeFieldFocused)
-                    .fixedSize(horizontal: false, vertical: true)
+                composerColumn
                     .layoutPriority(1)
                     .contributesPanelHeight()
             }
@@ -407,19 +401,28 @@ struct PanelView: View {
         return false
     }
 
+    /// Outcome strip sits behind the composer and only appears once a result
+    /// is in — token pill plus Replace / Copy / Pin, no dismiss control.
+    private var composerColumn: some View {
+        VStack(spacing: hasFinishedResult ? -PanelMetrics.composerOverlap : 0) {
+            if hasFinishedResult {
+                footer
+                    .glassModule()
+                    .fixedSize(horizontal: false, vertical: true)
+                    .zIndex(0)
+                    .transition(.opacity.combined(with: .move(edge: .bottom)))
+            }
+            intentField
+                .glassModule(radius: PanelMetrics.composerRadius, focusRing: describeFieldFocused)
+                .fixedSize(horizontal: false, vertical: true)
+                .zIndex(1)
+        }
+        .animation(tabAnimation, value: hasFinishedResult)
+    }
+
     private var footer: some View {
         HStack(spacing: 10) {
-            PanelIconHitButton(
-                icon: "rotate-cw",
-                help: "Regenerate",
-                hint: "Run this action again on the same input",
-                enabled: hasFinishedResult || isErrorState
-            ) {
-                engine.retry(actionID: appState.selectedActionID)
-            }
-
-            if case .done = appState.resultState(for: appState.selectedActionID),
-               let savings = appState.savings[appState.selectedActionID] {
+            if let savings = appState.savings[appState.selectedActionID] {
                 SavingsPill(savings: savings)
                     .transition(.opacity)
             }
@@ -447,36 +450,27 @@ struct PanelView: View {
                     .transition(.opacity)
             }
 
-            if hasFinishedResult {
-                Button(appState.vaultNoteID == nil ? "Replace" : "Apply") { performReplace() }
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.small)
-                    .help(
-                        appState.vaultNoteID == nil
-                            ? "Replace the selection (Cmd-Return)"
-                            : "Write this result back into the vault note (Cmd-Return)"
-                    )
+            Button(appState.vaultNoteID == nil ? "Replace" : "Apply") { performReplace() }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.small)
+                .help(
+                    appState.vaultNoteID == nil
+                        ? "Replace the selection (Cmd-Return)"
+                        : "Write this result back into the vault note (Cmd-Return)"
+                )
 
-                Button("Copy") { performCopy() }
-                    .buttonStyle(.bordered)
-                    .controlSize(.small)
+            Button("Copy") { performCopy() }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
 
-                Button("Pin") { performPin() }
-                    .buttonStyle(.bordered)
-                    .controlSize(.small)
-                    .help("Save this result in the vault")
-            }
-
-            PanelIconHitButton(
-                icon: "x",
-                help: "Dismiss",
-                hint: "Close the panel without applying the result",
-                enabled: true
-            ) {
-                engine.cancel()
-            }
+            Button("Pin") { performPin() }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .help("Save this result in the vault")
         }
         .padding(.horizontal, PanelMetrics.moduleInset)
+        .padding(.top, 6)
+        .padding(.bottom, PanelMetrics.composerOverlap + 6)
         .frame(minHeight: PanelMetrics.footerMinHeight, alignment: .center)
         .frame(maxWidth: .infinity)
     }
@@ -495,46 +489,63 @@ struct PanelView: View {
     }
 
     private var intentField: some View {
-        HStack(spacing: 8) {
-            BeruIcon(
-                name: appState.isQuickSearch ? "search" : "sparkles",
-                size: 16
-            )
-                .foregroundStyle(.secondary)
-            TextField(composerPlaceholder, text: $appState.describeInstruction)
-                .textFieldStyle(.plain)
-                .font(.system(size: 13))
-                .focused($describeFieldFocused)
-                .onSubmit { submitDescribe() }
-            DictationButton(onNeedsPermission: { engine.requestDictationPermission() })
-            if targetPickerVisible {
-                targetMenu
-            }
-            Button {
-                submitDescribe()
-            } label: {
-                ZStack {
-                    Circle()
-                        .fill(canSubmitDescribe ? BrandColors.accentColor : Color.clear)
-                    BeruIcon(name: "arrow-up", size: canSubmitDescribe ? 15 : 13, strokeWidth: 2.4)
-                        .foregroundStyle(canSubmitDescribe ? Color.white : Color.secondary)
-                }
-                .frame(
-                    width: canSubmitDescribe ? 28 : 22,
-                    height: canSubmitDescribe ? 28 : 22
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                BeruIcon(
+                    name: appState.isQuickSearch ? "search" : "sparkles",
+                    size: 16
                 )
+                .foregroundStyle(.secondary)
+                TextField(composerPlaceholder, text: $appState.describeInstruction)
+                    .textFieldStyle(.plain)
+                    .font(.system(size: 13))
+                    .focused($describeFieldFocused)
+                    .onSubmit { submitDescribe() }
             }
-            .buttonStyle(.plain)
-            .disabled(!canSubmitDescribe)
-            .animation(.easeOut(duration: 0.12), value: canSubmitDescribe)
-            .help("Run this intent")
-            .accessibilityLabel("Run this intent")
-            .accessibilityHint("Send the instruction to Beru")
+            HStack(spacing: 8) {
+                if targetPickerVisible {
+                    targetMenu
+                } else {
+                    providerMenu
+                }
+                PanelIconHitButton(
+                    icon: "rotate-cw",
+                    help: "Regenerate",
+                    hint: "Run this action again on the same input",
+                    enabled: hasFinishedResult || isErrorState
+                ) {
+                    engine.retry(actionID: appState.selectedActionID)
+                }
+                Spacer(minLength: 8)
+                DictationButton(onNeedsPermission: { engine.requestDictationPermission() })
+                sendButton
+            }
         }
         .padding(.horizontal, PanelMetrics.moduleInset)
+        .padding(.vertical, 8)
         .frame(minHeight: PanelMetrics.composerMinHeight, alignment: .center)
         .frame(maxWidth: .infinity)
         .animation(tabAnimation, value: appState.isQuickSearch)
+    }
+
+    private var sendButton: some View {
+        Button {
+            guard canSubmitDescribe else { return }
+            submitDescribe()
+        } label: {
+            ZStack {
+                Circle()
+                    .fill(canSubmitDescribe ? BrandColors.accentColor : Color.primary.opacity(0.14))
+                BeruIcon(name: "arrow-up", size: 15, strokeWidth: 2.4)
+                    .foregroundStyle(canSubmitDescribe ? Color.white : Color.secondary)
+            }
+            .frame(width: 28, height: 28)
+        }
+        .buttonStyle(.plain)
+        .animation(.easeOut(duration: 0.12), value: canSubmitDescribe)
+        .help("Run this intent")
+        .accessibilityLabel("Run this intent")
+        .accessibilityHint("Send the instruction to Beru")
     }
 
     private var composerPlaceholder: String {
@@ -569,27 +580,61 @@ struct PanelView: View {
 
     private var targetMenu: some View {
         let active = targetRegistry.profile(withID: appState.selectedTargetID)
-        return Button {
-            presentTargetMenu()
-        } label: {
-            HStack(spacing: 4) {
-                BeruLabel(
-                    title: active?.name ?? "Generic",
-                    icon: active?.icon ?? "circle-dashed",
-                    iconSize: 14
-                )
-                BeruIcon(name: "chevrons-up-down", size: 11, strokeWidth: 2)
+        return composerPickerPill(
+            icon: active?.icon ?? "circle-dashed",
+            title: active?.name ?? "Generic",
+            help: "Which AI this prompt is written for",
+            accessibilityLabel: "Target, \(active?.name ?? "Generic")",
+            accessibilityHint: "Choose which AI this prompt is written for",
+            action: presentTargetMenu
+        )
+    }
+
+    private var providerMenu: some View {
+        let kind = SettingsStore.shared.activeProvider
+        return composerPickerPill(
+            icon: kind.composerIcon,
+            title: kind.composerTitle,
+            help: "Change the active provider",
+            accessibilityLabel: "Active provider, \(kind.title)",
+            accessibilityHint: "Choose which AI provider Beru sends requests to",
+            action: presentProviderMenu
+        )
+    }
+
+    private func composerPickerPill(
+        icon: String,
+        title: String,
+        help: String,
+        accessibilityLabel: String,
+        accessibilityHint: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            HStack(spacing: 5) {
+                BeruIcon(name: icon, size: 12, strokeWidth: 2)
+                    .foregroundStyle(BrandColors.accentColor)
+                Text(title)
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                BeruIcon(name: "chevron-down", size: 10, strokeWidth: 2)
+                    .foregroundStyle(.secondary)
             }
-            .font(.system(size: 11))
-            .lineLimit(1)
-            .foregroundStyle(BrandColors.accentColor)
-            .contentShape(Rectangle())
+            .padding(.horizontal, 8)
+            .padding(.vertical, 5)
+            .background {
+                Capsule()
+                    .fill(Color.primary.opacity(0.05))
+                    .overlay(Capsule().strokeBorder(BrandColors.border, lineWidth: 1))
+            }
+            .contentShape(Capsule())
         }
         .buttonStyle(.plain)
         .fixedSize()
-        .help("Which AI this prompt is written for")
-        .accessibilityLabel("Target, \(active?.name ?? "Generic")")
-        .accessibilityHint("Choose which AI this prompt is written for")
+        .help(help)
+        .accessibilityLabel(accessibilityLabel)
+        .accessibilityHint(accessibilityHint)
     }
 
     /// `NSMenu.popUp` works in a non-activating panel. SwiftUI `Menu` does not —
@@ -610,6 +655,29 @@ struct PanelView: View {
             item.target = TargetMenuRelay.shared
             item.representedObject = profile.id
             item.state = profile.id == selectedID ? .on : .off
+            menu.addItem(item)
+        }
+        menu.popUp(positioning: nil, at: NSEvent.mouseLocation, in: nil)
+    }
+
+    private func presentProviderMenu() {
+        let settings = SettingsStore.shared
+        let menu = NSMenu()
+        menu.autoenablesItems = false
+        let selected = settings.activeProvider
+        PanelProviderMenuRelay.shared.onPick = { kind in
+            settings.selectProvider(kind)
+        }
+        for kind in ProviderKind.allCases {
+            let item = NSMenuItem(
+                title: kind.title,
+                action: #selector(PanelProviderMenuRelay.pick(_:)),
+                keyEquivalent: ""
+            )
+            item.target = PanelProviderMenuRelay.shared
+            item.representedObject = kind.rawValue
+            item.state = kind == selected ? .on : .off
+            item.isEnabled = settings.isConfigured(kind)
             menu.addItem(item)
         }
         menu.popUp(positioning: nil, at: NSEvent.mouseLocation, in: nil)
@@ -647,6 +715,35 @@ private final class TargetMenuRelay: NSObject {
     @objc func pick(_ sender: NSMenuItem) {
         guard let id = sender.representedObject as? String else { return }
         onPick?(id)
+    }
+}
+
+private final class PanelProviderMenuRelay: NSObject {
+    static let shared = PanelProviderMenuRelay()
+    var onPick: ((ProviderKind) -> Void)?
+
+    @objc func pick(_ sender: NSMenuItem) {
+        guard let raw = sender.representedObject as? String,
+              let kind = ProviderKind(rawValue: raw) else { return }
+        onPick?(kind)
+    }
+}
+
+private extension ProviderKind {
+    var composerTitle: String {
+        switch self {
+        case .ollama: return "Ollama"
+        case .anthropic: return "Anthropic"
+        case .custom: return "API"
+        }
+    }
+
+    var composerIcon: String {
+        switch self {
+        case .ollama: return "cpu"
+        case .anthropic: return "sparkle"
+        case .custom: return "cloud"
+        }
     }
 }
 

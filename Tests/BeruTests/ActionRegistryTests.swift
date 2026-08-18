@@ -18,9 +18,9 @@ final class ActionRegistryTests: XCTestCase {
 
     @MainActor
     func testBuiltInsComeFirstAndGrammarIsPrimary() {
-        let all = ActionRegistry.shared.allActions
-        XCTAssertEqual(all.first?.id, EnhancementAction.grammarID)
-        XCTAssertEqual(all.dropFirst().first?.id, EnhancementAction.enhanceID)
+        let ordered = ActionRegistry.ordered([.grammar, .enhance], by: [])
+        XCTAssertEqual(ordered.first?.id, EnhancementAction.grammarID)
+        XCTAssertEqual(ordered.dropFirst().first?.id, EnhancementAction.enhanceID)
     }
 
     @MainActor

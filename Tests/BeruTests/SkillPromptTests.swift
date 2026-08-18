@@ -57,7 +57,9 @@ final class BuiltInPromptScopeTests: XCTestCase {
 
     @MainActor
     func testGrammarIsFirstActionAndDefault() {
-        XCTAssertEqual(ActionRegistry.shared.allActions.first?.id, EnhancementAction.grammarID)
+        let ordered = ActionRegistry.ordered([.grammar, .enhance], by: [])
+        XCTAssertEqual(ordered.first?.id, EnhancementAction.grammarID)
+        XCTAssertEqual(EnhancementAction.grammarID, "grammar")
     }
 }
 

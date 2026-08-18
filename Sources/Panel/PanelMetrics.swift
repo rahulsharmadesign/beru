@@ -46,10 +46,14 @@ enum PanelMetrics {
     static let chipRowHeight: CGFloat = 32
     /// Footer (regenerate / dismiss) refuses to compress below this.
     static let footerMinHeight: CGFloat = 36
-    /// Composer, including its internal padding.
-    static let composerMinHeight: CGFloat = 44
-    /// Gaps between the four modules.
-    static let moduleChromeHeight: CGFloat = moduleSpacing * 3
+    /// Composer, including its internal padding. Two-row field + chrome.
+    static let composerMinHeight: CGFloat = 76
+    /// Composer card only — toolbar and result stay on `moduleRadius`.
+    static let composerRadius: CGFloat = 16
+    /// Gaps between the three outer modules (toolbar, result, composer stack).
+    static let moduleChromeHeight: CGFloat = moduleSpacing * 2
+    /// How far the outcome strip tucks under the composer.
+    static let composerOverlap: CGFloat = 12
     static let screenInset: CGFloat = 8
     /// Ignore height changes smaller than this to stop the window resizing on
     /// every reflow.
