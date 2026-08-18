@@ -99,7 +99,7 @@ Have an idea? [Open a feature request](https://github.com/rahulsharmadesign/beru
 
 Everything stays on this Mac.
 
-- Settings, actions, targets, vault notes, and run history are stored locally. Nothing is uploaded to a Beru server — there isn’t one.
+- Settings, actions, targets, vault notes, and run history are stored locally. Nothing is uploaded to a Beru server, there isn’t one.
 - No analytics, telemetry, or crash reporting.
 - API keys live in the Keychain on this Mac.
 - Selected text goes only to the LLM provider you configure.
