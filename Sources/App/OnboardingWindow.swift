@@ -9,12 +9,14 @@ final class OnboardingWindowController: NSWindowController, NSWindowDelegate {
 
     convenience init(onOpenModels: @escaping () -> Void = {}) {
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 460, height: 540),
-            styleMask: [.titled, .closable],
+            contentRect: NSRect(x: 0, y: 0, width: 420, height: 520),
+            styleMask: [.titled, .closable, .fullSizeContentView],
             backing: .buffered,
             defer: false
         )
         window.title = "Get Started"
+        window.titleVisibility = .hidden
+        window.titlebarAppearsTransparent = true
         window.isReleasedWhenClosed = false
         window.isOpaque = true
         window.backgroundColor = .windowBackgroundColor
@@ -77,13 +79,16 @@ struct GetStartedView: View {
     @State private var step: GetStartedStep = .welcome
     @State private var isTrusted = Permissions.isAccessibilityTrusted()
     @State private var dictation = DictationService.shared
+    private var a11y = AccessibilityPreferences.shared
+
+    init(controller: OnboardingWindowController?) {
+        self.controller = controller
+    }
 
     var body: some View {
         let _ = AppearanceObserver.shared.signature
+
         VStack(spacing: 0) {
-            stepDots
-                .padding(.top, 24)
-                .padding(.bottom, 16)
             Group {
                 switch step {
                 case .welcome: welcome
@@ -92,11 +97,18 @@ struct GetStartedView: View {
                 case .models: models
                 }
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-            .padding(.horizontal, 32)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .padding(.horizontal, 36)
+            .id(step)
+            .transition(stepTransition)
+
+            stepDots
+                .padding(.bottom, 28)
         }
-        .frame(width: 460, height: 540)
+        .frame(width: 420, height: 520)
         .background(BrandColors.canvas)
+        .animation(motion, value: step)
+        .animation(motion, value: isTrusted)
         .task {
             while !Task.isCancelled {
                 isTrusted = Permissions.isAccessibilityTrusted()
@@ -106,11 +118,19 @@ struct GetStartedView: View {
         }
     }
 
+    private var motion: Animation? {
+        a11y.reduceMotion ? nil : .easeInOut(duration: 0.22)
+    }
+
+    private var stepTransition: AnyTransition {
+        a11y.reduceMotion ? .opacity : .opacity
+    }
+
     private var stepDots: some View {
         HStack(spacing: 8) {
             ForEach(GetStartedStep.allCases, id: \.rawValue) { item in
                 Capsule()
-                    .fill(item == step ? BrandColors.accentColor : Color.secondary.opacity(0.25))
+                    .fill(item == step ? BrandColors.accentColor : Color.secondary.opacity(0.28))
                     .frame(width: item == step ? 18 : 6, height: 6)
             }
         }
@@ -123,9 +143,7 @@ struct GetStartedView: View {
             title: "Get started with Beru",
             body: "Beru lives in the menu bar. Select text in any app, press the shortcut, and it refines the writing in place — grammar, prompts, replies, and questions."
         ) {
-            Button("Continue") { step = .accessibility }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
+            OnboardContinueButton("Continue") { step = .accessibility }
         }
     }
 
@@ -136,16 +154,13 @@ struct GetStartedView: View {
         ) {
             VStack(spacing: 12) {
                 statusLine(isTrusted ? "Granted" : "Needed")
-                Button("Open System Settings") {
+                OnboardContinueButton("Open System Settings") {
                     Permissions.requestAccessibilityIfNeeded()
                     Permissions.openAccessibilitySettings()
                 }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
-                Button("Continue") { step = .microphone }
-                    .buttonStyle(.bordered)
-                    .controlSize(.large)
-                    .disabled(!isTrusted)
+                OnboardContinueButton("Continue", prominent: false, enabled: isTrusted) {
+                    step = .microphone
+                }
             }
         }
     }
@@ -159,21 +174,17 @@ struct GetStartedView: View {
             VStack(spacing: 12) {
                 statusLine(ready ? "Ready" : (dictation.availability.message ?? "Not set up yet"))
                 if dictation.availability == .needsPermission {
-                    Button("Allow Microphone") {
+                    OnboardContinueButton("Allow Microphone") {
                         Task { await dictation.requestPermissions() }
                     }
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.large)
                 } else if !ready {
-                    Button("Open System Settings") {
+                    OnboardContinueButton("Open System Settings") {
                         dictation.availability.openSystemSettings()
                     }
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.large)
                 }
-                Button(ready ? "Continue" : "Skip") { step = .models }
-                    .buttonStyle(.bordered)
-                    .controlSize(.large)
+                OnboardContinueButton(ready ? "Continue" : "Skip", prominent: !ready ? false : true) {
+                    step = .models
+                }
             }
         }
     }
@@ -184,16 +195,12 @@ struct GetStartedView: View {
             body: "Use a local model with Ollama, or connect Anthropic / Groq in Settings. qwen3:8b is the recommended local default."
         ) {
             VStack(spacing: 12) {
-                Button("Open Models") {
+                OnboardContinueButton("Open Models") {
                     controller?.finish(openModels: true)
                 }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
-                Button("Done") {
+                OnboardContinueButton("Done", prominent: false) {
                     controller?.finish(openModels: false)
                 }
-                .buttonStyle(.bordered)
-                .controlSize(.large)
             }
         }
     }
@@ -203,33 +210,74 @@ struct GetStartedView: View {
         body: String,
         @ViewBuilder footer: () -> Footer
     ) -> some View {
-        VStack(spacing: 20) {
-            Image("BrandMark")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 72, height: 72)
-                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-            Text(title)
-                .font(.title2.bold())
-                .multilineTextAlignment(.center)
-            Text(body)
-                .font(.system(size: 13))
-                .multilineTextAlignment(.center)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
+        VStack(spacing: 0) {
             Spacer(minLength: 12)
-            footer()
-            Spacer(minLength: 8)
+            VStack(spacing: 20) {
+                Image("BrandMark")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 72, height: 72)
+                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .accessibilityHidden(true)
+                Text(title)
+                    .font(.system(size: 22, weight: .bold))
+                    .foregroundStyle(SettingsTheme.textPrimary)
+                    .multilineTextAlignment(.center)
+                Text(body)
+                    .font(.system(size: 13))
+                    .foregroundStyle(SettingsTheme.textSecondary)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: 320)
+                footer()
+                    .padding(.top, 4)
+            }
+            Spacer(minLength: 12)
         }
-        .padding(.top, 8)
-        .padding(.bottom, 28)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private func statusLine(_ text: String) -> some View {
         Text(text)
             .font(.system(size: 12, weight: .medium))
-            .foregroundStyle(.secondary)
+            .foregroundStyle(SettingsTheme.textSecondary)
             .multilineTextAlignment(.center)
             .fixedSize(horizontal: false, vertical: true)
+    }
+}
+
+/// Compact capsule CTA. Prominent uses system blue so it matches the native
+/// Continue control; the brand accent is reserved for the pager.
+private struct OnboardContinueButton: View {
+    let title: String
+    var prominent: Bool = true
+    var enabled: Bool = true
+    let action: () -> Void
+
+    init(
+        _ title: String,
+        prominent: Bool = true,
+        enabled: Bool = true,
+        action: @escaping () -> Void
+    ) {
+        self.title = title
+        self.prominent = prominent
+        self.enabled = enabled
+        self.action = action
+    }
+
+    var body: some View {
+        if prominent {
+            Button(title, action: action)
+                .buttonStyle(.borderedProminent)
+                .tint(Color(nsColor: .controlAccentColor))
+                .controlSize(.large)
+                .disabled(!enabled)
+        } else {
+            Button(title, action: action)
+                .buttonStyle(.bordered)
+                .controlSize(.large)
+                .disabled(!enabled)
+        }
     }
 }
