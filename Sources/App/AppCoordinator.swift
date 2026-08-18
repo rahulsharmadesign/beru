@@ -96,12 +96,7 @@ final class AppCoordinator {
     }
 
     func handleInvokeHotkey() {
-        if SettingsStore.shared.hasCompletedGetStarted {
-            onboardingWindow?.finish()
-            invoke()
-            return
-        }
-        if onboardingWindow?.isPresented == true || openingPanelAfterGetStarted {
+        if onboardingWindow?.isPresented == true {
             openPanelAfterGetStarted()
             return
         }
@@ -113,10 +108,14 @@ final class AppCoordinator {
             showOnboarding()
             return
         }
-        completeOnboardingIfPresented()
 
         let trusted = Permissions.isAccessibilityTrusted()
         logger.notice("invoke() accessibility trusted = \(trusted)")
+        if !trusted {
+            Permissions.requestAccessibilityIfNeeded()
+            presentEmptySelectionNotice()
+            return
+        }
 
         // Overlap the model load with text capture (up to 150 ms) so a model
         // idled out by Ollama's keep-alive is loading while we read the
@@ -269,7 +268,11 @@ final class AppCoordinator {
             showOnboarding()
             return
         }
-        onboardingWindow?.finish()
+        if !Permissions.isAccessibilityTrusted() {
+            Permissions.requestAccessibilityIfNeeded()
+            presentEmptySelectionNotice()
+            return
+        }
 
         if appState.isPanelVisible {
             appState.selectAction(EnhancementAction.searchID)
@@ -378,11 +381,6 @@ final class AppCoordinator {
             }
         }
         onboardingWindow?.show()
-    }
-
-    private func completeOnboardingIfPresented() {
-        guard onboardingWindow?.isPresented == true else { return }
-        onboardingWindow?.finish()
     }
 
     /// Closes Get Started and shows the panel. Used by the Start Beru button

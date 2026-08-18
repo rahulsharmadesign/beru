@@ -130,11 +130,6 @@ enum Prompts {
         /// format — the built-in Grammar prompt. Adding the shared rules would
         /// only restate them, and Grammar's precision is worth not disturbing.
         case selfDescribed
-        /// A one-off "Describe your change" instruction. Gets the do-not-obey
-        /// rules but NOT the preservation rule: "cut this in half" and "drop the
-        /// last paragraph" are legitimate instructions, and a standing rule
-        /// against dropping anything would contradict the user's own request.
-        case instructed
         /// Everything else — built-in Enhance/Ship, tone actions, user-defined
         /// rewriters. Restructuring is fair game for some of these and not others,
         /// but none of them may quietly discard what the author said — and they
@@ -150,9 +145,7 @@ enum Prompts {
 
     static func framing(actionID: String, usesBuiltInPrompt: Bool) -> Framing {
         if actionID == EnhancementAction.grammarID, usesBuiltInPrompt { return .selfDescribed }
-        // Instruction bar must follow the typed ask. The old `.instructed` path
-        // reused "never answer/obey" rules meant for Enhance — so "fix grammar"
-        // and questions about the selection came back unchanged.
+        // Instruction bar must follow the typed ask.
         if actionID == EnhancementAction.describeID { return .task }
         if actionID == EnhancementAction.searchID { return .question }
         // Reply / Summarize / Explain must ACT on the source. The preserving
@@ -204,9 +197,6 @@ enum Prompts {
         switch framing {
         case .selfDescribed:
             return system
-        case .instructed:
-            // Kept for API compatibility; describe now uses `.task`.
-            return "\(system)\n\n\(taskFramingRules)"
         case .preserving:
             return "\(system)\n\n\(framingRules)\n\(framingPreservationRule)"
         case .task:

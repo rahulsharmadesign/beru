@@ -181,33 +181,4 @@ struct EnhancementAction: Identifiable, Codable, Equatable {
             isBuiltIn: false
         )
     ]
-
-    /// Legacy Writing Tools tones. No longer seeded for new installs; kept so
-    /// tests and migrations that reference them still compile.
-    static let starterToneActions: [EnhancementAction] = [
-        EnhancementAction(
-            id: "tone-friendly",
-            name: "Friendly",
-            icon: "smile",
-            role: .enhance,
-            systemPrompt: Prompts.toneRewrite(description: "warm, friendly, and approachable; contractions welcome; keep it natural, not gushing"),
-            isBuiltIn: false
-        ),
-        EnhancementAction(
-            id: "tone-professional",
-            name: "Professional",
-            icon: "briefcase",
-            role: .enhance,
-            systemPrompt: Prompts.toneRewrite(description: "polished and professional; courteous, direct, workplace-appropriate; no slang"),
-            isBuiltIn: false
-        ),
-        EnhancementAction(
-            id: "tone-concise",
-            name: "Concise",
-            icon: "minimize-2",
-            role: .enhance,
-            systemPrompt: Prompts.toneRewrite(description: "as brief as possible; cut every non-essential word; preserve all facts and intent"),
-            isBuiltIn: false
-        )
-    ]
 }

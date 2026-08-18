@@ -18,6 +18,10 @@ enum TextCapture {
             logger.notice("captured via AX, length = \(axText.count)")
             return .text(axText)
         }
+        guard AXIsProcessTrusted() else {
+            logger.notice("AX capture empty and process is not trusted")
+            return .empty
+        }
         logger.notice("AX capture empty/unavailable, trying clipboard fallback")
 
         if let clipboardText = await captureViaClipboard(), !clipboardText.isEmpty {

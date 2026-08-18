@@ -8,6 +8,7 @@ struct PanelView: View {
     @FocusState private var describeFieldFocused: Bool
     @State private var registry = ActionRegistry.shared
     @State private var chipFrames: [String: CGRect] = [:]
+    @State private var accessibilityTrusted = Permissions.isAccessibilityTrusted()
     private var targetRegistry = TargetRegistry.shared
     private var a11y = AccessibilityPreferences.shared
 
@@ -65,6 +66,12 @@ struct PanelView: View {
         .onKeyPress(.escape) {
             engine.cancel()
             return .handled
+        }
+        .task {
+            while !Task.isCancelled {
+                accessibilityTrusted = Permissions.isAccessibilityTrusted()
+                try? await Task.sleep(for: .seconds(1))
+            }
         }
         .onKeyPress(keys: [.return], phases: .down) { press in
             if press.modifiers.contains(.command) {
@@ -299,13 +306,41 @@ struct PanelView: View {
 
     @ViewBuilder
     private var idlePlaceholder: some View {
-        let needsSetup = appState.selectedActionID == EnhancementAction.searchID
-            && !SettingsStore.shared.isConfigured(SettingsStore.shared.activeProvider)
-        if needsSetup {
-            providerSetupPlaceholder
+        if !accessibilityTrusted {
+            accessibilityPlaceholder
         } else {
-            regularIdlePlaceholder
+            let needsSetup = appState.selectedActionID == EnhancementAction.searchID
+                && !SettingsStore.shared.isConfigured(SettingsStore.shared.activeProvider)
+            if needsSetup {
+                providerSetupPlaceholder
+            } else {
+                regularIdlePlaceholder
+            }
         }
+    }
+
+    private var accessibilityPlaceholder: some View {
+        VStack(spacing: 10) {
+            Text("Allow Accessibility")
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(.primary.opacity(0.85))
+            Text("Beru needs Accessibility to read and replace selected text in other apps.")
+                .font(.system(size: 12))
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+            Button("Open System Settings") {
+                Permissions.requestAccessibilityIfNeeded()
+                Permissions.openAccessibilitySettings()
+            }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.small)
+            .padding(.top, 4)
+        }
+        .padding(.horizontal, 24)
+        .padding(.vertical, 28)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(PanelDragRegion())
     }
 
     private var regularIdlePlaceholder: some View {
