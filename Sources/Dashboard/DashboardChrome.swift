@@ -41,7 +41,7 @@ extension View {
             .padding(padding)
             .background {
                 RoundedRectangle(cornerRadius: DashboardChrome.wellRadius, style: .continuous)
-                    .fill(Color(nsColor: .controlBackgroundColor))
+                    .fill(BrandColors.surface)
             }
     }
 

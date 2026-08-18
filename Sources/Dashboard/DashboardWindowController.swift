@@ -62,7 +62,7 @@ final class DashboardWindowController: NSWindowController, NSWindowDelegate {
         window.toolbar = nil
         window.isOpaque = true
         window.hasShadow = true
-        window.backgroundColor = .windowBackgroundColor
+        window.backgroundColor = BrandColors.canvasNSColor
         window.isReleasedWhenClosed = false
         window.minSize = NSSize(width: 880, height: 560)
         window.setFrameAutosaveName("BeruDashboardFixed")

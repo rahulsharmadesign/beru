@@ -20,7 +20,7 @@ final class OnboardingWindowController: NSWindowController, NSWindowDelegate {
         window.titlebarAppearsTransparent = true
         window.isReleasedWhenClosed = false
         window.isOpaque = true
-        window.backgroundColor = .windowBackgroundColor
+        window.backgroundColor = BrandColors.canvasNSColor
         window.center()
         self.init(window: window)
         self.onOpenPanel = onOpenPanel
@@ -32,6 +32,8 @@ final class OnboardingWindowController: NSWindowController, NSWindowDelegate {
 
     func show() {
         restoredAccessory = false
+        window?.contentView = NSHostingView(rootView: GetStartedView(controller: self))
+        window?.backgroundColor = BrandColors.canvasNSColor
         NSApp.setActivationPolicy(.regular)
         window?.appearance = NSApp.effectiveAppearance
         window?.makeKeyAndOrderFront(nil)

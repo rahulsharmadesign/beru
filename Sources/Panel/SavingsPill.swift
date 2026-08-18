@@ -20,7 +20,7 @@ struct SavingsPill: View {
     /// An opaque-enough surface that whatever is behind the glass cannot bleed
     /// through far enough to swallow 11pt text.
     private var surface: Color {
-        Color(nsColor: .windowBackgroundColor).opacity(0.9)
+        BrandColors.canvas.opacity(0.9)
     }
 
     /// Hand-picked per appearance rather than using `.green` / `.orange`, whose

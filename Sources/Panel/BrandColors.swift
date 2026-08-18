@@ -74,11 +74,26 @@ enum BrandColors {
     static let darkSurface = Color(red: 0.125, green: 0.130, blue: 0.160)
     static let darkBorder = Color.white.opacity(0.14)
     static let softShadow = Color.black.opacity(0.075)
-    /// Semantic surfaces shared with the dashboard. AppKit resolves these
-    /// colors for the active appearance at render time.
-    static var canvas: Color { Color(nsColor: .windowBackgroundColor) }
-    static var surface: Color { Color(nsColor: .controlBackgroundColor) }
-    static var input: Color { Color(nsColor: .textBackgroundColor) }
+
+    /// Frozen product fills. Do not map these to `windowBackgroundColor` or
+    /// `controlBackgroundColor` — those resolve grey (and greyer on inactive
+    /// floating panels) and regress across macOS versions.
+    static let canvasNSColor = NSColor(name: "BeruCanvas") { appearance in
+        let dark = appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+        return dark
+            ? NSColor(srgbRed: 0.075, green: 0.078, blue: 0.098, alpha: 1)
+            : NSColor(srgbRed: 0.982, green: 0.983, blue: 0.990, alpha: 1)
+    }
+    static let surfaceNSColor = NSColor(name: "BeruSurface") { appearance in
+        let dark = appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+        return dark
+            ? NSColor(srgbRed: 0.125, green: 0.130, blue: 0.160, alpha: 1)
+            : NSColor.white
+    }
+
+    static var canvas: Color { Color(nsColor: canvasNSColor) }
+    static var surface: Color { Color(nsColor: surfaceNSColor) }
+    static var input: Color { Color(nsColor: surfaceNSColor) }
     static var border: Color { Color(nsColor: .separatorColor) }
     static var strongBorder: Color { Color(nsColor: .gridColor) }
 }

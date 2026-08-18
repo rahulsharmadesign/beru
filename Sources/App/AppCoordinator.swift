@@ -69,7 +69,7 @@ final class AppCoordinator {
 
         let trusted = Permissions.isAccessibilityTrusted()
         logger.notice("initial accessibility trusted = \(trusted)")
-        if !trusted || !SettingsStore.shared.hasCompletedGetStarted {
+        if !SettingsStore.shared.hasCompletedGetStarted {
             showOnboarding()
         }
 
@@ -96,6 +96,11 @@ final class AppCoordinator {
     }
 
     func handleInvokeHotkey() {
+        if SettingsStore.shared.hasCompletedGetStarted {
+            onboardingWindow?.finish()
+            invoke()
+            return
+        }
         if onboardingWindow?.isPresented == true || openingPanelAfterGetStarted {
             openPanelAfterGetStarted()
             return
@@ -104,13 +109,14 @@ final class AppCoordinator {
     }
 
     func invoke() {
-        let trusted = Permissions.isAccessibilityTrusted()
-        logger.notice("invoke() accessibility trusted = \(trusted)")
-        guard trusted else {
+        if !SettingsStore.shared.hasCompletedGetStarted {
             showOnboarding()
             return
         }
         completeOnboardingIfPresented()
+
+        let trusted = Permissions.isAccessibilityTrusted()
+        logger.notice("invoke() accessibility trusted = \(trusted)")
 
         // Overlap the model load with text capture (up to 150 ms) so a model
         // idled out by Ollama's keep-alive is loading while we read the
@@ -259,12 +265,11 @@ final class AppCoordinator {
             return
         }
 
-        let trusted = Permissions.isAccessibilityTrusted()
-        logger.notice("invokeVoiceAsk() accessibility trusted = \(trusted)")
-        guard trusted else {
+        if !SettingsStore.shared.hasCompletedGetStarted {
             showOnboarding()
             return
         }
+        onboardingWindow?.finish()
 
         if appState.isPanelVisible {
             appState.selectAction(EnhancementAction.searchID)

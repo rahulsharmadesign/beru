@@ -3,8 +3,7 @@ import SwiftUI
 
 /// Semantic tokens shared by every dashboard surface.
 ///
-/// AppKit colors resolve against the active window appearance, so native
-/// controls and custom chrome switch together when macOS changes mode.
+/// Window and sidebar fills come from frozen BrandColors canvas/surface tokens.
 enum SettingsTheme {
     static var window: Color { BrandColors.canvas }
     static var sidebar: Color { BrandColors.surface }
