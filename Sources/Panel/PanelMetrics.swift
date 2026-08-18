@@ -20,12 +20,16 @@ enum PanelMetrics {
     /// Gap between the window edge and the SwiftUI hosting view. Applied in
     /// AppKit so SwiftUI layout cannot draw flush with the window mask.
     static let windowInset: CGFloat = 10
+    /// Title chrome sits flush with the rounded top; only sides and bottom keep this inset.
+    static let windowTopInset: CGFloat = 0
+    /// Title chrome above the inner cards — holds the close control.
+    static let closeStripHeight: CGFloat = 28
     /// Kept at zero: the panel uses the window-server shadow (`hasShadow`),
     /// which draws outside the frame. A transparent inset is not needed.
     static let shadowInset: CGFloat = 0
     static var windowWidth: CGFloat { width + shadowInset * 2 }
     static func windowHeight(for contentHeight: CGFloat) -> CGFloat {
-        contentHeight + shadowInset * 2 + windowInset * 2
+        contentHeight + shadowInset * 2 + windowTopInset + windowInset
     }
 
     // MARK: - Modules

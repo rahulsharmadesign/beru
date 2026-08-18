@@ -72,6 +72,7 @@ final class AppCoordinator {
         // immediately instead of paying a cold start.
         warmUpProvider()
         migrateDictateShortcutIfNeeded()
+        AppUpdateService.shared.check()
     }
 
     /// Fire-and-forget pre-load of the model the next invocation will most

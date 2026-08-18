@@ -31,23 +31,27 @@ struct PanelView: View {
         let _ = SettingsStore.shared.primaryColorID
         let _ = AppearanceObserver.shared.signature
 
-        VStack(spacing: PanelMetrics.moduleSpacing) {
-            toolbar
-                .glassModule()
-                .fixedSize(horizontal: false, vertical: true)
-                .layoutPriority(1)
+        VStack(spacing: 0) {
+            closeStrip
                 .contributesPanelHeight()
-            resultModule
-            footer
-                .glassModule()
-                .fixedSize(horizontal: false, vertical: true)
-                .layoutPriority(1)
-                .contributesPanelHeight()
-            intentField
-                .glassModule(radius: PanelMetrics.moduleRadius, focusRing: describeFieldFocused)
-                .fixedSize(horizontal: false, vertical: true)
-                .layoutPriority(1)
-                .contributesPanelHeight()
+            VStack(spacing: PanelMetrics.moduleSpacing) {
+                toolbar
+                    .glassModule()
+                    .fixedSize(horizontal: false, vertical: true)
+                    .layoutPriority(1)
+                    .contributesPanelHeight()
+                resultModule
+                footer
+                    .glassModule()
+                    .fixedSize(horizontal: false, vertical: true)
+                    .layoutPriority(1)
+                    .contributesPanelHeight()
+                intentField
+                    .glassModule(radius: PanelMetrics.moduleRadius, focusRing: describeFieldFocused)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .layoutPriority(1)
+                    .contributesPanelHeight()
+            }
         }
         .background(BrandColors.canvas)
         .background(PanelDragRegion())
@@ -93,6 +97,21 @@ struct PanelView: View {
             selectTab(tabs[digit - 1].id)
             return .handled
         }
+    }
+
+    // MARK: - Close strip
+
+    /// Outer-frame chrome matching the widget mock: red close sits above the
+    /// inner cards, on the right, not over the chips.
+    private var closeStrip: some View {
+        HStack(spacing: 8) {
+            Spacer(minLength: 0)
+            PanelUpdateButton()
+            PanelCloseDot { engine.cancel() }
+        }
+        .padding(.trailing, 4)
+        .frame(height: PanelMetrics.closeStripHeight)
+        .background(PanelDragRegion())
     }
 
     // MARK: - Toolbar (verbs + context)
@@ -222,7 +241,7 @@ struct PanelView: View {
         let app = appState.hostAppName ?? "Mac"
         let trimmed = appState.capturedText.trimmingCharacters(in: .whitespacesAndNewlines)
         if trimmed.isEmpty {
-            return "\(app) · No selection"
+            return "\(app) · No text selected"
         }
         return "\(app) · \(trimmed.count) characters"
     }
@@ -285,16 +304,21 @@ struct PanelView: View {
     }
 
     private var idlePlaceholder: some View {
-        VStack(spacing: 6) {
-            Text("Ask Beru")
+        let actionID = appState.selectedActionID
+        let name = registry.action(withID: actionID)?.name
+            ?? (actionID == EnhancementAction.searchID ? "AI Search" : "This action")
+        let copy = EnhancementAction.emptyCaptureCopy(actionID: actionID, actionName: name)
+        return VStack(spacing: 6) {
+            Text(copy.title)
                 .font(.system(size: 13, weight: .medium))
                 .foregroundStyle(.primary.opacity(0.85))
-            Text(appState.isQuickSearch
-                 ? "Type a question, then press Return"
-                 : "Pick a skill above, or type below")
+            Text(copy.subtitle)
                 .font(.system(size: 12))
                 .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
         }
+        .padding(.horizontal, 24)
         .padding(.vertical, 28)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(PanelDragRegion())
@@ -477,7 +501,7 @@ struct PanelView: View {
                 size: 16
             )
                 .foregroundStyle(.secondary)
-            TextField(appState.isQuickSearch ? "Ask Beru anything" : "What do you want?", text: $appState.describeInstruction)
+            TextField(composerPlaceholder, text: $appState.describeInstruction)
                 .textFieldStyle(.plain)
                 .font(.system(size: 13))
                 .focused($describeFieldFocused)
@@ -511,6 +535,16 @@ struct PanelView: View {
         .frame(minHeight: PanelMetrics.composerMinHeight, alignment: .center)
         .frame(maxWidth: .infinity)
         .animation(tabAnimation, value: appState.isQuickSearch)
+    }
+
+    private var composerPlaceholder: String {
+        if appState.isQuickSearch || appState.selectedActionID == EnhancementAction.searchID {
+            return "Ask a question…"
+        }
+        if appState.capturedText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return "Or type a question to search…"
+        }
+        return "Optional instruction for this action…"
     }
 
     private var canSubmitDescribe: Bool {
@@ -613,6 +647,33 @@ private final class TargetMenuRelay: NSObject {
     @objc func pick(_ sender: NSMenuItem) {
         guard let id = sender.representedObject as? String else { return }
         onPick?(id)
+    }
+}
+
+/// Solid Update pill, left of the close disc. Hidden unless a newer release exists.
+private struct PanelUpdateButton: View {
+    @State private var updates = AppUpdateService.shared
+
+    var body: some View {
+        if updates.showsUpdateButton {
+            ZStack {
+                DictationPressView {
+                    guard !updates.isBusy else { return }
+                    updates.install()
+                }
+                Text(updates.buttonTitle)
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 5)
+                    .background(Capsule().fill(BrandColors.accentColor))
+                    .allowsHitTesting(false)
+            }
+            .fixedSize()
+            .help(updates.availableVersion.map { "Install Beru \($0)" } ?? "Install the latest Beru")
+            .accessibilityLabel("Update")
+            .accessibilityAddTraits(.isButton)
+        }
     }
 }
 

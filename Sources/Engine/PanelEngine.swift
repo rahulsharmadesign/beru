@@ -195,7 +195,7 @@ final class PanelEngine {
         // Verb skills need material to work on. Search and the intent bar may
         // run on an empty capture — the question or instruction is the job.
         if !EnhancementAction.allowsEmptyCapture(actionID), capturedEmpty {
-            appState.setResult(.error("Add text or dictate first"), for: actionID)
+            appState.setResult(.idle, for: actionID)
             return
         }
 

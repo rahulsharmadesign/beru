@@ -114,6 +114,13 @@ final class ActionRegistryTests: XCTestCase {
         XCTAssertEqual(EnhancementAction.search.name, "AI Search")
         XCTAssertFalse(EnhancementAction.showsInlineDiff(for: EnhancementAction.searchID))
         XCTAssertTrue(EnhancementAction.allowsEmptyCapture(EnhancementAction.searchID))
+        XCTAssertFalse(EnhancementAction.allowsEmptyCapture(EnhancementAction.grammarID))
+        let grammar = EnhancementAction.emptyCaptureCopy(actionID: EnhancementAction.grammarID, actionName: "Grammar")
+        XCTAssertEqual(grammar.title, "No text selected")
+        XCTAssertTrue(grammar.subtitle.contains("Highlight some text"))
+        let search = EnhancementAction.emptyCaptureCopy(actionID: EnhancementAction.searchID, actionName: "AI Search")
+        XCTAssertEqual(search.title, "Ask a question")
+        XCTAssertTrue(search.subtitle.contains("don’t need to select"))
     }
 
     @MainActor

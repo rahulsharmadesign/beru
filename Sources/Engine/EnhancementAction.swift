@@ -34,10 +34,30 @@ struct EnhancementAction: Identifiable, Codable, Equatable {
         case Self.describeID:
             return "Run a one-off instruction on the selected text"
         case Self.searchID:
-            return "Ask Beru a question. Uses your selected AI."
+            return "Ask a question. No selected text required."
         default:
             return "Run a saved custom prompt on the selected text"
         }
+    }
+
+    /// Title and body for the panel when this action has nothing to work on.
+    static func emptyCaptureCopy(actionID: String, actionName: String) -> (title: String, subtitle: String) {
+        if actionID == searchID {
+            return (
+                "Ask a question",
+                "Type below and press Return. You don’t need to select text first."
+            )
+        }
+        if actionID == describeID {
+            return (
+                "Give an instruction",
+                "Type what you want Beru to do, then press Return."
+            )
+        }
+        return (
+            "No text selected",
+            "\(actionName) needs text from another app. Highlight some text, then press the Beru shortcut."
+        )
     }
 
     static let grammarID = "grammar"

@@ -369,7 +369,7 @@ final class PanelController {
         panel.backdropView.addSubview(hosting)
         let inset = PanelMetrics.windowInset
         NSLayoutConstraint.activate([
-            hosting.topAnchor.constraint(equalTo: panel.backdropView.topAnchor, constant: inset),
+            hosting.topAnchor.constraint(equalTo: panel.backdropView.topAnchor, constant: PanelMetrics.windowTopInset),
             hosting.bottomAnchor.constraint(equalTo: panel.backdropView.bottomAnchor, constant: -inset),
             hosting.leadingAnchor.constraint(equalTo: panel.backdropView.leadingAnchor, constant: inset),
             hosting.trailingAnchor.constraint(equalTo: panel.backdropView.trailingAnchor, constant: -inset)

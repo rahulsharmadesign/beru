@@ -45,7 +45,7 @@ enum DashboardRoute: String, Identifiable, CaseIterable, Hashable {
     /// Extra search terms so "tip" or "version" still finds About.
     var searchTerms: String {
         switch self {
-        case .about: return "about tip razorpay contact github version support donate"
+        case .about: return "about tip razorpay contact github version support donate update"
         default: return ""
         }
     }

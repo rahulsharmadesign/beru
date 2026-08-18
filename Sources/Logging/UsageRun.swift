@@ -66,7 +66,7 @@ struct UsageRun: Identifiable, Sendable, Equatable {
             case .dismissed: return "Dismissed"
             case .cancelled: return "Cancelled"
             case .failed: return "Failed"
-            case .emptySelection: return "Nothing selected"
+            case .emptySelection: return "No text selected"
             case .abandoned: return "Left open"
             }
         }

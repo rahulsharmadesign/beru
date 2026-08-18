@@ -4,6 +4,7 @@ import SwiftUI
 struct DashboardView: View {
     @Bindable var model: DashboardModel
     @State private var query = ""
+    @State private var updates = AppUpdateService.shared
 
     init(model: DashboardModel) {
         _model = Bindable(model)
@@ -117,6 +118,9 @@ struct DashboardView: View {
             Text(route.title)
                 .font(selected ? BeruSans.sidebarSelected : BeruSans.sidebar)
             Spacer(minLength: 0)
+            if route == .about, updates.showsUpdateButton {
+                SidebarUpdateChip()
+            }
         }
         .foregroundStyle(SettingsTheme.textPrimary)
         .padding(.horizontal, 10)
@@ -129,7 +133,6 @@ struct DashboardView: View {
         .contentShape(RoundedRectangle(cornerRadius: SettingsChrome.rowRadius, style: .continuous))
     }
 
-    @ViewBuilder
     private var detail: some View {
         Group {
             switch model.route {
@@ -146,5 +149,23 @@ struct DashboardView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(SettingsTheme.window)
+    }
+}
+
+private struct SidebarUpdateChip: View {
+    @State private var updates = AppUpdateService.shared
+
+    var body: some View {
+        Button(updates.buttonTitle) {
+            updates.install()
+        }
+        .buttonStyle(.plain)
+        .font(BeruSans.control)
+        .foregroundStyle(SettingsTheme.onActive)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 4)
+        .background(Capsule().fill(SettingsTheme.active))
+        .disabled(updates.isBusy)
+        .accessibilityLabel("Update")
     }
 }

@@ -238,7 +238,7 @@ struct GeneralSettingsTab: View {
             }
 
             SettingsSection(title: "Keyboard", subtitle: "Global shortcuts for opening Beru and dictation.") {
-                SettingsRow(title: "Open Beru", caption: "Global hotkey. Select text first.") {
+                SettingsRow(title: "Open Beru", caption: "Select text in another app, then press this shortcut.") {
                     KeyboardShortcuts.Recorder(for: .invokeBeru)
                 }
                 SettingsRow(title: "Dictate", caption: "Opens Beru in Ask and starts listening. Press again, Escape, or the mic to stop.") {
@@ -508,6 +508,8 @@ enum BeruAbout {
 }
 
 struct AboutSettingsTab: View {
+    @State private var updates = AppUpdateService.shared
+
     private var version: String {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "—"
     }
@@ -588,6 +590,11 @@ struct AboutSettingsTab: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
             Spacer(minLength: 0)
+            if updates.showsUpdateButton {
+                SettingsPrimaryButton(title: updates.buttonTitle, enabled: !updates.isBusy) {
+                    updates.install()
+                }
+            }
         }
         .padding(.bottom, 8)
         .accessibilityElement(children: .combine)
