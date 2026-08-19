@@ -61,7 +61,7 @@ struct ActionsView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .padding(.horizontal, SettingsChrome.contentPadding)
                 } else {
-                    List(selection: $selection) {
+                    List {
                         ForEach(filteredActions) { action in
                             Button {
                                 selection = action.id
@@ -72,6 +72,9 @@ struct ActionsView: View {
                             .listRowSeparator(.hidden)
                             .listRowInsets(EdgeInsets(top: 1, leading: SettingsChrome.contentPadding, bottom: 1, trailing: SettingsChrome.contentPadding))
                             .listRowBackground(Color.clear)
+                            // Suppress the List's own blue/gray highlight —
+                            // actionRow draws its own selection fill.
+                            .selectionDisabled()
                         }
                         .onMove { source, destination in
                             guard query.isEmpty else { return }
@@ -122,7 +125,14 @@ struct ActionsView: View {
 
     private func actionRow(_ action: EnhancementAction) -> some View {
         let isSelected = selection == action.id
+        let canReorder = query.isEmpty
+        let handleColor: Color = isSelected ? SettingsTheme.onActive : SettingsTheme.textPrimary
         return HStack(spacing: 8) {
+            Image(systemName: "line.3.horizontal")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(handleColor.opacity(canReorder ? 0.9 : 0.35))
+                .frame(width: 16, height: 18)
+                .accessibilityLabel("Reorder")
             BeruIcon(name: action.icon, size: 16)
                 .foregroundStyle(isSelected ? SettingsTheme.onActive : SettingsTheme.textSecondary)
                 .frame(width: 18, height: 18)
