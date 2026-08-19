@@ -101,11 +101,11 @@ struct ProviderSettingsSections: View {
             SettingsRow(title: "Base URL", caption: "Ollama or any compatible /v1 host.") {
                 SettingsField(placeholder: "http://127.0.0.1:11434/v1", text: $settings.ollamaBaseURL, width: 260)
             }
-            SettingsRow(title: "Enhance model") {
-                SettingsField(placeholder: "qwen3:8b", text: $settings.ollamaEnhanceModel)
+            SettingsRow(title: "Enhance model", caption: "Local Ollama tag used for Enhance Prompt.") {
+                OllamaModelIDPicker(selection: $settings.ollamaEnhanceModel, accessibilityLabel: "Enhance model")
             }
-            SettingsRow(title: "Grammar model") {
-                SettingsField(placeholder: "qwen3:8b", text: $settings.ollamaGrammarModel)
+            SettingsRow(title: "Grammar model", caption: "Local Ollama tag used for Grammar.") {
+                OllamaModelIDPicker(selection: $settings.ollamaGrammarModel, accessibilityLabel: "Grammar model")
             }
         case .anthropic:
             SettingsRow(title: "API key", caption: "Stored in the Keychain on this Mac.") {

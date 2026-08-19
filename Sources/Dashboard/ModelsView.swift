@@ -2,13 +2,10 @@ import SwiftUI
 
 struct ModelsView: View {
     @Bindable private var settings = SettingsStore.shared
+    @Bindable private var pull = OllamaPullService.shared
     @State private var installed: [OllamaAdmin.Model] = []
     @State private var listState: ListState = .loading
     @State private var setupState: OllamaSetupState = .notInstalled
-    @State private var pulling: String?
-    @State private var pullProgress: OllamaAdmin.PullProgress?
-    @State private var pullError: String?
-    @State private var pullTask: Task<Void, Never>?
 
     private enum ListState: Equatable {
         case loading
@@ -17,13 +14,7 @@ struct ModelsView: View {
         case notOllama
     }
 
-    private static let recommended: [(name: String, size: String, note: String)] = [
-        ("qwen3:8b", "~5 GB", "Default. Reasoning suppressed automatically."),
-        ("qwen2.5:7b", "~4.7 GB", "No reasoning pass; slightly faster first token.")
-    ]
-
-    private static let defaultEnhanceModel = "qwen2.5:7b"
-    private static let defaultGrammarModel = "qwen2.5:7b"
+    private static let recommended = RecommendedOllamaModel.all
 
     private var admin: OllamaAdmin {
         OllamaAdmin(baseURL: settings.ollamaBaseURL)
@@ -44,7 +35,12 @@ struct ModelsView: View {
                 await refresh(showLoading: false)
             }
         }
-        .onDisappear { pullTask?.cancel() }
+        // Pulls live on OllamaPullService so leaving this page does not cancel them.
+        .onChange(of: pull.pulling) { wasPulling, isPulling in
+            if wasPulling != nil, isPulling == nil {
+                Task { await refresh() }
+            }
+        }
     }
 
     @ViewBuilder
@@ -130,25 +126,27 @@ struct ModelsView: View {
                 }
             }
 
-            ForEach(Self.recommended, id: \.name) { item in
-                let isInstalled = installed.contains { $0.name == item.name }
-                let isPulling = pulling == item.name
-                SettingsRow(title: item.name, caption: installCaption(item, isPulling: isPulling)) {
+            ForEach(Self.recommended) { item in
+                let isInstalled = installed.contains {
+                    $0.name == item.name || $0.name.hasPrefix(item.name + "-")
+                }
+                let isPulling = pull.pulling == item.name
+                SettingsRow(title: item.title, caption: installCaption(item, isPulling: isPulling)) {
                     if isInstalled {
                         SettingsValue(text: "Installed")
                     } else if isPulling {
-                        SettingsPillButton(title: "Cancel", action: cancelPull)
+                        SettingsPillButton(title: "Cancel", action: pull.cancel)
                     } else {
                         SettingsPillButton(
                             title: "Install",
-                            enabled: pulling == nil && listState == .ready
+                            enabled: pull.pulling == nil && (listState == .ready || setupState == .running)
                         ) {
-                            startPull(item.name)
+                            pull.start(name: item.name, baseURL: settings.ollamaBaseURL)
                         }
                     }
                 }
             }
-            if let pullError {
+            if let pullError = pull.error {
                 SettingsRow(title: "Install failed", caption: pullError) {
                     SettingsValue(text: "Error")
                 }
@@ -168,11 +166,11 @@ struct ModelsView: View {
     }
 
     private func installCaption(
-        _ item: (name: String, size: String, note: String),
+        _ item: RecommendedOllamaModel,
         isPulling: Bool
     ) -> String {
         if isPulling { return pullStatusLine }
-        return "\(item.size) · \(item.note)"
+        return "\(item.name) · \(item.caption)"
     }
 
     private func rolesUsing(_ name: String) -> [String] {
@@ -183,7 +181,7 @@ struct ModelsView: View {
     }
 
     private var pullStatusLine: String {
-        guard let progress = pullProgress else { return "Starting…" }
+        guard let progress = pull.progress else { return "Starting…" }
         guard let completed = progress.completed, let total = progress.total, total > 0 else {
             return progress.status.isEmpty ? "Working…" : progress.status
         }
@@ -221,41 +219,5 @@ struct ModelsView: View {
         guard let root = OllamaAdmin.nativeRoot(from: settings.ollamaBaseURL),
               let host = root.host else { return "the server" }
         return root.port.map { "\(host):\($0)" } ?? host
-    }
-
-    private func startPull(_ name: String) {
-        pullError = nil
-        pulling = name
-        pullProgress = nil
-        let admin = admin
-        pullTask = Task {
-            do {
-                for try await progress in admin.pull(model: name) {
-                    pullProgress = progress
-                }
-                applyModelIfDefaults(name)
-                await refresh()
-            } catch {
-                pullError = error.localizedDescription
-            }
-            pulling = nil
-            pullProgress = nil
-        }
-    }
-
-    private func applyModelIfDefaults(_ name: String) {
-        if settings.ollamaEnhanceModel == Self.defaultEnhanceModel {
-            settings.ollamaEnhanceModel = name
-        }
-        if settings.ollamaGrammarModel == Self.defaultGrammarModel {
-            settings.ollamaGrammarModel = name
-        }
-    }
-
-    private func cancelPull() {
-        pullTask?.cancel()
-        pullTask = nil
-        pulling = nil
-        pullProgress = nil
     }
 }

@@ -159,6 +159,7 @@ struct AnthropicProvider: LLMProvider {
         case 200..<300: return
         case 401: throw ProviderError.invalidAPIKey
         case 429: throw ProviderError.rateLimited
+        case 404: throw ProviderError.modelUnavailable("Anthropic returned status 404")
         default: throw ProviderError.badResponse("Anthropic returned status \(http.statusCode)")
         }
     }

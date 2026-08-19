@@ -298,7 +298,7 @@ struct OpenAICompatProvider: LLMProvider {
                 switch http.statusCode {
                 case 200..<300: return .success(())
                 case 401: return .failure(.invalidAPIKey)
-                case 404: return .failure(.badResponse(await unknownModelMessage(serverBody: data)))
+                case 404: return .failure(.modelUnavailable(await unknownModelMessage(serverBody: data)))
                 case 429: return .failure(.rateLimited)
                 default:
                     if let message = Self.openAIErrorMessage(from: data) {
@@ -356,6 +356,7 @@ struct OpenAICompatProvider: LLMProvider {
         case 200..<300: return
         case 401: throw ProviderError.invalidAPIKey
         case 429: throw ProviderError.rateLimited
+        case 404: throw ProviderError.modelUnavailable("Server returned status 404")
         default: throw ProviderError.badResponse("Server returned status \(http.statusCode)")
         }
     }

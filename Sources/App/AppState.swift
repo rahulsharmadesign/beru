@@ -87,6 +87,9 @@ final class AppState {
     /// Which provider produced the current error, per action. Lets the panel
     /// offer "Try with [other provider]" instead of the user opening Settings.
     var errorProviders: [String: ProviderKind] = [:]
+    /// Actions whose error is a missing/unknown model, so the panel can offer
+    /// Connect to model next to Retry.
+    var errorNeedsModelSetup: Set<String> = []
 
     private var streamTasks: [String: Task<Void, Never>] = [:]
 
@@ -144,6 +147,7 @@ final class AppState {
         restyledNotices.removeAll()
         cleanNotices.removeAll()
         errorProviders.removeAll()
+        errorNeedsModelSetup.removeAll()
     }
 
     func dismiss() {
@@ -167,6 +171,7 @@ final class AppState {
         restyledNotices.removeAll()
         cleanNotices.removeAll()
         errorProviders.removeAll()
+        errorNeedsModelSetup.removeAll()
     }
 
     func setResult(_ state: ResultState, for actionID: String) {

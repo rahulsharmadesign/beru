@@ -46,6 +46,11 @@ struct DashboardView: View {
         filteredMenu.filter(\.isWorkspace)
     }
 
+    /// Hide the tip while sidebar search is filtering.
+    private var searchIsEmpty: Bool {
+        query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
     private var sidebar: some View {
         VStack(alignment: .leading, spacing: 0) {
             SettingsSearchField(text: $query)
@@ -69,8 +74,14 @@ struct DashboardView: View {
                 }
                 .scrollBounceBehavior(.basedOnSize)
                 Spacer(minLength: 0)
-                if !filteredFooter.isEmpty {
+                if searchIsEmpty || !filteredFooter.isEmpty {
                     sidebarGroupDivider
+                    if searchIsEmpty {
+                        SettingsTipCard {
+                            model.route = .models
+                        }
+                        .padding(.bottom, 8)
+                    }
                     ForEach(filteredFooter) { route in
                         sidebarButton(route)
                     }
@@ -118,6 +129,9 @@ struct DashboardView: View {
             Text(route.title)
                 .font(selected ? BeruSans.sidebarSelected : BeruSans.sidebar)
             Spacer(minLength: 0)
+            if route == .models {
+                ModelsDownloadBadge()
+            }
             if route == .about, updates.showsUpdateButton {
                 SidebarUpdateChip()
             }
@@ -149,6 +163,70 @@ struct DashboardView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(SettingsTheme.window)
+    }
+}
+
+/// Isolated so a pull's progress ticks do not re-layout the whole dashboard.
+private struct ModelsDownloadBadge: View {
+    @Bindable private var pull = OllamaPullService.shared
+
+    var body: some View {
+        if pull.pulling != nil {
+            Text("Downloading…")
+                .font(BeruSans.footnote)
+                .foregroundStyle(SettingsTheme.textSecondary)
+                .lineLimit(1)
+        }
+    }
+}
+
+/// Isolated so dismissing the tip does not animate or invalidate the dashboard.
+private struct SettingsTipCard: View {
+    var onViewModels: () -> Void
+    @Bindable private var settings = SettingsStore.shared
+    @State private var revealed = false
+
+    var body: some View {
+        if !settings.hasDismissedSettingsTip {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(alignment: .center, spacing: 8) {
+                    Text("Tip")
+                        .font(BeruSans.sidebarHeader)
+                        .foregroundStyle(SettingsTheme.textPrimary)
+                    Spacer(minLength: 0)
+                    SettingsIconButton(icon: "x", size: 12, frameSize: 22, help: "Dismiss tip") {
+                        settings.hasDismissedSettingsTip = true
+                    }
+                }
+                Text("Gemma 3 1B is a lightweight local model (~815 MB) that fits the widget.")
+                    .font(BeruSans.footnote)
+                    .foregroundStyle(SettingsTheme.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Button(action: onViewModels) {
+                    Text("View models")
+                        .font(BeruSans.footnote)
+                        .foregroundStyle(SettingsTheme.onActive)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
+                        .background(Capsule().fill(SettingsTheme.active))
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("View models")
+            }
+            .padding(10)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background {
+                RoundedRectangle(cornerRadius: SettingsChrome.rowRadius, style: .continuous)
+                    .fill(BrandColors.surface)
+                    .overlay {
+                        RoundedRectangle(cornerRadius: SettingsChrome.rowRadius, style: .continuous)
+                            .strokeBorder(SettingsTheme.border, lineWidth: 1)
+                    }
+            }
+            .opacity(revealed ? 1 : 0)
+            .onAppear { revealed = true }
+            .animation(.easeOut(duration: 0.25), value: revealed)
+        }
     }
 }
 

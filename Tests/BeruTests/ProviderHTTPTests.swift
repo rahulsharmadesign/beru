@@ -28,4 +28,17 @@ final class ProviderHTTPTests: XCTestCase {
         XCTAssertThrowsError(try ProviderHTTP.chatCompletionsURL(from: ""))
         XCTAssertThrowsError(try ProviderHTTP.chatCompletionsURL(from: "   "))
     }
+
+    func testModelUnavailableKeepsServerErrorCopyAndFlagsSetup() {
+        let error = ProviderError.modelUnavailable("Server returned status 404")
+        XCTAssertEqual(error.userMessage, "Server returned status 404")
+        XCTAssertTrue(error.needsModelSetup)
+        XCTAssertFalse(ProviderError.badResponse("Server returned status 500").needsModelSetup)
+    }
+
+    func testRecommendedCatalogSurfacesGemma3First() {
+        XCTAssertEqual(RecommendedOllamaModel.all.first?.name, "gemma3:1b")
+        XCTAssertEqual(RecommendedOllamaModel.all.first?.title, "Gemma 3 1B")
+        XCTAssertTrue(RecommendedOllamaModel.all.contains(where: { $0.name == "qwen2.5:7b" }))
+    }
 }

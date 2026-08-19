@@ -260,6 +260,9 @@ struct PanelView: View {
                 RationaleNote(text: rationale)
             }
         }
+        // Inset inside clipShape so placeholder copy is not sheared by the
+        // card radius against the toolbar and composer.
+        .padding(PanelMetrics.moduleInset)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .animation(tabAnimation, value: appState.selectedActionID)
         .glassModule(scrim: .content)
@@ -337,10 +340,13 @@ struct PanelView: View {
             .controlSize(.small)
             .padding(.top, 4)
         }
-        .padding(.horizontal, 24)
-        .padding(.vertical, 28)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(.horizontal, 20)
+        .padding(.vertical, 16)
+        .frame(maxWidth: .infinity)
         .background(PanelDragRegion())
+        // Intrinsic height so the window grows instead of clipping this card
+        // against the toolbar and composer.
+        .contributesPanelHeight()
     }
 
     private var regularIdlePlaceholder: some View {
@@ -439,6 +445,7 @@ struct PanelView: View {
     private func errorView(message: String) -> some View {
         let actionID = appState.selectedActionID
         let fallbacks = SettingsStore.shared.fallbackProviders
+        let showConnectCTA = appState.errorNeedsModelSetup.contains(actionID)
         return VStack(spacing: 10) {
             Text(message)
                 .font(.system(size: 13))
@@ -447,6 +454,16 @@ struct PanelView: View {
             HStack(spacing: 8) {
                 Button("Retry") { engine.retry(actionID: actionID) }
                     .controlSize(.small)
+
+                // Connect to model: 404 / unknown model — open Models so the
+                // user can install or pick one instead of retrying blindly.
+                if showConnectCTA {
+                    Button("Connect to model") {
+                        engine.requestProviderSetup(preferLocal: true)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.small)
+                }
 
                 // If another provider is configured, offer it here so a failed
                 // request doesn't dead-end the user into opening Settings.

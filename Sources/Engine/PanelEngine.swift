@@ -221,6 +221,7 @@ final class PanelEngine {
         // Clear before the new run or a prior "unchanged" banner sticks even when
         // this generation actually changes the text.
         appState.cleanNotices.remove(actionID)
+        appState.errorNeedsModelSetup.remove(actionID)
 
         let provider = ProviderRegistry.activeProvider()
         let clipboardForRequest = appState.includeClipboard ? appState.clipboardText : nil
@@ -483,6 +484,9 @@ final class PanelEngine {
                 logger.notice("stream failed for \(actionID): \(error.userMessage)")
                 self.publish(.error(error.userMessage), for: actionID, generation: generation)
                 self.appState.errorProviders[actionID] = SettingsStore.shared.activeProvider
+                if error.needsModelSetup {
+                    self.appState.errorNeedsModelSetup.insert(actionID)
+                }
                 Self.recordOutcome(
                     .generationFailed, invocationID: invocationID, actionID: actionID,
                     attempt: attempt, totalMs: Self.milliseconds(clock.now - requestStart),

@@ -179,6 +179,11 @@ final class SettingsStore {
         didSet { defaults.set(hasCompletedGetStarted, forKey: Keys.hasCompletedGetStarted) }
     }
 
+    /// One-time settings sidebar Tip card above About has been dismissed.
+    var hasDismissedSettingsTip: Bool {
+        didSet { defaults.set(hasDismissedSettingsTip, forKey: Keys.hasDismissedSettingsTip) }
+    }
+
     private enum Keys {
         static let activeProvider = "activeProvider"
         static let ollamaBaseURL = "ollamaBaseURL"
@@ -200,6 +205,7 @@ final class SettingsStore {
         static let lastTargetByApp = "lastTargetByApp"
         static let hasLaunchedBefore = "hasLaunchedBefore"
         static let hasCompletedGetStarted = "hasCompletedGetStarted"
+        static let hasDismissedSettingsTip = "hasDismissedSettingsTip"
     }
 
     private init() {
@@ -253,6 +259,7 @@ final class SettingsStore {
         lastTargetID = defaults.string(forKey: Keys.lastTargetID) ?? TargetProfile.genericID
         lastTargetByApp = defaults.dictionary(forKey: Keys.lastTargetByApp) as? [String: String] ?? [:]
         hasCompletedGetStarted = defaults.bool(forKey: Keys.hasCompletedGetStarted)
+        hasDismissedSettingsTip = defaults.bool(forKey: Keys.hasDismissedSettingsTip)
     }
 
     /// Whether a provider has everything it needs to answer a request, so the

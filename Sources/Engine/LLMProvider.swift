@@ -5,6 +5,8 @@ enum ProviderError: Error, Equatable {
     case rateLimited
     case connectionFailed(String)
     case badResponse(String)
+    /// HTTP 404 / unknown model — panel shows Retry plus Connect to model.
+    case modelUnavailable(String)
     case cancelled
 
     var userMessage: String {
@@ -15,11 +17,16 @@ enum ProviderError: Error, Equatable {
             return "Rate limited — try again"
         case .connectionFailed(let hint):
             return hint
-        case .badResponse(let message):
+        case .badResponse(let message), .modelUnavailable(let message):
             return message
         case .cancelled:
             return "Cancelled"
         }
+    }
+
+    var needsModelSetup: Bool {
+        if case .modelUnavailable = self { return true }
+        return false
     }
 }
 
