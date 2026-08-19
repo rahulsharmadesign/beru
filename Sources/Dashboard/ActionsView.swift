@@ -66,26 +66,22 @@ struct ActionsView: View {
                     ScrollView {
                         VStack(spacing: 2) {
                             ForEach(filteredActions) { action in
-                                Button {
-                                    selection = action.id
-                                } label: {
-                                    actionRow(action)
-                                }
-                                .buttonStyle(.plain)
-                                .onDrag {
-                                    guard query.isEmpty else { return NSItemProvider() }
-                                    draggingID = action.id
-                                    return NSItemProvider(object: action.id as NSString)
-                                }
-                                .onDrop(
-                                    of: [.text],
-                                    delegate: ActionRowDropDelegate(
-                                        itemID: action.id,
-                                        draggingID: $draggingID,
-                                        enabled: query.isEmpty,
-                                        registry: registry
+                                actionRow(action)
+                                    .onTapGesture { selection = action.id }
+                                    .onDrag {
+                                        guard query.isEmpty else { return NSItemProvider() }
+                                        draggingID = action.id
+                                        return NSItemProvider(object: action.id as NSString)
+                                    }
+                                    .onDrop(
+                                        of: [.text],
+                                        delegate: ActionRowDropDelegate(
+                                            itemID: action.id,
+                                            draggingID: $draggingID,
+                                            enabled: query.isEmpty,
+                                            registry: registry
+                                        )
                                     )
-                                )
                             }
                         }
                     }
