@@ -6,8 +6,6 @@ struct ActionsView: View {
     @State private var selection: String?
     @State private var operationError: String?
     @State private var query = ""
-    @State private var draggingID: String?
-
     private var selected: EnhancementAction? {
         registry.action(withID: selection ?? "")
     }
@@ -63,36 +61,26 @@ struct ActionsView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .padding(.horizontal, SettingsChrome.contentPadding)
                 } else {
-                    ScrollView {
-                        VStack(spacing: 2) {
-                            ForEach(filteredActions) { action in
-                                Button {
-                                    selection = action.id
-                                } label: {
-                                    actionRow(action)
-                                }
-                                .buttonStyle(.plain)
-                                .onDrag {
-                                    guard query.isEmpty else { return NSItemProvider() }
-                                    draggingID = action.id
-                                    return NSItemProvider(object: action.id as NSString)
-                                }
-                                .onDrop(
-                                    of: [.text],
-                                    delegate: ActionRowDropDelegate(
-                                        itemID: action.id,
-                                        itemIDs: filteredActions.map(\.id),
-                                        draggingID: $draggingID,
-                                        enabled: query.isEmpty,
-                                        onMove: moveActions
-                                    )
-                                )
+                    List(selection: $selection) {
+                        ForEach(filteredActions) { action in
+                            Button {
+                                selection = action.id
+                            } label: {
+                                actionRow(action)
                             }
+                            .buttonStyle(.plain)
+                            .listRowSeparator(.hidden)
+                            .listRowInsets(EdgeInsets(top: 1, leading: SettingsChrome.contentPadding, bottom: 1, trailing: SettingsChrome.contentPadding))
+                            .listRowBackground(Color.clear)
+                        }
+                        .onMove { source, destination in
+                            guard query.isEmpty else { return }
+                            moveActions(from: source, to: destination)
                         }
                     }
+                    .listStyle(.plain)
                     .scrollContentBackground(.hidden)
                     .padding(.top, SettingsChrome.workspaceListInset)
-                    .padding(.horizontal, SettingsChrome.contentPadding)
                     .frame(maxHeight: .infinity)
                     .help(query.isEmpty ? "Drag to reorder chips in the panel" : "Clear search to reorder")
                 }
@@ -134,14 +122,7 @@ struct ActionsView: View {
 
     private func actionRow(_ action: EnhancementAction) -> some View {
         let isSelected = selection == action.id
-        let canReorder = query.isEmpty
-        let handleColor = isSelected ? SettingsTheme.onActive : SettingsTheme.textPrimary
         return HStack(spacing: 8) {
-            Image(systemName: "line.3.horizontal")
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(handleColor.opacity(canReorder ? 0.9 : 0.35))
-                .frame(width: 16, height: 18)
-                .accessibilityLabel("Reorder")
             BeruIcon(name: action.icon, size: 16)
                 .foregroundStyle(isSelected ? SettingsTheme.onActive : SettingsTheme.textSecondary)
                 .frame(width: 18, height: 18)
@@ -322,28 +303,3 @@ struct ActionsView: View {
     }
 }
 
-private struct ActionRowDropDelegate: DropDelegate {
-    let itemID: String
-    let itemIDs: [String]
-    @Binding var draggingID: String?
-    let enabled: Bool
-    let onMove: (IndexSet, Int) -> Void
-
-    func dropUpdated(info: DropInfo) -> DropProposal? {
-        DropProposal(operation: enabled ? .move : .cancel)
-    }
-
-    func performDrop(info: DropInfo) -> Bool {
-        draggingID = nil
-        return enabled
-    }
-
-    func dropEntered(info: DropInfo) {
-        guard enabled,
-              let draggingID,
-              draggingID != itemID,
-              let from = itemIDs.firstIndex(of: draggingID),
-              let to = itemIDs.firstIndex(of: itemID) else { return }
-        onMove(IndexSet(integer: from), from < to ? to + 1 : to)
-    }
-}
