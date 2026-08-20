@@ -24,7 +24,7 @@ The guards are a ratchet against `scripts/qa-baseline.txt`. A count going up fai
 
 ## Pull requests
 
-1. Fork and branch from `ship`.
+1. Fork and branch from `main`.
 2. Keep the change scoped. Capture, keystroke simulation, Keychain, and provider URL handling need extra care — see [SECURITY.md](SECURITY.md).
 3. Run `./scripts/qa.sh` and work the manual checklist section that matches your change.
 4. Do not commit secrets, signing certificates, or `.env` files.
