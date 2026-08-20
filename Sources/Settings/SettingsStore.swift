@@ -245,7 +245,6 @@ final class SettingsStore {
         usageLoggingEnabled = defaults.object(forKey: Keys.usageLoggingEnabled) == nil
             ? false
             : defaults.bool(forKey: Keys.usageLoggingEnabled)
-        KeychainStore.shared.upgradeStoredKeyAccessibility()
         explainChanges = defaults.object(forKey: Keys.explainChanges) == nil
             ? true
             : defaults.bool(forKey: Keys.explainChanges)
@@ -315,24 +314,38 @@ final class SettingsStore {
 
 
     var anthropicAPIKey: String? {
-        get { KeychainStore.shared.load(account: "anthropic") }
-        set {
-            if let newValue, !newValue.isEmpty {
-                KeychainStore.shared.save(key: newValue, account: "anthropic")
-            } else {
-                KeychainStore.shared.delete(account: "anthropic")
-            }
-        }
+        get { cachedKey(\.anthropicKeyCache, account: "anthropic") }
+        set { storeKey(newValue, cache: \.anthropicKeyCache, account: "anthropic") }
     }
 
     var customAPIKey: String? {
-        get { KeychainStore.shared.load(account: "custom") }
-        set {
-            if let newValue, !newValue.isEmpty {
-                KeychainStore.shared.save(key: newValue, account: "custom")
-            } else {
-                KeychainStore.shared.delete(account: "custom")
-            }
+        get { cachedKey(\.customKeyCache, account: "custom") }
+        set { storeKey(newValue, cache: \.customKeyCache, account: "custom") }
+    }
+
+    private var anthropicKeyCache: KeyCache = .unloaded
+    private var customKeyCache: KeyCache = .unloaded
+
+    private enum KeyCache: Equatable {
+        case unloaded
+        case loaded(String?)
+    }
+
+    private func cachedKey(_ keyPath: ReferenceWritableKeyPath<SettingsStore, KeyCache>, account: String) -> String? {
+        if case .loaded(let value) = self[keyPath: keyPath] { return value }
+        let value = KeychainStore.shared.load(account: account)
+        self[keyPath: keyPath] = .loaded(value)
+        return value
+    }
+
+    private func storeKey(_ newValue: String?, cache: ReferenceWritableKeyPath<SettingsStore, KeyCache>, account: String) {
+        let normalized = newValue.flatMap { $0.isEmpty ? nil : $0 }
+        if case .loaded(let current) = self[keyPath: cache], current == normalized { return }
+        self[keyPath: cache] = .loaded(normalized)
+        if let normalized {
+            _ = KeychainStore.shared.save(key: normalized, account: account)
+        } else {
+            _ = KeychainStore.shared.delete(account: account)
         }
     }
 }

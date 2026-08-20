@@ -63,8 +63,7 @@ struct ProviderSettingsSections: View {
             }
         }
         .onAppear {
-            anthropicKey = settings.anthropicAPIKey ?? ""
-            customKey = settings.customAPIKey ?? ""
+            hydrateKeysForActiveProvider()
             apiPreset = Self.detectPreset(baseURL: settings.customBaseURL)
             if settings.activeProvider == .custom {
                 if settings.customBaseURL.isEmpty {
@@ -76,6 +75,7 @@ struct ProviderSettingsSections: View {
             }
         }
         .onChange(of: settings.activeProvider) { _, kind in
+            hydrateKeysForActiveProvider()
             if kind == .custom, settings.customBaseURL.isEmpty {
                 applyAPIPreset(.groq)
                 apiPreset = .groq
@@ -91,6 +91,19 @@ struct ProviderSettingsSections: View {
             if settings.customGrammarModel.isEmpty || settings.customGrammarModel == oldValue {
                 settings.customGrammarModel = newValue
             }
+        }
+    }
+
+    /// Ollama has no secrets. Hitting Keychain on every Models visit is what
+    /// raised "Beru wants to use your confidential information".
+    private func hydrateKeysForActiveProvider() {
+        switch settings.activeProvider {
+        case .ollama:
+            break
+        case .anthropic:
+            anthropicKey = settings.anthropicAPIKey ?? ""
+        case .custom:
+            customKey = settings.customAPIKey ?? ""
         }
     }
 
