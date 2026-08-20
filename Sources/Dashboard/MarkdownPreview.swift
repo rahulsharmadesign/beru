@@ -4,7 +4,7 @@ struct MarkdownPreview: View {
     let text: String
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 7) {
+        VStack(alignment: .leading, spacing: BeruSpace.xs) {
             ForEach(Array(blocks.enumerated()), id: \.offset) { _, block in
                 switch block {
                 case .heading(let level, let content):
@@ -13,7 +13,7 @@ struct MarkdownPreview: View {
                         .foregroundStyle(SettingsTheme.textPrimary)
                         .padding(.top, 4)
                 case .bullet(let content):
-                    HStack(alignment: .firstTextBaseline, spacing: 7) {
+                    HStack(alignment: .firstTextBaseline, spacing: BeruSpace.xs) {
                         Text("•").foregroundStyle(SettingsTheme.textSecondary)
                         Text(inline(content))
                             .font(BeruSans.control)

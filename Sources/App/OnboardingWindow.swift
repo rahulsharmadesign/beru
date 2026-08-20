@@ -129,15 +129,15 @@ struct GetStartedView: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .padding(.horizontal, 36)
+            .padding(.horizontal, BeruSpace.xl)
             .id(step)
             .transition(stepTransition)
 
             stepDots
-                .padding(.bottom, 28)
+                .padding(.bottom, BeruSpace.lg)
         }
         .frame(width: 420, height: 520)
-        .background(BrandColors.canvas)
+        .background(BeruColor.canvas)
         .animation(motion, value: step)
         .animation(motion, value: isTrusted)
         .task {
@@ -158,10 +158,10 @@ struct GetStartedView: View {
     }
 
     private var stepDots: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: BeruSpace.xs) {
             ForEach(GetStartedStep.allCases, id: \.rawValue) { item in
                 Capsule()
-                    .fill(item == step ? BrandColors.accentColor : Color.secondary.opacity(0.28))
+                    .fill(item == step ? BeruColor.accent : BeruColor.textSecondary.opacity(0.28))
                     .frame(width: item == step ? 18 : 6, height: 6)
             }
         }
@@ -232,35 +232,35 @@ struct GetStartedView: View {
         @ViewBuilder footer: () -> Footer
     ) -> some View {
         VStack(spacing: 0) {
-            Spacer(minLength: 12)
-            VStack(spacing: 20) {
+            Spacer(minLength: BeruSpace.sm)
+            VStack(spacing: BeruSpace.lg) {
                 Image("BrandMark")
                     .resizable()
                     .scaledToFit()
                     .frame(width: 72, height: 72)
-                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .clipShape(BeruRadius.shape(BeruRadius.lg))
                     .accessibilityHidden(true)
                 Text(title)
-                    .font(.system(size: 22, weight: .bold))
-                    .foregroundStyle(SettingsTheme.textPrimary)
+                    .font(BeruType.heroTitle)
+                    .foregroundStyle(BeruColor.textPrimary)
                     .multilineTextAlignment(.center)
                 Text(body)
-                    .font(.system(size: 13))
-                    .foregroundStyle(SettingsTheme.textSecondary)
+                    .font(BeruType.body)
+                    .foregroundStyle(BeruColor.textSecondary)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: 320)
                 footer()
-                    .padding(.top, 4)
+                    .padding(.top, BeruSpace.xxs)
             }
-            Spacer(minLength: 12)
+            Spacer(minLength: BeruSpace.sm)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 
-/// Compact capsule CTA. Prominent uses system blue so it matches the native
-/// Continue control; the brand accent is reserved for the pager.
+/// The onboarding CTA. Used to be a system `.borderedProminent` in system blue,
+/// which made this the only surface in Beru not painted in the brand accent.
 private struct OnboardContinueButton: View {
     let title: String
     var prominent: Bool = true
@@ -280,17 +280,12 @@ private struct OnboardContinueButton: View {
     }
 
     var body: some View {
-        if prominent {
-            Button(title, action: action)
-                .buttonStyle(.borderedProminent)
-                .tint(Color(nsColor: .controlAccentColor))
-                .controlSize(.large)
-                .disabled(!enabled)
-        } else {
-            Button(title, action: action)
-                .buttonStyle(.bordered)
-                .controlSize(.large)
-                .disabled(!enabled)
-        }
+        BeruButton(
+            title: title,
+            variant: prominent ? .primary : .pill,
+            size: .large,
+            enabled: enabled,
+            action: action
+        )
     }
 }

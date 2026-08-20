@@ -12,7 +12,7 @@ struct RunsView: View {
                 if model.isRecordingDisabled {
                     recordingOff
                 } else if !model.hasLoaded {
-                    VStack(spacing: 10) {
+                    VStack(spacing: BeruSpace.sm) {
                         ProgressView()
                         Text("Loading runs…")
                             .font(BeruSans.rowCaption)
@@ -153,8 +153,8 @@ struct RunsView: View {
                                     .font(BeruSans.sidebarHeader)
                                     .foregroundStyle(SettingsTheme.textSecondary)
                                     .textCase(.uppercase)
-                                    .padding(.horizontal, 10)
-                                    .padding(.bottom, 4)
+                                    .padding(.horizontal, BeruSpace.sm)
+                                    .padding(.bottom, BeruSpace.xxs)
                                 ForEach(section.runs) { run in
                                     Button {
                                         model.selection = run.id
@@ -230,8 +230,8 @@ private struct RunRow: View {
     var isSelected: Bool
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 5) {
-            HStack(spacing: 6) {
+        VStack(alignment: .leading, spacing: BeruSpace.xxs) {
+            HStack(spacing: BeruSpace.xs) {
                 // The action identifies the row, so it wins the space; the app
                 // name truncates instead. Without a priority the two competed
                 // and a long action name could be clipped to nothing useful.
@@ -257,7 +257,7 @@ private struct RunRow: View {
                 .font(BeruSans.footnote)
                 .foregroundStyle(isSelected ? SettingsTheme.onActive.opacity(0.72) : SettingsTheme.textSecondary)
                 .lineLimit(2)
-            HStack(spacing: 6) {
+            HStack(spacing: BeruSpace.xs) {
                 SavingsBadge(saved: run.savedTokens, onAccent: isSelected)
                 OutcomeBadge(outcome: run.outcome, onAccent: isSelected)
                 if run.generationCount > 1 {
@@ -266,8 +266,8 @@ private struct RunRow: View {
                 }
             }
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 8)
+        .padding(.horizontal, BeruSpace.sm)
+        .padding(.vertical, BeruSpace.xs)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background {
             RoundedRectangle(cornerRadius: SettingsChrome.rowRadius, style: .continuous)
@@ -306,11 +306,11 @@ private extension View {
     func badgeStyle(color: Color, onAccent: Bool) -> some View {
         font(BeruSans.footnote)
             .foregroundStyle(onAccent ? SettingsTheme.onActive : color)
-            .padding(.horizontal, 5)
-            .padding(.vertical, 2)
+            .padding(.horizontal, BeruSpace.xxs)
+            .padding(.vertical, BeruSpace.hair)
             .background(
                 (onAccent ? SettingsTheme.onActive.opacity(0.18) : color.opacity(0.12)),
-                in: RoundedRectangle(cornerRadius: 4)
+                in: BeruRadius.shape(BeruRadius.sm)
             )
     }
 }

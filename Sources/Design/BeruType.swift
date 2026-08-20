@@ -13,6 +13,8 @@ enum BeruType {
 
     // MARK: Page
 
+    /// Onboarding only. The one place a title carries the whole window.
+    static let heroTitle = font(22, weight: .bold)
     static let pageTitle = font(20, weight: .semibold)
     static let pageSubtitle = font(13)
     static let section = font(14, weight: .semibold)

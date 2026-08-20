@@ -99,7 +99,7 @@ struct SettingsPage<Content: View>: View {
                 content
             }
             .padding(.horizontal, SettingsChrome.contentPadding)
-            .padding(.top, 28)
+            .padding(.top, BeruSpace.lg)
             .padding(.bottom, 48)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -128,7 +128,7 @@ struct SettingsWorkspace<Content: View>: View {
                 SettingsHeaderRule()
             }
             .padding(.horizontal, SettingsChrome.contentPadding)
-            .padding(.top, 28)
+            .padding(.top, BeruSpace.lg)
             .padding(.bottom, 0)
             .fixedSize(horizontal: false, vertical: true)
             content
@@ -186,7 +186,7 @@ struct SettingsSection<Content: View>: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
-            VStack(alignment: .leading, spacing: 18) {
+            VStack(alignment: .leading, spacing: BeruSpace.md) {
                 content
             }
         }
@@ -219,7 +219,7 @@ struct SettingsRow<Control: View>: View {
     }
 
     private var labels: some View {
-        VStack(alignment: .leading, spacing: 3) {
+        VStack(alignment: .leading, spacing: BeruSpace.hair) {
             Text(title)
                 .font(BeruSans.rowTitle)
                 .foregroundStyle(SettingsTheme.textPrimary)
@@ -246,13 +246,19 @@ struct SettingsRow<Control: View>: View {
     }
 
     private var verticalLayout: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: BeruSpace.xs) {
             labels
             control
                 .frame(maxWidth: .infinity, alignment: .trailing)
         }
     }
 }
+
+// The five dashboard button types below are now names for `BeruButton`
+// variants, not separate implementations. Each used to hand-roll its own
+// capsule, hover state, padding and disabled opacity, which is how the app
+// ended up with four button languages that drifted apart. Keeping the names
+// means the ~80 call sites read the same while there is one implementation.
 
 struct SettingsPillButton: View {
     let title: String
@@ -262,35 +268,16 @@ struct SettingsPillButton: View {
     var leadingIcon: String? = nil
     let action: () -> Void
 
-    @State private var isHovered = false
-
     var body: some View {
-        Button(role: role, action: action) {
-            HStack(spacing: 6) {
-                if let leadingIcon {
-                    BeruIcon(name: leadingIcon, size: 14)
-                }
-                Text(title)
-                    .font(BeruSans.control)
-                    .lineLimit(1)
-                if let trailingIcon {
-                    BeruIcon(name: trailingIcon, size: 14)
-                }
-            }
-            .foregroundStyle(SettingsTheme.textPrimary)
-            .padding(.horizontal, 16)
-            .padding(.vertical, 9)
-            .background {
-                Capsule()
-                    .fill(isHovered && enabled ? SettingsTheme.hoverFill : Color.clear)
-                    .overlay(Capsule().strokeBorder(SettingsTheme.border, lineWidth: 1))
-            }
-        }
-        .buttonStyle(.plain)
-        .disabled(!enabled)
-        .fixedSize()
-        .opacity(enabled ? 1 : 0.45)
-        .onHover { isHovered = $0 }
+        BeruButton(
+            title: title,
+            variant: .pill,
+            leadingIcon: leadingIcon,
+            trailingIcon: trailingIcon,
+            enabled: enabled,
+            role: role,
+            action: action
+        )
     }
 }
 
@@ -300,34 +287,14 @@ struct SettingsPrimaryButton: View {
     var enabled: Bool = true
     let action: () -> Void
 
-    @State private var isHovered = false
-
     var body: some View {
-        Button(action: action) {
-            HStack(spacing: 6) {
-                if let icon {
-                    BeruIcon(name: icon, size: 14)
-                }
-                Text(title)
-                    .font(BeruSans.control)
-                    .lineLimit(1)
-            }
-            .foregroundStyle(SettingsTheme.onActive)
-            .padding(.horizontal, 16)
-            .padding(.vertical, 9)
-            .background {
-                Capsule()
-                    .fill(
-                        enabled
-                            ? (isHovered ? SettingsTheme.active.opacity(0.88) : SettingsTheme.active)
-                            : SettingsTheme.active.opacity(0.45)
-                    )
-            }
-        }
-        .buttonStyle(.plain)
-        .disabled(!enabled)
-        .fixedSize()
-        .onHover { isHovered = $0 }
+        BeruButton(
+            title: title,
+            variant: .primary,
+            leadingIcon: icon,
+            enabled: enabled,
+            action: action
+        )
     }
 }
 
@@ -336,38 +303,15 @@ struct SettingsTogglePill: View {
     var icon: String? = nil
     @Binding var isOn: Bool
 
-    @State private var isHovered = false
-
     var body: some View {
-        Button { isOn.toggle() } label: {
-            HStack(spacing: 6) {
-                if let icon {
-                    BeruIcon(name: icon, size: 14)
-                }
-                Text(title)
-                    .font(BeruSans.control)
-                    .lineLimit(1)
-            }
-            .foregroundStyle(isOn ? SettingsTheme.onActive : SettingsTheme.textPrimary)
-            .padding(.horizontal, 16)
-            .padding(.vertical, 9)
-            .background {
-                Capsule()
-                    .fill(
-                        isOn
-                            ? SettingsTheme.active
-                            : (isHovered ? SettingsTheme.hoverFill : Color.clear)
-                    )
-                    .overlay {
-                        if !isOn {
-                            Capsule().strokeBorder(SettingsTheme.border, lineWidth: 1)
-                        }
-                    }
-            }
+        BeruButton(
+            title: title,
+            variant: .pill,
+            leadingIcon: icon,
+            isActive: isOn
+        ) {
+            isOn.toggle()
         }
-        .buttonStyle(.plain)
-        .fixedSize()
-        .onHover { isHovered = $0 }
     }
 }
 
@@ -376,32 +320,22 @@ struct SettingsIconButton: View {
     var size: CGFloat = 16
     /// Tap-target frame. Smaller for icon buttons living inside a compact
     /// row (e.g. a card in a narrow list) rather than a toolbar/footer.
-    var frameSize: CGFloat = 28
+    var frameSize: CGFloat = BeruMetrics.hitTarget
     var enabled: Bool = true
     /// Hover tooltip and VoiceOver name. Required so an icon-only control
     /// never ships without a description of what it does.
     let help: String
     let action: () -> Void
 
-    @State private var isHovered = false
-
     var body: some View {
-        Button(action: action) {
-            BeruIcon(name: icon, size: size)
-                .foregroundStyle(SettingsTheme.textPrimary)
-                .frame(width: frameSize, height: frameSize)
-                .background {
-                    RoundedRectangle(cornerRadius: 6, style: .continuous)
-                        .fill(isHovered && enabled ? SettingsTheme.hoverFill : Color.clear)
-                }
-        }
-        .buttonStyle(.plain)
-        .disabled(!enabled)
-        .fixedSize()
-        .opacity(enabled ? 1 : 0.45)
-        .help(help)
-        .accessibilityLabel(help)
-        .onHover { isHovered = $0 }
+        BeruIconButton(
+            icon: icon,
+            size: size,
+            frameSize: frameSize,
+            enabled: enabled,
+            help: help,
+            action: action
+        )
     }
 }
 
@@ -412,23 +346,8 @@ struct SettingsInlineButton: View {
     var role: ButtonRole?
     let action: () -> Void
 
-    @State private var isHovered = false
-
     var body: some View {
-        Button(role: role, action: action) {
-            Text(title)
-                .font(BeruSans.footnote)
-                .foregroundStyle(role == .destructive ? SettingsTheme.destructive : SettingsTheme.textSecondary)
-                .padding(.horizontal, 6)
-                .padding(.vertical, 3)
-                .background {
-                    RoundedRectangle(cornerRadius: 5, style: .continuous)
-                        .fill(isHovered ? SettingsTheme.hoverFill : Color.clear)
-                }
-        }
-        .buttonStyle(.plain)
-        .fixedSize()
-        .onHover { isHovered = $0 }
+        BeruButton(title: title, variant: .inline, role: role, action: action)
     }
 }
 
@@ -444,7 +363,7 @@ struct SettingsWorkspaceToolbar<Content: View>: View {
                 }
             }
             .padding(.horizontal, SettingsChrome.contentPadding)
-            .padding(.bottom, 10)
+            .padding(.bottom, BeruSpace.sm)
             .fixedSize(horizontal: false, vertical: true)
             .frame(maxWidth: .infinity, alignment: .leading)
             SettingsHeaderRule()
@@ -453,7 +372,7 @@ struct SettingsWorkspaceToolbar<Content: View>: View {
     }
 
     private var toolbarContent: some View {
-        HStack(alignment: .center, spacing: 10) {
+        HStack(alignment: .center, spacing: BeruSpace.sm) {
             content
         }
     }
@@ -505,8 +424,8 @@ struct SettingsField: View {
             .foregroundStyle(SettingsTheme.textPrimary)
             .multilineTextAlignment(alignment)
             .frame(width: width)
-            .padding(.horizontal, 14)
-            .padding(.vertical, 9)
+            .padding(.horizontal, BeruSpace.md)
+            .padding(.vertical, BeruSpace.xs)
             .background {
                 Capsule()
                     .fill(SettingsTheme.inputBg)
@@ -544,8 +463,8 @@ struct SettingsSecretField: View {
             .accessibilityLabel(visible ? "Hide secret" : "Show secret")
         }
         .frame(width: width)
-        .padding(.horizontal, 14)
-        .padding(.vertical, 9)
+        .padding(.horizontal, BeruSpace.md)
+        .padding(.vertical, BeruSpace.xs)
         .background {
             Capsule()
                 .fill(SettingsTheme.inputBg)
@@ -571,7 +490,7 @@ struct SettingsSwitch: View {
                     .fill(SettingsTheme.onActive)
                     .frame(width: 18, height: 18)
                     .shadow(color: .black.opacity(0.3), radius: 1.5, y: 1)
-                    .padding(3)
+                    .padding(BeruSpace.hair)
             }
         }
         .buttonStyle(.plain)
@@ -598,7 +517,7 @@ struct SettingsSearchField: View {
                 .layoutPriority(1)
         }
         .padding(.horizontal, SettingsChrome.workspaceListInset)
-        .padding(.vertical, 10)
+        .padding(.vertical, BeruSpace.sm)
         .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
         .background {
             Capsule()
@@ -618,7 +537,7 @@ struct SettingsMenuPill<Selection: Hashable, Content: View>: View {
         Menu {
             content
         } label: {
-            HStack(spacing: 6) {
+            HStack(spacing: BeruSpace.xs) {
                 Text(label)
                     .font(BeruSans.control)
                 BeruIcon(name: "expand_more", size: 14)
@@ -626,7 +545,7 @@ struct SettingsMenuPill<Selection: Hashable, Content: View>: View {
             .foregroundStyle(SettingsTheme.textPrimary)
             .lineLimit(1)
             .padding(.horizontal, 16)
-            .padding(.vertical, 9)
+            .padding(.vertical, BeruSpace.xs)
             .background {
                 Capsule()
                     .strokeBorder(SettingsTheme.border, lineWidth: 1)
@@ -660,7 +579,7 @@ extension View {
     }
 
     func settingsEditorSurface() -> some View {
-        padding(10)
+        padding(BeruSpace.sm)
             .background {
                 RoundedRectangle(cornerRadius: SettingsChrome.rowRadius, style: .continuous)
                     .fill(SettingsTheme.inputBg)

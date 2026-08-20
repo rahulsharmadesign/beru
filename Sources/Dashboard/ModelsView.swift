@@ -92,8 +92,8 @@ struct ModelsView: View {
                         } label: {
                             Text("Use for")
                                 .font(BeruSans.control)
-                                .padding(.horizontal, 14)
-                                .padding(.vertical, 6)
+                                .padding(.horizontal, BeruSpace.md)
+                                .padding(.vertical, BeruSpace.xs)
                                 .background {
                                     Capsule()
                                         .strokeBorder(SettingsTheme.border, lineWidth: 1)

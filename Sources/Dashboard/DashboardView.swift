@@ -108,8 +108,8 @@ struct DashboardView: View {
         Rectangle()
             .fill(SettingsTheme.border)
             .frame(height: 1)
-            .padding(.horizontal, 4)
-            .padding(.vertical, 6)
+            .padding(.horizontal, BeruSpace.xxs)
+            .padding(.vertical, BeruSpace.xs)
     }
 
     private var sidebarNoMatches: some View {
@@ -122,7 +122,7 @@ struct DashboardView: View {
 
     private func sidebarRow(_ route: DashboardRoute) -> some View {
         let selected = model.route == route
-        return HStack(spacing: 10) {
+        return HStack(spacing: BeruSpace.sm) {
             BeruIcon(name: route.lucideIcon, size: 18)
                 .foregroundStyle(SettingsTheme.textSecondary)
                 .frame(width: 18, height: 18)
@@ -137,8 +137,8 @@ struct DashboardView: View {
             }
         }
         .foregroundStyle(SettingsTheme.textPrimary)
-        .padding(.horizontal, 10)
-        .padding(.vertical, 8)
+        .padding(.horizontal, BeruSpace.sm)
+        .padding(.vertical, BeruSpace.xs)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background {
             RoundedRectangle(cornerRadius: SettingsChrome.rowRadius, style: .continuous)
@@ -202,18 +202,14 @@ private struct SettingsTipCard: View {
                     .font(BeruSans.footnote)
                     .foregroundStyle(SettingsTheme.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
-                Button(action: onViewModels) {
-                    Text("View models")
-                        .font(BeruSans.footnote)
-                        .foregroundStyle(SettingsTheme.onActive)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 5)
-                        .background(Capsule().fill(SettingsTheme.active))
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("View models")
+                BeruButton(
+                    title: "View models",
+                    variant: .primary,
+                    size: .compact,
+                    action: onViewModels
+                )
             }
-            .padding(10)
+            .padding(BeruSpace.sm)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background {
                 RoundedRectangle(cornerRadius: SettingsChrome.rowRadius, style: .continuous)
@@ -234,16 +230,14 @@ private struct SidebarUpdateChip: View {
     @State private var updates = AppUpdateService.shared
 
     var body: some View {
-        Button(updates.buttonTitle) {
+        BeruButton(
+            title: updates.buttonTitle,
+            variant: .primary,
+            size: .compact,
+            enabled: !updates.isBusy
+        ) {
             updates.install()
         }
-        .buttonStyle(.plain)
-        .font(BeruSans.control)
-        .foregroundStyle(SettingsTheme.onActive)
-        .padding(.horizontal, 10)
-        .padding(.vertical, 4)
-        .background(Capsule().fill(SettingsTheme.active))
-        .disabled(updates.isBusy)
         .accessibilityLabel("Update")
     }
 }

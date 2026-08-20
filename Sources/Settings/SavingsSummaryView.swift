@@ -28,7 +28,7 @@ struct SavingsSummaryView: View {
 
     private var standardBody: some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack(alignment: .firstTextBaseline, spacing: 6) {
+            HStack(alignment: .firstTextBaseline, spacing: BeruSpace.xs) {
                 Text(headline)
                     .font(BeruSans.rowTitle)
                     .foregroundStyle(SettingsTheme.textPrimary)
@@ -52,11 +52,11 @@ struct SavingsSummaryView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
-        .padding(style == .card ? 14 : 0)
+        .padding(style == .card ? BeruSpace.md : 0)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background {
             if style == .card {
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                BeruRadius.shape()
                     .fill(SettingsTheme.badgeBg)
             }
         }
@@ -85,7 +85,7 @@ struct SavingsSummaryView: View {
     }
 
     private var meter: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: BeruSpace.xxs) {
             GeometryReader { geometry in
                 let share = savings.totalInputTokens > 0
                     ? min(1, Double(savings.totalOutputTokens) / Double(savings.totalInputTokens))

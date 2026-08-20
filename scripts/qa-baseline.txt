@@ -1,9 +1,9 @@
 # QA ratchet for scripts/qa.sh. Counts may only go down.
 # Regenerate with ./scripts/qa.sh --update-baseline
-system_fonts=8
-raw_colors=21
-raw_radius=8
-offgrid_spacing=33
+system_fonts=0
+raw_colors=18
+raw_radius=0
+offgrid_spacing=0
 panel_infinite_height=4
 keychain_reach=0
 shared_singletons=19

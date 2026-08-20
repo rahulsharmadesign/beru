@@ -111,11 +111,11 @@ struct TargetsView: View {
 
     private func targetRow(_ profile: TargetProfile) -> some View {
         let isSelected = selection == profile.id
-        return HStack(spacing: 10) {
+        return HStack(spacing: BeruSpace.sm) {
             BeruIcon(name: profile.icon, size: 16)
                 .foregroundStyle(isSelected ? SettingsTheme.onActive : SettingsTheme.textSecondary)
                 .frame(width: 18, height: 18)
-            VStack(alignment: .leading, spacing: 1) {
+            VStack(alignment: .leading, spacing: BeruSpace.hair) {
                 Text(profile.name)
                     .font(BeruSans.rowTitle)
                     .foregroundStyle(isSelected ? SettingsTheme.onActive : SettingsTheme.textPrimary)
@@ -126,8 +126,8 @@ struct TargetsView: View {
             }
             Spacer(minLength: 0)
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 8)
+        .padding(.horizontal, BeruSpace.sm)
+        .padding(.vertical, BeruSpace.xs)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background {
             RoundedRectangle(cornerRadius: SettingsChrome.rowRadius, style: .continuous)

@@ -203,7 +203,7 @@ struct VaultView: View {
                 .lineLimit(1)
                 .truncationMode(.tail)
         }
-        .padding(.horizontal, 10)
+        .padding(.horizontal, BeruSpace.sm)
         .padding(.vertical, 8)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background {
@@ -284,7 +284,7 @@ struct VaultView: View {
     }
 
     private func editorBar(for note: VaultNote) -> some View {
-        HStack(spacing: 10) {
+        HStack(spacing: BeruSpace.sm) {
             TextField("Title", text: binding(for: note).title)
                 .textFieldStyle(.plain)
                 .font(BeruSans.section)
@@ -295,14 +295,14 @@ struct VaultView: View {
             AppEditorModeControl(showingPreview: $showingPreview)
         }
         .padding(.horizontal, SettingsChrome.contentPadding)
-        .padding(.vertical, 10)
+        .padding(.vertical, BeruSpace.sm)
         .fixedSize(horizontal: false, vertical: true)
         .background(SettingsTheme.window)
     }
 
     private func editorFooter(for note: VaultNote) -> some View {
         let hasBody = !note.body.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        return HStack(spacing: 10) {
+        return HStack(spacing: BeruSpace.sm) {
             SettingsPrimaryButton(
                 title: "Enhance this note",
                 icon: "sparkles",
@@ -328,7 +328,7 @@ struct VaultView: View {
                 .layoutPriority(-1)
         }
         .padding(.horizontal, SettingsChrome.contentPadding)
-        .padding(.vertical, 10)
+        .padding(.vertical, BeruSpace.sm)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(SettingsTheme.window)
     }
@@ -357,7 +357,7 @@ struct VaultView: View {
                 }
             }
             .padding(.horizontal, SettingsChrome.workspaceListInset)
-            .padding(.vertical, 10)
+            .padding(.vertical, BeruSpace.sm)
             .fixedSize(horizontal: false, vertical: true)
 
             SettingsHeaderRule()
@@ -396,8 +396,8 @@ struct VaultView: View {
     }
 
     private func pinRow(_ pin: VaultPin) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 6) {
+        VStack(alignment: .leading, spacing: BeruSpace.xxs) {
+            HStack(spacing: BeruSpace.xs) {
                 BeruIcon(name: pin.kind == .link ? "link" : "inventory_2", size: 14)
                     .foregroundStyle(SettingsTheme.textSecondary)
                 Text(pin.title)

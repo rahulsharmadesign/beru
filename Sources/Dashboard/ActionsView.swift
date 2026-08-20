@@ -133,14 +133,14 @@ struct ActionsView: View {
         let handleColor = isSelected ? SettingsTheme.onActive : SettingsTheme.textPrimary
         return HStack(spacing: 8) {
             Image(systemName: "line.3.horizontal")
-                .font(.system(size: 13, weight: .semibold))
+                .font(BeruType.bodyMedium)
                 .foregroundStyle(handleColor.opacity(canReorder ? 0.9 : 0.35))
                 .frame(width: 16, height: 18)
                 .accessibilityLabel("Reorder")
             BeruIcon(name: action.icon, size: 16)
                 .foregroundStyle(isSelected ? SettingsTheme.onActive : SettingsTheme.textSecondary)
                 .frame(width: 18, height: 18)
-            VStack(alignment: .leading, spacing: 1) {
+            VStack(alignment: .leading, spacing: BeruSpace.hair) {
                 Text(action.name)
                     .font(BeruSans.rowTitle)
                     .foregroundStyle(isSelected ? SettingsTheme.onActive : SettingsTheme.textPrimary)
@@ -152,8 +152,8 @@ struct ActionsView: View {
             }
             Spacer(minLength: 0)
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 8)
+        .padding(.horizontal, BeruSpace.sm)
+        .padding(.vertical, BeruSpace.xs)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background {
             RoundedRectangle(cornerRadius: SettingsChrome.rowRadius, style: .continuous)

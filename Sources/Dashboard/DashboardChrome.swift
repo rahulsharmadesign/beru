@@ -83,11 +83,11 @@ extension View {
 struct AppEditorModeControl: View {
     @Binding var showingPreview: Bool
     var body: some View {
-        HStack(spacing: 3) {
+        HStack(spacing: BeruSpace.hair) {
             mode("Edit", active: !showingPreview) { showingPreview = false }
             mode("Preview", active: showingPreview) { showingPreview = true }
         }
-        .padding(3)
+        .padding(BeruSpace.hair)
         .background(SettingsTheme.badgeBg, in: Capsule())
         .fixedSize()
     }
@@ -98,8 +98,8 @@ struct AppEditorModeControl: View {
                 .fontWeight(.medium)
                 .lineLimit(1)
                 .foregroundStyle(active ? SettingsTheme.onActive : SettingsTheme.textPrimary)
-                .padding(.horizontal, 11)
-                .padding(.vertical, 5)
+                .padding(.horizontal, BeruSpace.sm)
+                .padding(.vertical, BeruSpace.xxs)
                 .background(active ? SettingsTheme.active : Color.clear, in: Capsule())
         }
         .buttonStyle(.plain)

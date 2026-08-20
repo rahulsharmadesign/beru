@@ -88,6 +88,15 @@ enum BeruColor {
         static let longerDark = Color(red: 1.00, green: 0.74, blue: 0.38)
     }
 
+    /// The panel's close disc, drawn in AppKit. Fixed rather than dynamic: this
+    /// is the traffic-light red users expect in a window corner, and it has to
+    /// read the same over whatever the panel is floating above.
+    enum CloseDisc {
+        static let fill = NSColor(srgbRed: 1, green: 0.37, blue: 0.34, alpha: 1)
+        static let pressedFill = NSColor(srgbRed: 0.78, green: 0.16, blue: 0.14, alpha: 1)
+        static let glyph = NSColor(srgbRed: 0.30, green: 0.04, blue: 0.03, alpha: 0.88)
+    }
+
     // MARK: - Elevation
 
     static let softShadow = BrandColors.softShadow

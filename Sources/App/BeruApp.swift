@@ -33,15 +33,15 @@ struct MenuBarContent: View {
     @Environment(\.dismiss) private var dismiss
 
     private let rowHeight: CGFloat = 40
-    private let rowRadius: CGFloat = 10
+    private let rowRadius = BeruRadius.md
 
     var body: some View {
         let _ = AppearanceObserver.shared.signature
         let _ = settings.primaryColorID
-        VStack(spacing: 8) {
+        VStack(spacing: BeruSpace.xs) {
             header
             primaryAction
-            HStack(spacing: 8) {
+            HStack(spacing: BeruSpace.xs) {
                 compactAction("Dictate", symbol: "mic", action: coordinator.dictateNewText)
                 compactAction("Vault", symbol: "library", action: {
                     openDashboard(.vault)
@@ -51,12 +51,12 @@ struct MenuBarContent: View {
             Divider()
             footer
         }
-        .padding(14)
+        .padding(BeruSpace.md)
         .frame(width: 320)
-        .background(colorScheme == .dark ? BrandColors.darkSurface : BrandColors.lightSurface)
-        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .shadow(color: .black.opacity(colorScheme == .dark ? 0.35 : 0.16), radius: 24, y: 10)
-        .tint(BrandColors.accentColor)
+        .background(colorScheme == .dark ? BeruColor.Dark.surface : BeruColor.Light.surface)
+        .clipShape(BeruRadius.shape(BeruRadius.lg))
+        .shadow(color: .black.opacity(colorScheme == .dark ? 0.35 : 0.16), radius: BeruSpace.lg, y: BeruSpace.xs)
+        .tint(BeruColor.accent)
     }
 
     private var wellFill: Color {
@@ -64,23 +64,23 @@ struct MenuBarContent: View {
     }
 
     private var header: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: BeruSpace.sm) {
             Image("BrandMark").resizable().scaledToFit().frame(width: 30, height: 30)
-                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-            VStack(alignment: .leading, spacing: 1) {
-                Text("Beru").font(.headline)
+                .clipShape(BeruRadius.shape(BeruRadius.sm))
+            VStack(alignment: .leading, spacing: 0) {
+                Text("Beru").font(BeruType.rowTitle).fontWeight(.semibold)
                 Text(headerStatus.text)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(BeruType.footnote)
+                    .foregroundStyle(BeruColor.textSecondary)
                     .lineLimit(1)
             }
-            Spacer(minLength: 8)
+            Spacer(minLength: BeruSpace.xs)
             Circle()
-                .fill(headerStatus.ready ? DashboardTheme.accent : Color.secondary.opacity(0.45))
-                .frame(width: 8, height: 8)
+                .fill(headerStatus.ready ? BeruColor.accent : BeruColor.textSecondary.opacity(0.45))
+                .frame(width: BeruSpace.xs, height: BeruSpace.xs)
                 .accessibilityLabel(headerStatus.ready ? "Beru is ready" : headerStatus.text)
         }
-        .padding(.bottom, 4)
+        .padding(.bottom, BeruSpace.xxs)
     }
 
     private var headerStatus: (text: String, ready: Bool) {
@@ -95,22 +95,23 @@ struct MenuBarContent: View {
 
     private var primaryAction: some View {
         Button { coordinator.enhanceClipboard() } label: {
-            HStack(spacing: 8) {
+            HStack(spacing: BeruSpace.xs) {
                 BeruIcon(name: "sparkles", size: 15, strokeWidth: 2)
                 Text("Enhance Clipboard")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(BeruType.body)
+                    .fontWeight(.semibold)
                     .lineLimit(1)
-                Spacer(minLength: 8)
+                Spacer(minLength: BeruSpace.xs)
                 if let shortcut = KeyboardShortcuts.getShortcut(for: .invokeBeru) {
                     Text(shortcut.description)
-                        .font(.system(size: 12, weight: .medium).monospaced())
+                        .font(BeruType.footnoteMedium.monospaced())
                         .opacity(0.72)
                 }
             }
-            .foregroundStyle(SettingsTheme.onActive)
-            .padding(.horizontal, 12)
+            .foregroundStyle(BeruColor.onAccent)
+            .padding(.horizontal, BeruSpace.sm)
             .frame(maxWidth: .infinity, minHeight: rowHeight)
-            .background(DashboardTheme.accent, in: RoundedRectangle(cornerRadius: rowRadius, style: .continuous))
+            .background(BeruColor.accent, in: BeruRadius.shape(rowRadius))
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Enhance Clipboard")
@@ -119,15 +120,15 @@ struct MenuBarContent: View {
 
     private func compactAction(_ title: String, symbol: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            HStack(spacing: 8) {
+            HStack(spacing: BeruSpace.xs) {
                 BeruIcon(name: symbol, size: 15, strokeWidth: 2)
                 Text(title)
-                    .font(.system(size: 13, weight: .medium))
+                    .font(BeruType.bodyMedium)
                     .lineLimit(1)
             }
-            .foregroundStyle(.primary)
+            .foregroundStyle(BeruColor.textPrimary)
             .frame(maxWidth: .infinity, minHeight: rowHeight)
-            .background(wellFill, in: RoundedRectangle(cornerRadius: rowRadius, style: .continuous))
+            .background(wellFill, in: BeruRadius.shape(rowRadius))
         }
         .buttonStyle(.plain)
         .frame(maxWidth: .infinity)
@@ -140,20 +141,20 @@ struct MenuBarContent: View {
         Button {
             presentProviderMenu()
         } label: {
-            HStack(spacing: 8) {
+            HStack(spacing: BeruSpace.xs) {
                 BeruIcon(name: "cpu", size: 15, strokeWidth: 2)
                 Text(settings.activeProvider.title)
-                    .font(.system(size: 13, weight: .medium))
+                    .font(BeruType.bodyMedium)
                     .lineLimit(1)
-                Spacer(minLength: 8)
+                Spacer(minLength: BeruSpace.xs)
                 BeruIcon(name: "chevrons-up-down", size: 14, strokeWidth: 2)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(BeruColor.textSecondary)
             }
-            .foregroundStyle(.primary)
-            .padding(.horizontal, 12)
+            .foregroundStyle(BeruColor.textPrimary)
+            .padding(.horizontal, BeruSpace.sm)
             .frame(maxWidth: .infinity, minHeight: rowHeight, alignment: .leading)
-            .background(wellFill, in: RoundedRectangle(cornerRadius: rowRadius, style: .continuous))
-            .contentShape(RoundedRectangle(cornerRadius: rowRadius, style: .continuous))
+            .background(wellFill, in: BeruRadius.shape(rowRadius))
+            .contentShape(BeruRadius.shape(rowRadius))
         }
         .buttonStyle(.plain)
         .help("Change the active provider")
@@ -186,20 +187,20 @@ struct MenuBarContent: View {
     private var footer: some View {
         HStack {
             Button { openDashboard(.general) } label: {
-                HStack(spacing: 8) {
+                HStack(spacing: BeruSpace.xs) {
                     BeruIcon(name: "settings", size: 14, strokeWidth: 2)
                     Text("Settings")
                 }
             }
             .buttonStyle(.plain)
-            Spacer(minLength: 8)
+            Spacer(minLength: BeruSpace.xs)
             Button("Quit") { NSApp.terminate(nil) }
                 .buttonStyle(.plain)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(BeruColor.textSecondary)
         }
-        .font(.system(size: 13))
-        .foregroundStyle(.primary)
-        .padding(.top, 4)
+        .font(BeruType.body)
+        .foregroundStyle(BeruColor.textPrimary)
+        .padding(.top, BeruSpace.xxs)
     }
 
     private func openDashboard(_ route: DashboardRoute) {

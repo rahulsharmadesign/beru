@@ -17,6 +17,8 @@ struct BeruButton: View {
     }
 
     enum Size {
+        /// Onboarding, where one CTA carries the step.
+        case large
         /// Settings and dashboard.
         case regular
         /// The panel, where a 420pt width has to hold several actions.
@@ -104,6 +106,7 @@ struct BeruButton: View {
 
     private var font: Font {
         switch size {
+        case .large: return BeruType.control
         case .regular: return BeruType.control
         case .compact: return BeruType.footnote
         }
@@ -111,13 +114,14 @@ struct BeruButton: View {
 
     private var iconSize: CGFloat {
         switch size {
-        case .regular: return 14
+        case .large, .regular: return 14
         case .compact: return 12
         }
     }
 
     private var horizontalPadding: CGFloat {
         switch size {
+        case .large: return BeruSpace.xl
         case .regular: return BeruSpace.md
         case .compact: return BeruSpace.sm
         }
@@ -125,6 +129,7 @@ struct BeruButton: View {
 
     private var verticalPadding: CGFloat {
         switch size {
+        case .large: return BeruSpace.sm
         case .regular: return BeruSpace.xs
         case .compact: return BeruSpace.xxs
         }

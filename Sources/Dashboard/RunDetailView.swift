@@ -54,8 +54,8 @@ struct RunDetailView: View {
                         .font(BeruSans.footnote)
                         .foregroundStyle(SettingsTheme.textSecondary)
                         .lineLimit(1)
-                        .padding(.horizontal, 7)
-                        .padding(.vertical, 3)
+                        .padding(.horizontal, BeruSpace.xs)
+                        .padding(.vertical, BeruSpace.hair)
                         .background(SettingsTheme.badgeBg, in: Capsule())
                         .fixedSize()
                 }
@@ -138,7 +138,7 @@ struct RunDetailView: View {
     }
 
     private func why(_ text: String) -> some View {
-        VStack(alignment: .leading, spacing: 3) {
+        VStack(alignment: .leading, spacing: BeruSpace.hair) {
             Text("Why this changed")
                 .font(BeruSans.rowTitle)
                 .foregroundStyle(SettingsTheme.textPrimary)
@@ -181,7 +181,7 @@ struct RunDetailView: View {
     }
 
     private func fact(_ label: String, _ value: String) -> some View {
-        VStack(alignment: .leading, spacing: 3) {
+        VStack(alignment: .leading, spacing: BeruSpace.hair) {
             Text(label)
                 .font(BeruSans.footnote)
                 .foregroundStyle(SettingsTheme.textSecondary)
@@ -223,7 +223,7 @@ struct RunDetailView: View {
             Spacer(minLength: 0)
         }
         .padding(.horizontal, SettingsChrome.contentPadding)
-        .padding(.vertical, 10)
+        .padding(.vertical, BeruSpace.sm)
         .fixedSize(horizontal: false, vertical: true)
         .background(SettingsTheme.window)
     }

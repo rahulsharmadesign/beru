@@ -53,7 +53,7 @@ struct ProviderSettingsSections: View {
 
             SettingsSection(title: "Connection", subtitle: "Verify the provider responds before you run.") {
                 SettingsRow(title: "Test connection", caption: testCaption) {
-                    HStack(spacing: 10) {
+                    HStack(spacing: BeruSpace.sm) {
                         testStatusView
                         SettingsPillButton(title: "Test", enabled: testState != .testing) {
                             testConnection()
@@ -226,7 +226,13 @@ struct GeneralSettingsTab: View {
 
             SettingsSection(title: "Accent", subtitle: "Primary color for selected controls and actions.") {
                 SettingsRow(title: "Primary color", caption: "Selected controls, focus, and primary actions.") {
-                    LazyVGrid(columns: Array(repeating: GridItem(.fixed(22), spacing: 6), count: 6), spacing: 6) {
+                    LazyVGrid(
+                        columns: Array(
+                            repeating: GridItem(.fixed(22), spacing: BeruSpace.xs),
+                            count: 6
+                        ),
+                        spacing: BeruSpace.xs
+                    ) {
                         ForEach(PrimaryColor.allCases) { option in
                             Button {
                                 settings.primaryColorID = option.rawValue
@@ -592,7 +598,7 @@ struct AboutSettingsTab: View {
                 .resizable()
                 .scaledToFit()
                 .frame(width: 56, height: 56)
-                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .clipShape(BeruRadius.shape(BeruRadius.lg))
             VStack(alignment: .leading, spacing: 4) {
                 Text("Beru")
                     .font(BeruSans.pageTitle)
