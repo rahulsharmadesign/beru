@@ -48,6 +48,10 @@ enum PanelMetrics {
     static let footerMinHeight: CGFloat = 36
     /// Composer, including its internal padding. Two-row field + chrome.
     static let composerMinHeight: CGFloat = 76
+    /// Height reserved by the result area while a request is in flight. Without
+    /// a declared height these states report nothing, so the window falls back
+    /// to `minHeight` and then jumps when the first token arrives.
+    static let resultPlaceholderHeight: CGFloat = 120
     /// Composer card only — toolbar and result stay on `moduleRadius`.
     static let composerRadius: CGFloat = 16
     /// Gaps between the three outer modules (toolbar, result, composer stack).

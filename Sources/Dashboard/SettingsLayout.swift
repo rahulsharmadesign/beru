@@ -32,7 +32,13 @@ enum SettingsChrome {
     static let workspaceListInset: CGFloat = 16
     static let rowRadius: CGFloat = 10
     static let fieldWidth: CGFloat = 200
-    static let labelMaxWidth: CGFloat = 560
+    /// Label column width used by `SettingsRow`'s `ViewThatFits` probe.
+    ///
+    /// At 560 the horizontal candidate needed 560 + 24 + 12 + a 200pt control,
+    /// so any row with a long caption exceeded the content width and silently
+    /// dropped to the stacked layout while its neighbours stayed side by side.
+    /// 420 keeps a whole page on one layout down to a much narrower window.
+    static let labelMaxWidth: CGFloat = 420
 }
 
 struct SettingsHeaderRule: View {
@@ -76,17 +82,19 @@ struct SettingsSplitView<Sidebar: View, Detail: View>: View {
 
 struct SettingsPage<Content: View>: View {
     let title: String
+    let subtitle: String
     var content: Content
 
-    init(title: String, subtitle _: String = "", @ViewBuilder content: () -> Content) {
+    init(title: String, subtitle: String = "", @ViewBuilder content: () -> Content) {
         self.title = title
+        self.subtitle = subtitle
         self.content = content()
     }
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: SettingsChrome.headerContentSpacing) {
-                SettingsPageHeader(title: title)
+                SettingsPageHeader(title: title, subtitle: subtitle)
                 SettingsHeaderRule()
                 content
             }
@@ -103,17 +111,19 @@ struct SettingsPage<Content: View>: View {
 
 struct SettingsWorkspace<Content: View>: View {
     let title: String
+    let subtitle: String
     var content: Content
 
-    init(title: String, subtitle _: String = "", @ViewBuilder content: () -> Content) {
+    init(title: String, subtitle: String = "", @ViewBuilder content: () -> Content) {
         self.title = title
+        self.subtitle = subtitle
         self.content = content()
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: SettingsChrome.headerContentSpacing) {
             VStack(alignment: .leading, spacing: SettingsChrome.headerContentSpacing) {
-                SettingsPageHeader(title: title)
+                SettingsPageHeader(title: title, subtitle: subtitle)
                     .frame(maxWidth: .infinity, alignment: .leading)
                 SettingsHeaderRule()
             }
@@ -131,29 +141,51 @@ struct SettingsWorkspace<Content: View>: View {
 
 struct SettingsPageHeader: View {
     let title: String
+    var subtitle: String = ""
 
     var body: some View {
-        Text(title)
-            .font(BeruSans.pageTitle)
-            .foregroundStyle(SettingsTheme.textPrimary)
-            .frame(maxWidth: .infinity, alignment: .leading)
+        // Every page already declares a subtitle in DashboardRoute and search
+        // matches against it, but the header discarded the argument, so the
+        // copy explaining each page was written and never shown.
+        VStack(alignment: .leading, spacing: BeruSpace.xxs) {
+            Text(title)
+                .font(BeruSans.pageTitle)
+                .foregroundStyle(SettingsTheme.textPrimary)
+            if !subtitle.isEmpty {
+                Text(subtitle)
+                    .font(BeruSans.pageSubtitle)
+                    .foregroundStyle(SettingsTheme.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
 struct SettingsSection<Content: View>: View {
     let title: String
+    let subtitle: String?
     var content: Content
 
-    init(title: String, subtitle _: String? = nil, @ViewBuilder content: () -> Content) {
+    init(title: String, subtitle: String? = nil, @ViewBuilder content: () -> Content) {
         self.title = title
+        self.subtitle = subtitle
         self.content = content()
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text(title)
-                .font(BeruSans.section)
-                .foregroundStyle(SettingsTheme.textPrimary)
+            VStack(alignment: .leading, spacing: BeruSpace.xxs) {
+                Text(title)
+                    .font(BeruSans.section)
+                    .foregroundStyle(SettingsTheme.textPrimary)
+                if let subtitle, !subtitle.isEmpty {
+                    Text(subtitle)
+                        .font(BeruSans.footnote)
+                        .foregroundStyle(SettingsTheme.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
             VStack(alignment: .leading, spacing: 18) {
                 content
             }

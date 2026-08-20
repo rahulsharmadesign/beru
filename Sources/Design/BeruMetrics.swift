@@ -26,8 +26,9 @@ enum BeruMetrics {
     static let formMaxWidth: CGFloat = 680
     /// Right-aligned control column in a settings row.
     static let fieldWidth: CGFloat = 200
-    /// Stops a long caption from running the full window width.
-    static let labelMaxWidth: CGFloat = 560
+    /// Label column in a settings row. Narrow enough that title, caption and a
+    /// full-width control still fit side by side inside `formMaxWidth`.
+    static let labelMaxWidth: CGFloat = 420
 
     /// Square hit target for icon-only buttons. Also the panel's send and
     /// dictation buttons, which were three separate 28pt literals.

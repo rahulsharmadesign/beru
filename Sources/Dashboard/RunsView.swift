@@ -232,15 +232,20 @@ private struct RunRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
             HStack(spacing: 6) {
+                // The action identifies the row, so it wins the space; the app
+                // name truncates instead. Without a priority the two competed
+                // and a long action name could be clipped to nothing useful.
                 Text(run.actionName ?? run.actionID ?? "Run")
                     .font(BeruSans.rowTitle)
                     .foregroundStyle(isSelected ? SettingsTheme.onActive : SettingsTheme.textPrimary)
                     .lineLimit(1)
+                    .layoutPriority(1)
                 if let app = run.hostAppName {
                     Text(app)
                         .font(BeruSans.footnote)
                         .foregroundStyle(isSelected ? SettingsTheme.onActive.opacity(0.72) : SettingsTheme.textSecondary)
                         .lineLimit(1)
+                        .truncationMode(.tail)
                 }
                 Spacer(minLength: 4)
                 Text(run.startedAt, style: .time)

@@ -8,15 +8,23 @@ struct ResultView: View {
             if state == .idle {
                 Color.clear
             } else if state == .loading {
+                // A declared height rather than filling the parent, so the
+                // window has something to size to before any text arrives.
                 Color.clear
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+                    .frame(maxWidth: .infinity, minHeight: PanelMetrics.resultPlaceholderHeight)
+                    .contributesPanelHeight()
             } else if state == .thinking {
                 VStack(spacing: 8) {
                     Text("Thinking…")
                         .font(.system(size: 11))
                         .foregroundStyle(.secondary)
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+                .frame(
+                    maxWidth: .infinity,
+                    minHeight: PanelMetrics.resultPlaceholderHeight,
+                    alignment: .center
+                )
+                .contributesPanelHeight()
             } else if case .streaming(let text) = state {
                 streamingText(text)
             } else if case .done(let text) = state {
@@ -25,6 +33,7 @@ struct ResultView: View {
                 Text(message)
                     .font(.system(size: 13))
                     .foregroundStyle(.secondary)
+                    .contributesPanelHeight()
             }
         }
     }

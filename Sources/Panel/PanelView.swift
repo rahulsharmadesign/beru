@@ -126,10 +126,13 @@ struct PanelView: View {
                     .transition(.opacity)
             }
         }
+        // Scoped to the stack that holds the conditional context line. Applied
+        // after padding and the drag region it also animated the module's
+        // chrome, so switching tabs relaid out the whole toolbar card.
+        .animation(tabAnimation, value: appState.selectedActionID)
         .padding(PanelMetrics.moduleInset)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(PanelDragRegion())
-        .animation(tabAnimation, value: appState.selectedActionID)
     }
 
     private var hasCapturedText: Bool {
@@ -264,7 +267,6 @@ struct PanelView: View {
         // card radius against the toolbar and composer.
         .padding(PanelMetrics.moduleInset)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .animation(tabAnimation, value: appState.selectedActionID)
         .glassModule(scrim: .content)
     }
 
@@ -305,6 +307,9 @@ struct PanelView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .id(appState.selectedActionID)
         .transition(.opacity)
+        // Only the swapped content crossfades. On the enclosing module this
+        // also animated the card padding and glass background on every switch.
+        .animation(tabAnimation, value: appState.selectedActionID)
     }
 
     @ViewBuilder
@@ -366,8 +371,12 @@ struct PanelView: View {
         }
         .padding(.horizontal, 24)
         .padding(.vertical, 28)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .frame(maxWidth: .infinity)
         .background(PanelDragRegion())
+        // Intrinsic height, reported to the window. Filling the parent instead
+        // left this card taller than the space the window had allocated, which
+        // sheared it against the toolbar and composer.
+        .contributesPanelHeight()
     }
 
     private var providerSetupPlaceholder: some View {
@@ -396,8 +405,9 @@ struct PanelView: View {
         }
         .padding(.horizontal, 24)
         .padding(.vertical, 28)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .frame(maxWidth: .infinity)
         .background(PanelDragRegion())
+        .contributesPanelHeight()
     }
 
     private var truncationBanner: some View {
@@ -475,8 +485,11 @@ struct PanelView: View {
                 }
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .frame(maxWidth: .infinity)
         .padding(20)
+        // The retry row can wrap onto a second line once a fallback provider
+        // and Connect to model are both present, so the window has to be told.
+        .contributesPanelHeight()
     }
 
     /// Short label for the "Try with [X]" button. Takes the first word of the
@@ -614,11 +627,13 @@ struct PanelView: View {
                 sendButton
             }
         }
+        // Search mode swaps the icon, placeholder and the target/provider menu.
+        // Scoped here so the composer card's own frame is not part of it.
+        .animation(tabAnimation, value: appState.isQuickSearch)
         .padding(.horizontal, PanelMetrics.moduleInset)
         .padding(.vertical, 8)
         .frame(minHeight: PanelMetrics.composerMinHeight, alignment: .center)
         .frame(maxWidth: .infinity)
-        .animation(tabAnimation, value: appState.isQuickSearch)
     }
 
     private var sendButton: some View {
