@@ -189,6 +189,11 @@ final class AppCoordinator {
         appState.capturedElement = targetElement
         appState.hostBundleID = host?.bundleID
         appState.hostAppName = host?.name
+        // A different app is a different conversation. Dropped here rather than
+        // at the moment of switching so the thread survives a trip to another
+        // app and back without invoking, which is how you go and look something
+        // up mid-edit.
+        SessionThread.shared.hostChanged(to: host?.bundleID)
         appState.vaultNoteID = vaultNoteID
         snapshotClipboard(relativeTo: text)
         appState.selectedTargetID = TargetRegistry.resolveTargetID(

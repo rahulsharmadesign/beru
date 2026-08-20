@@ -6,6 +6,6 @@ raw_radius=0
 offgrid_spacing=0
 panel_infinite_height=4
 keychain_reach=0
-shared_singletons=19
+shared_singletons=20
 discarded_observation=0
 oversized_files=0

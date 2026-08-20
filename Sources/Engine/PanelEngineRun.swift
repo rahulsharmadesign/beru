@@ -125,6 +125,13 @@ extension PanelEngine {
         } else {
             appState.contextApplications[actionID] = activeContext
         }
+        // What was asked in this app just before now. Its own scope rule, wider
+        // than the target's: a follow-up makes sense for Describe and Search
+        // too, not just Enhance.
+        let threadTurns = SettingsStore.shared.sessionContextEnabled
+            && Prompts.threadApplies(actionID: actionID)
+            ? SessionThread.shared.turns(forBundleID: appState.hostBundleID)
+            : []
 
         // Composed last so the explanation request is the final instruction —
         // it has to outrank the "output only the result" rule the base prompts
@@ -156,9 +163,12 @@ extension PanelEngine {
         let finalSystemPrompt = Prompts.composeWithRationale(
             Prompts.composeWithFraming(
                 Prompts.composeWithProfile(
-                    Prompts.composeWithContext(
-                        Prompts.composeWithTarget(systemPrompt, profile: activeTarget),
-                        context: activeContext
+                    Prompts.composeWithThread(
+                        Prompts.composeWithContext(
+                            Prompts.composeWithTarget(systemPrompt, profile: activeTarget),
+                            context: activeContext
+                        ),
+                        turns: threadTurns
                     ),
                     profile: activeAuthorProfile
                 ),
@@ -174,6 +184,11 @@ extension PanelEngine {
             : (ActionRegistry.shared.action(withID: actionID)?.name
                 ?? (actionID == EnhancementAction.describeID ? EnhancementAction.describe.name : actionID))
         let invocationID = appState.invocationID
+        // Captured before the Task so the thread records what was asked on this
+        // run, not whatever the intent field holds by the time it finishes.
+        let threadInstruction = (instruction ?? appState.describeInstruction)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let hostBundleID = appState.hostBundleID
         UsageLog.record {
             UsageEvent(
                 invocationID: invocationID,
@@ -191,187 +206,31 @@ extension PanelEngine {
             )
         }
 
-        powerActivity.streamBegan()
-        let task = Task { [weak self] in
-            defer {
-                self?.powerActivity.streamEnded()
-                self?.onStreamingEnded?()
-            }
-            guard let self else { return }
-            var accumulated = ""
-            let clock = ContinuousClock()
-            let requestStart = clock.now
-            var firstTokenAt: ContinuousClock.Instant?
-            var lastPublish: ContinuousClock.Instant?
-            var reasoningChunks = 0
-            do {
-                let stream = provider.stream(
-                    system: finalSystemPrompt,
-                    user: userMessage,
-                    role: role,
-                    expectsRationale: explainsChanges
-                )
-                for try await chunk in stream {
-                    guard case .content(let text) = chunk else {
-                        // Reasoning must never reach the document. Surface it
-                        // as a state so a thinking model doesn't look hung.
-                        reasoningChunks += 1
-                        if accumulated.isEmpty, reasoningChunks == 1 {
-                            self.publish(.thinking, for: actionID, generation: generation)
-                        }
-                        continue
-                    }
-                    // Some models emit leading blank lines (e.g. residue of a
-                    // stripped reasoning block); never show or insert them.
-                    if accumulated.isEmpty {
-                        accumulated = String(text.drop(while: \.isWhitespace))
-                    } else {
-                        accumulated += text
-                    }
-                    guard !accumulated.isEmpty else { continue }
-                    let now = clock.now
-                    if firstTokenAt == nil {
-                        firstTokenAt = now
-                        engineLogger.notice("ttfb for \(actionID): \(Self.milliseconds(now - requestStart)) ms")
-                    }
-                    // Coalesce: publish the first token immediately, then at
-                    // most once per interval. The final text is always
-                    // published below, so no content is ever dropped.
-                    if let last = lastPublish, now - last < Self.streamPublishInterval {
-                        continue
-                    }
-                    lastPublish = now
-                    // Never stream the rationale markup into view. Once the
-                    // model starts the explanation the visible text simply
-                    // stops growing, which reads as "finished".
-                    let visible = Self.visibleWhileStreaming(accumulated)
-                    if !visible.isEmpty {
-                        self.publish(.streaming(visible), for: actionID, generation: generation)
-                    }
-                }
-
-                // A cancelled byte stream finishes cleanly rather than
-                // throwing — the SSE reader swallows the error by design — so
-                // "no content" here means superseded just as often as it means
-                // the model said nothing. Check before interpreting it as a
-                // failure, or every regenerate and every action switch logs a
-                // phantom error and flashes one into the panel.
-                guard !Task.isCancelled, self.isLive(generation, for: actionID) else {
-                    engineLogger.notice("stream superseded for \(actionID)")
-                    Self.recordOutcome(
-                        .generationCancelled, invocationID: invocationID, actionID: actionID,
-                        attempt: attempt, totalMs: Self.milliseconds(clock.now - requestStart),
-                        reasoningChunks: reasoningChunks,
-                        output: accumulated.isEmpty ? nil : accumulated
-                    )
-                    return
-                }
-                // Split BEFORE stripping the wrapping: strippedWrapping inspects
-                // the prefix and suffix, and a trailing rationale block would
-                // hide a closing code fence or quote from it.
-                let (body, rationale) = Self.splitRationale(
-                    accumulated.trimmingCharacters(in: .whitespacesAndNewlines)
-                )
-                // Scaffolding last: strippedWrapping matches on prefix and
-                // suffix, so removing an opening <context> first would hide the
-                // outer wrapping from it.
-                var final = Self.strippedScaffolding(
-                    Self.strippedWrapping(body),
-                    input: capturedText
-                )
-                if isQuickSearch {
-                    final = Self.strippedSearchChrome(final)
-                }
-                let totalMs = Self.milliseconds(clock.now - requestStart)
-                let ttfbMs = firstTokenAt.map { Self.milliseconds($0 - requestStart) }
-                engineLogger.notice("stream done for \(actionID), length = \(final.count), total = \(totalMs) ms, reasoning chunks discarded = \(reasoningChunks)")
-                if final.isEmpty {
-                    self.publish(
-                        .error("The model returned an empty response — try Regenerate"),
-                        for: actionID, generation: generation
-                    )
-                    Self.recordOutcome(
-                        .generationFailed, invocationID: invocationID, actionID: actionID,
-                        attempt: attempt, totalMs: totalMs, reasoningChunks: reasoningChunks,
-                        errorMessage: "empty response"
-                    )
-                } else {
-                    let savings = TokenSavings(input: capturedText, output: final)
-                    self.appState.savings[actionID] = savings
-                    // "Nothing needed fixing" and "the tool did nothing" look
-                    // identical on screen, and the second reading is what makes
-                    // people hit Regenerate until the model invents changes.
-                    if final == capturedText.trimmingCharacters(in: .whitespacesAndNewlines) {
-                        self.appState.cleanNotices.insert(actionID)
-                    } else {
-                        self.appState.cleanNotices.remove(actionID)
-                    }
-                    if let rationale, self.isLive(generation, for: actionID) {
-                        self.appState.rationales[actionID] = rationale
-                    }
-                    self.publish(.done(final), for: actionID, generation: generation)
-                    if isQuickSearch, self.isLive(generation, for: actionID) {
-                        self.appState.describeInstruction = ""
-                    }
-                    Self.recordOutcome(
-                        .generationFinished, invocationID: invocationID, actionID: actionID,
-                        attempt: attempt, ttfbMs: ttfbMs, totalMs: totalMs,
-                        reasoningChunks: reasoningChunks, output: final, savings: savings,
-                        rationale: rationale
-                    )
-                    // Every action gets a diff, not just Grammar: seeing what a
-                    // tone rewrite actually touched is the point of the feature.
-                    await self.computeDiff(actionID: actionID, original: capturedText, revised: final)
-                }
-            } catch is CancellationError {
-                engineLogger.notice("stream cancelled for \(actionID)")
-                Self.recordOutcome(
-                    .generationCancelled, invocationID: invocationID, actionID: actionID,
-                    attempt: attempt, totalMs: Self.milliseconds(clock.now - requestStart),
-                    reasoningChunks: reasoningChunks, output: accumulated.isEmpty ? nil : accumulated
-                )
-            } catch let error as ProviderError {
-                if case .cancelled = error { return }
-                engineLogger.notice("stream failed for \(actionID): \(error.userMessage)")
-                self.publish(.error(error.userMessage), for: actionID, generation: generation)
-                self.appState.errorProviders[actionID] = SettingsStore.shared.activeProvider
-                if error.needsModelSetup {
-                    self.appState.errorNeedsModelSetup.insert(actionID)
-                }
-                Self.recordOutcome(
-                    .generationFailed, invocationID: invocationID, actionID: actionID,
-                    attempt: attempt, totalMs: Self.milliseconds(clock.now - requestStart),
-                    reasoningChunks: reasoningChunks, errorMessage: error.userMessage
-                )
-            } catch {
-                engineLogger.notice("stream failed for \(actionID): \(error.localizedDescription)")
-                self.publish(.error(error.localizedDescription), for: actionID, generation: generation)
-                self.appState.errorProviders[actionID] = SettingsStore.shared.activeProvider
-                // localizedDescription only: NSError.userInfo can carry the
-                // base URL, which may embed credentials.
-                Self.recordOutcome(
-                    .generationFailed, invocationID: invocationID, actionID: actionID,
-                    attempt: attempt, totalMs: Self.milliseconds(clock.now - requestStart),
-                    reasoningChunks: reasoningChunks, errorMessage: error.localizedDescription
-                )
-            }
-        }
-        appState.registerStreamTask(task, for: actionID)
+        runStream(
+            PanelRequest(
+                actionID: actionID,
+                actionName: actionName,
+                role: role,
+                provider: provider,
+                systemPrompt: finalSystemPrompt,
+                userMessage: userMessage,
+                capturedText: capturedText,
+                threadInstruction: threadInstruction,
+                hostBundleID: hostBundleID,
+                invocationID: invocationID,
+                attempt: attempt,
+                generation: generation,
+                explainsChanges: explainsChanges,
+                isQuickSearch: isQuickSearch
+            )
+        )
     }
 
-    /// Retries the current action with a specific provider, switching the
-    /// active provider for this run. Used by the panel's "Try with [X]" error
-    /// action so a failed provider doesn't dead-end the user into Settings.
+    /// Retries the current action with a specific provider, switching the active
+    /// provider for this run. Used by the panel's "Try with [X]" error action so
+    /// a failed provider doesn't dead-end the user into Settings.
     func retryWithProvider(_ kind: ProviderKind, actionID: String) {
         SettingsStore.shared.selectProvider(kind)
         start(actionID: actionID)
     }
-
-    /// Runs the O(n*m) word diff off the main thread exactly once per result,
-    /// then caches the ops in AppState for the view layer to render.
-    ///
-    /// Enhance is this algorithm's worst case — it rewrites wholesale, so the
-    /// common prefix/suffix trim that makes copy-edits cheap buys nothing and
-    /// the full LCS table is built. Still well within budget for the 8k capture
-    /// cap, and detached so a slow one cannot stall the panel.
 }

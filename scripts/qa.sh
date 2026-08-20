@@ -158,7 +158,9 @@ run_static_guards() {
             --exclude=KeychainStore.swift --exclude=SettingsStore.swift)" \
         "KeychainStore.shared outside Settings"
 
-    # Global mutable state: hold the line on new process singletons.
+    # Global mutable state: hold the line on new process singletons. Raising
+    # this number is a decision, not a formality — say in the commit why the
+    # thing cannot be owned by whoever uses it.
     guard shared_singletons \
         "$(count_matches 'static let shared' Sources)" \
         "static let shared declarations"

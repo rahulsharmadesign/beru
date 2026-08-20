@@ -66,6 +66,17 @@ final class SettingsStore {
     var explainChanges: Bool {
         didSet { defaults.set(explainChanges, forKey: Keys.explainChanges) }
     }
+    /// Lets Enhance, Describe and Search see your last few turns in the same
+    /// app, so a follow-up like "shorter" has something to refer to. Defaults to
+    /// on: only the preference is persisted, never the turns themselves, which
+    /// live in memory and die with the process.
+    var sessionContextEnabled: Bool {
+        didSet {
+            defaults.set(sessionContextEnabled, forKey: Keys.sessionContextEnabled)
+            // Turning it off should take effect now, not on the next app switch.
+            if !sessionContextEnabled { SessionThread.shared.clear() }
+        }
+    }
     var historyRetentionDays: Int {
         didSet { defaults.set(historyRetentionDays, forKey: Keys.historyRetentionDays) }
     }
@@ -107,6 +118,7 @@ final class SettingsStore {
         static let defaultActionID = "defaultActionID"
         static let usageLoggingEnabled = "usageLoggingEnabled"
         static let explainChanges = "explainChanges"
+        static let sessionContextEnabled = "sessionContextEnabled"
         static let historyRetentionDays = "historyRetentionDays"
         static let historyMaxMegabytes = "historyMaxMegabytes"
         static let lastTargetID = "lastTargetID"
@@ -158,6 +170,9 @@ final class SettingsStore {
         explainChanges = defaults.object(forKey: Keys.explainChanges) == nil
             ? true
             : defaults.bool(forKey: Keys.explainChanges)
+        sessionContextEnabled = defaults.object(forKey: Keys.sessionContextEnabled) == nil
+            ? true
+            : defaults.bool(forKey: Keys.sessionContextEnabled)
         let storedRetention = defaults.integer(forKey: Keys.historyRetentionDays)
         historyRetentionDays = storedRetention > 0 ? storedRetention : 90
         let storedMax = defaults.integer(forKey: Keys.historyMaxMegabytes)
