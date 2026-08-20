@@ -1,7 +1,7 @@
-import SwiftUI
+import Foundation
 
 /// Catalog of local models Beru recommends for Ollama. Shared by the Models
-/// install list and the Enhance/Grammar pickers so a advertised option like
+/// install list and the Enhance/Grammar pickers so an advertised option like
 /// Gemma 3 1B actually appears as a selectable setting.
 struct RecommendedOllamaModel: Identifiable, Hashable {
     var id: String { name }
@@ -24,35 +24,13 @@ struct RecommendedOllamaModel: Identifiable, Hashable {
             name: "qwen3:8b",
             title: "Qwen 3 8B",
             size: "~5 GB",
-            note: "Default. Reasoning suppressed automatically."
+            note: "Reasoning suppressed automatically."
         ),
         RecommendedOllamaModel(
             name: "qwen2.5:7b",
             title: "Qwen 2.5 7B",
             size: "~4.7 GB",
-            note: "No reasoning pass; slightly faster first token."
+            note: "Default. No reasoning pass; faster first token."
         )
     ]
-}
-
-/// Menu of recommended Ollama ids plus the current value if it is custom.
-struct OllamaModelIDPicker: View {
-    @Binding var selection: String
-    var accessibilityLabel: String
-
-    var body: some View {
-        Picker("", selection: $selection) {
-            ForEach(RecommendedOllamaModel.all) { item in
-                Text(item.title).tag(item.name)
-            }
-            if !RecommendedOllamaModel.all.contains(where: { $0.name == selection }),
-               !selection.isEmpty {
-                Text(selection).tag(selection)
-            }
-        }
-        .labelsHidden()
-        .accessibilityLabel(accessibilityLabel)
-        .pickerStyle(.menu)
-        .fixedSize()
-    }
 }

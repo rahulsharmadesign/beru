@@ -26,7 +26,7 @@ struct DashboardView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .clipped()
         .background(SettingsTheme.window)
-        .tint(BrandColors.accentColor)
+        .tint(BeruColor.accent)
         .font(BeruSans.font(13))
     }
 
@@ -213,7 +213,7 @@ private struct SettingsTipCard: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .background {
                 RoundedRectangle(cornerRadius: SettingsChrome.rowRadius, style: .continuous)
-                    .fill(BrandColors.surface)
+                    .fill(BeruColor.surface)
                     .overlay {
                         RoundedRectangle(cornerRadius: SettingsChrome.rowRadius, style: .continuous)
                             .strokeBorder(SettingsTheme.border, lineWidth: 1)

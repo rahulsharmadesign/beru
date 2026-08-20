@@ -6,28 +6,32 @@ import SwiftUI
 /// The app had three parallel color systems: `BrandColors` for the panel,
 /// `SettingsTheme` for the dashboard, and `DashboardTheme` for a third opinion
 /// on the accent. Same paint, three names, and no single place to change it.
-/// This is that place.
-///
-/// Values still resolve through `BrandColors` while call sites migrate; that
-/// type collapses into this one once nothing references it directly.
+/// This is that place, and the only file in the app allowed to hold a raw
+/// color literal.
 enum BeruColor {
 
     // MARK: - Surfaces
 
-    /// The one window and card fill. A second grey is what made the panel and
-    /// the settings window look like different apps.
-    static var canvas: Color { BrandColors.canvas }
-    static var surface: Color { BrandColors.surface }
-    static var input: Color { BrandColors.input }
+    /// The one window and card fill, frozen rather than mapped to
+    /// `windowBackgroundColor`. The widget window, its cards, the settings
+    /// window and its sidebar must all use this exact paint — a second grey is
+    /// what made those surfaces look broken.
+    static let canvasNSColor = NSColor(name: "BeruCanvas") { appearance in
+        let dark = appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+        return dark
+            ? NSColor(srgbRed: 0.125, green: 0.130, blue: 0.160, alpha: 1)
+            : NSColor(srgbRed: 0.982, green: 0.983, blue: 0.990, alpha: 1)
+    }
 
-    /// AppKit needs the dynamic `NSColor`, not a resolved SwiftUI `Color`.
-    static var canvasNSColor: NSColor { BrandColors.canvasNSColor }
+    static var canvas: Color { Color(nsColor: canvasNSColor) }
+    static var surface: Color { canvas }
+    static var input: Color { canvas }
 
     // MARK: - Lines
 
-    static var border: Color { BrandColors.border }
+    static var border: Color { Color(nsColor: .separatorColor) }
     /// Only where a hairline must survive against a busy fill.
-    static var strongBorder: Color { BrandColors.strongBorder }
+    static var strongBorder: Color { Color(nsColor: .gridColor) }
 
     // MARK: - Text
 
@@ -37,9 +41,16 @@ enum BeruColor {
     // MARK: - Accent
 
     @MainActor
-    static var accent: Color { BrandColors.accentColor }
-    @MainActor
-    static var accentDeep: Color { BrandColors.accentDeepColor }
+    static var accent: Color {
+        (PrimaryColor(rawValue: SettingsStore.shared.primaryColorID) ?? .indigo).color
+    }
+    /// AppKit surfaces that cannot read the store on the main actor, such as a
+    /// window's own background.
+    static var accentNSColor: NSColor { PrimaryColor.selected.nsColor }
+    static var accentDeepNSColor: NSColor {
+        accentNSColor.blended(withFraction: 0.25, of: .black) ?? accentNSColor
+    }
+    static var accentDeep: Color { Color(nsColor: accentDeepNSColor) }
     /// Label color on top of `accent`. Reads from the selected primary rather
     /// than assuming indigo, so a lighter accent can pair with dark glyphs.
     @MainActor
@@ -66,15 +77,15 @@ enum BeruColor {
     /// For surfaces that must pick a side explicitly rather than follow the
     /// dynamic canvas, such as the panel's glass chips.
     enum Light {
-        static let canvas = BrandColors.lightCanvas
-        static let surface = BrandColors.lightSurface
-        static let border = BrandColors.lightBorder
+        static let canvas = Color(red: 0.982, green: 0.983, blue: 0.990)
+        static let surface = Color.white
+        static let border = Color(red: 0.900, green: 0.902, blue: 0.920)
     }
 
     enum Dark {
-        static let canvas = BrandColors.darkCanvas
-        static let surface = BrandColors.darkSurface
-        static let border = BrandColors.darkBorder
+        static let canvas = Color(red: 0.125, green: 0.130, blue: 0.160)
+        static let surface = Color(red: 0.125, green: 0.130, blue: 0.160)
+        static let border = Color.white.opacity(0.14)
     }
 
     /// Contrast-tuned status colors for small text sitting on the panel's own
@@ -99,5 +110,5 @@ enum BeruColor {
 
     // MARK: - Elevation
 
-    static let softShadow = BrandColors.softShadow
+    static let softShadow = Color.black.opacity(0.075)
 }

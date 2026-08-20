@@ -1,50 +1,13 @@
-import AppKit
 import SwiftUI
 
-/// Semantic tokens shared by every dashboard surface.
-///
-/// Window and sidebar fills come from frozen BrandColors canvas/surface tokens.
-enum SettingsTheme {
-    static var window: Color { BrandColors.canvas }
-    static var sidebar: Color { BrandColors.canvas }
-    static var surface: Color { BrandColors.canvas }
-    static var border: Color { BrandColors.border }
-    static var textPrimary: Color { Color(nsColor: .labelColor) }
-    static var textSecondary: Color { Color(nsColor: .secondaryLabelColor) }
-    @MainActor
-    static var active: Color { BrandColors.accentColor }
-    static var onActive: Color { PrimaryColor.indigo.selectedForeground }
-    static var badgeBg: Color { Color(nsColor: .unemphasizedSelectedContentBackgroundColor) }
-    static var sidebarSelected: Color { Color(nsColor: .unemphasizedSelectedContentBackgroundColor) }
-    static var hoverFill: Color { Color(nsColor: .quaternaryLabelColor) }
-    static var inputBg: Color { BrandColors.input }
-    static var destructive: Color { Color(nsColor: .systemRed) }
-    static var positive: Color { Color(nsColor: .systemGreen) }
-}
-
-enum SettingsChrome {
-    static let windowWidth: CGFloat = 1180
-    static let windowHeight: CGFloat = 720
-    static let sidebarWidth: CGFloat = 240
-    static let workspaceListMaxWidth: CGFloat = 280
-    static let contentPadding: CGFloat = 32
-    static let headerContentSpacing: CGFloat = 16
-    static let workspaceListInset: CGFloat = 16
-    static let rowRadius: CGFloat = 10
-    static let fieldWidth: CGFloat = 200
-    /// Label column width used by `SettingsRow`'s `ViewThatFits` probe.
-    ///
-    /// At 560 the horizontal candidate needed 560 + 24 + 12 + a 200pt control,
-    /// so any row with a long caption exceeded the content width and silently
-    /// dropped to the stacked layout while its neighbours stayed side by side.
-    /// 420 keeps a whole page on one layout down to a much narrower window.
-    static let labelMaxWidth: CGFloat = 420
-}
+// Page scaffolding for the dashboard: the shells every route builds inside.
+// The reusable controls these pages fill themselves with live in
+// Sources/Design/SettingsControls.swift.
 
 struct SettingsHeaderRule: View {
     var body: some View {
         Rectangle()
-            .fill(SettingsTheme.border)
+            .fill(BeruColor.border)
             .frame(height: 1)
             .frame(maxWidth: .infinity)
     }
@@ -53,7 +16,7 @@ struct SettingsHeaderRule: View {
 struct SettingsVRule: View {
     var body: some View {
         Rectangle()
-            .fill(SettingsTheme.border)
+            .fill(BeruColor.border)
             .frame(width: 1)
             .frame(maxHeight: .infinity)
     }
@@ -62,7 +25,7 @@ struct SettingsVRule: View {
 /// Fixed sidebar + flexible detail. `HSplitView` collapses the detail pane on
 /// macOS when a child also asks for `maxWidth`.
 struct SettingsSplitView<Sidebar: View, Detail: View>: View {
-    var sidebarWidth: CGFloat = SettingsChrome.workspaceListMaxWidth
+    var sidebarWidth: CGFloat = BeruMetrics.workspaceListWidth
     @ViewBuilder var sidebar: Sidebar
     @ViewBuilder var detail: Detail
 
@@ -76,7 +39,7 @@ struct SettingsSplitView<Sidebar: View, Detail: View>: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(SettingsTheme.window)
+        .background(BeruColor.canvas)
     }
 }
 
@@ -93,19 +56,19 @@ struct SettingsPage<Content: View>: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: SettingsChrome.headerContentSpacing) {
+            VStack(alignment: .leading, spacing: BeruMetrics.headerContentSpacing) {
                 SettingsPageHeader(title: title, subtitle: subtitle)
                 SettingsHeaderRule()
                 content
             }
-            .padding(.horizontal, SettingsChrome.contentPadding)
+            .padding(.horizontal, BeruMetrics.contentPadding)
             .padding(.top, BeruSpace.lg)
-            .padding(.bottom, 48)
+            .padding(.bottom, BeruSpace.xxl)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .scrollBounceBehavior(.basedOnSize)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(SettingsTheme.window)
+        .background(BeruColor.canvas)
     }
 }
 
@@ -121,21 +84,20 @@ struct SettingsWorkspace<Content: View>: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: SettingsChrome.headerContentSpacing) {
-            VStack(alignment: .leading, spacing: SettingsChrome.headerContentSpacing) {
+        VStack(alignment: .leading, spacing: BeruMetrics.headerContentSpacing) {
+            VStack(alignment: .leading, spacing: BeruMetrics.headerContentSpacing) {
                 SettingsPageHeader(title: title, subtitle: subtitle)
                     .frame(maxWidth: .infinity, alignment: .leading)
                 SettingsHeaderRule()
             }
-            .padding(.horizontal, SettingsChrome.contentPadding)
+            .padding(.horizontal, BeruMetrics.contentPadding)
             .padding(.top, BeruSpace.lg)
-            .padding(.bottom, 0)
             .fixedSize(horizontal: false, vertical: true)
             content
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(SettingsTheme.window)
+        .background(BeruColor.canvas)
     }
 }
 
@@ -149,12 +111,12 @@ struct SettingsPageHeader: View {
         // copy explaining each page was written and never shown.
         VStack(alignment: .leading, spacing: BeruSpace.xxs) {
             Text(title)
-                .font(BeruSans.pageTitle)
-                .foregroundStyle(SettingsTheme.textPrimary)
+                .font(BeruType.pageTitle)
+                .foregroundStyle(BeruColor.textPrimary)
             if !subtitle.isEmpty {
                 Text(subtitle)
-                    .font(BeruSans.pageSubtitle)
-                    .foregroundStyle(SettingsTheme.textSecondary)
+                    .font(BeruType.pageSubtitle)
+                    .foregroundStyle(BeruColor.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
@@ -174,15 +136,15 @@ struct SettingsSection<Content: View>: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: BeruSpace.sm) {
             VStack(alignment: .leading, spacing: BeruSpace.xxs) {
                 Text(title)
-                    .font(BeruSans.section)
-                    .foregroundStyle(SettingsTheme.textPrimary)
+                    .font(BeruType.section)
+                    .foregroundStyle(BeruColor.textPrimary)
                 if let subtitle, !subtitle.isEmpty {
                     Text(subtitle)
-                        .font(BeruSans.footnote)
-                        .foregroundStyle(SettingsTheme.textSecondary)
+                        .font(BeruType.footnote)
+                        .foregroundStyle(BeruColor.textSecondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
@@ -199,8 +161,8 @@ struct SettingsFootnote: View {
 
     var body: some View {
         Text(text)
-            .font(BeruSans.footnote)
-            .foregroundStyle(SettingsTheme.textSecondary)
+            .font(BeruType.footnote)
+            .foregroundStyle(BeruColor.textSecondary)
             .fixedSize(horizontal: false, vertical: true)
     }
 }
@@ -221,25 +183,25 @@ struct SettingsRow<Control: View>: View {
     private var labels: some View {
         VStack(alignment: .leading, spacing: BeruSpace.hair) {
             Text(title)
-                .font(BeruSans.rowTitle)
-                .foregroundStyle(SettingsTheme.textPrimary)
+                .font(BeruType.rowTitle)
+                .foregroundStyle(BeruColor.textPrimary)
             if let caption, !caption.isEmpty {
                 Text(caption)
-                    .font(BeruSans.rowCaption)
-                    .foregroundStyle(SettingsTheme.textSecondary)
-                    .lineSpacing(3)
+                    .font(BeruType.footnote)
+                    .foregroundStyle(BeruColor.textSecondary)
+                    .lineSpacing(BeruSpace.hair)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
     }
 
     private var horizontalLayout: some View {
-        HStack(alignment: .top, spacing: 24) {
+        HStack(alignment: .top, spacing: BeruSpace.lg) {
             labels
-            .frame(minWidth: 0, maxWidth: SettingsChrome.labelMaxWidth, alignment: .leading)
-            Spacer(minLength: 12)
+                .frame(minWidth: 0, maxWidth: BeruMetrics.labelMaxWidth, alignment: .leading)
+            Spacer(minLength: BeruSpace.sm)
             control
-                .padding(.top, 2)
+                .padding(.top, BeruSpace.hair)
                 .layoutPriority(1)
                 .fixedSize(horizontal: true, vertical: false)
         }
@@ -254,103 +216,6 @@ struct SettingsRow<Control: View>: View {
     }
 }
 
-// The five dashboard button types below are now names for `BeruButton`
-// variants, not separate implementations. Each used to hand-roll its own
-// capsule, hover state, padding and disabled opacity, which is how the app
-// ended up with four button languages that drifted apart. Keeping the names
-// means the ~80 call sites read the same while there is one implementation.
-
-struct SettingsPillButton: View {
-    let title: String
-    var role: ButtonRole?
-    var enabled: Bool = true
-    var trailingIcon: String? = nil
-    var leadingIcon: String? = nil
-    let action: () -> Void
-
-    var body: some View {
-        BeruButton(
-            title: title,
-            variant: .pill,
-            leadingIcon: leadingIcon,
-            trailingIcon: trailingIcon,
-            enabled: enabled,
-            role: role,
-            action: action
-        )
-    }
-}
-
-struct SettingsPrimaryButton: View {
-    let title: String
-    var icon: String? = nil
-    var enabled: Bool = true
-    let action: () -> Void
-
-    var body: some View {
-        BeruButton(
-            title: title,
-            variant: .primary,
-            leadingIcon: icon,
-            enabled: enabled,
-            action: action
-        )
-    }
-}
-
-struct SettingsTogglePill: View {
-    let title: String
-    var icon: String? = nil
-    @Binding var isOn: Bool
-
-    var body: some View {
-        BeruButton(
-            title: title,
-            variant: .pill,
-            leadingIcon: icon,
-            isActive: isOn
-        ) {
-            isOn.toggle()
-        }
-    }
-}
-
-struct SettingsIconButton: View {
-    let icon: String
-    var size: CGFloat = 16
-    /// Tap-target frame. Smaller for icon buttons living inside a compact
-    /// row (e.g. a card in a narrow list) rather than a toolbar/footer.
-    var frameSize: CGFloat = BeruMetrics.hitTarget
-    var enabled: Bool = true
-    /// Hover tooltip and VoiceOver name. Required so an icon-only control
-    /// never ships without a description of what it does.
-    let help: String
-    let action: () -> Void
-
-    var body: some View {
-        BeruIconButton(
-            icon: icon,
-            size: size,
-            frameSize: frameSize,
-            enabled: enabled,
-            help: help,
-            action: action
-        )
-    }
-}
-
-/// Small text-only button for actions packed into a tight row (e.g. a card
-/// footer), where a full `SettingsPillButton` would be too heavy.
-struct SettingsInlineButton: View {
-    let title: String
-    var role: ButtonRole?
-    let action: () -> Void
-
-    var body: some View {
-        BeruButton(title: title, variant: .inline, role: role, action: action)
-    }
-}
-
 struct SettingsWorkspaceToolbar<Content: View>: View {
     @ViewBuilder var content: Content
 
@@ -362,13 +227,13 @@ struct SettingsWorkspaceToolbar<Content: View>: View {
                     toolbarContent
                 }
             }
-            .padding(.horizontal, SettingsChrome.contentPadding)
+            .padding(.horizontal, BeruMetrics.contentPadding)
             .padding(.bottom, BeruSpace.sm)
             .fixedSize(horizontal: false, vertical: true)
             .frame(maxWidth: .infinity, alignment: .leading)
             SettingsHeaderRule()
         }
-        .background(SettingsTheme.window)
+        .background(BeruColor.canvas)
     }
 
     private var toolbarContent: some View {
@@ -384,14 +249,14 @@ struct SettingsListFooter<Content: View>: View {
     var body: some View {
         VStack(spacing: 0) {
             SettingsHeaderRule()
-            HStack(spacing: 8) {
+            HStack(spacing: BeruSpace.xs) {
                 content
                 Spacer(minLength: 0)
             }
             .buttonStyle(.plain)
-            .foregroundStyle(SettingsTheme.textPrimary)
-            .padding(.horizontal, SettingsChrome.contentPadding)
-            .padding(.vertical, 8)
+            .foregroundStyle(BeruColor.textPrimary)
+            .padding(.horizontal, BeruMetrics.contentPadding)
+            .padding(.vertical, BeruSpace.xs)
             .fixedSize(horizontal: false, vertical: true)
             .background(DashboardChrome.sidebarSurface)
         }
@@ -399,193 +264,39 @@ struct SettingsListFooter<Content: View>: View {
     }
 }
 
-struct SettingsValue: View {
-    let text: String
-    var mono: Bool = false
-
-    var body: some View {
-        Text(text)
-            .font(mono ? BeruSans.mono : BeruSans.control)
-            .foregroundStyle(SettingsTheme.textSecondary)
-            .multilineTextAlignment(.trailing)
-    }
-}
-
-struct SettingsField: View {
-    let placeholder: String
-    @Binding var text: String
-    var width: CGFloat = SettingsChrome.fieldWidth
-    var alignment: TextAlignment = .leading
-
-    var body: some View {
-        TextField(placeholder, text: $text)
-            .textFieldStyle(.plain)
-            .font(BeruSans.control)
-            .foregroundStyle(SettingsTheme.textPrimary)
-            .multilineTextAlignment(alignment)
-            .frame(width: width)
-            .padding(.horizontal, BeruSpace.md)
-            .padding(.vertical, BeruSpace.xs)
-            .background {
-                Capsule()
-                    .fill(SettingsTheme.inputBg)
-                    .overlay(Capsule().strokeBorder(SettingsTheme.border, lineWidth: 1))
-            }
-    }
-}
-
-struct SettingsSecretField: View {
-    let placeholder: String
-    @Binding var text: String
-    var width: CGFloat = SettingsChrome.fieldWidth
-    @State private var visible = false
-
-    var body: some View {
-        HStack(spacing: 8) {
-            Group {
-                if visible {
-                    TextField(placeholder, text: $text)
-                } else {
-                    SecureField(placeholder, text: $text)
-                }
-            }
-            .textFieldStyle(.plain)
-            .font(BeruSans.mono)
-            .foregroundStyle(SettingsTheme.textSecondary)
-            Button {
-                visible.toggle()
-            } label: {
-                BeruIcon(name: visible ? "visibility_off" : "visibility", size: 15)
-                    .foregroundStyle(SettingsTheme.textSecondary)
-            }
-            .buttonStyle(.plain)
-            .help(visible ? "Hide" : "Show")
-            .accessibilityLabel(visible ? "Hide secret" : "Show secret")
-        }
-        .frame(width: width)
-        .padding(.horizontal, BeruSpace.md)
-        .padding(.vertical, BeruSpace.xs)
-        .background {
-            Capsule()
-                .fill(SettingsTheme.inputBg)
-                .overlay(Capsule().strokeBorder(SettingsTheme.border, lineWidth: 1))
-        }
-    }
-}
-
-/// Custom toggle matching SettingsScreen.jsx (42×24, #635BFF active).
-struct SettingsSwitch: View {
-    @Binding var isOn: Bool
-    var accessibilityLabel: String = "Toggle"
-
-    var body: some View {
-        Button {
-            isOn.toggle()
-        } label: {
-            ZStack(alignment: isOn ? .trailing : .leading) {
-                Capsule()
-                    .fill(isOn ? SettingsTheme.active : SettingsTheme.border)
-                    .frame(width: 42, height: 24)
-                Circle()
-                    .fill(SettingsTheme.onActive)
-                    .frame(width: 18, height: 18)
-                    .shadow(color: .black.opacity(0.3), radius: 1.5, y: 1)
-                    .padding(BeruSpace.hair)
-            }
-        }
-        .buttonStyle(.plain)
-        .animation(.easeOut(duration: 0.15), value: isOn)
-        .accessibilityLabel(accessibilityLabel)
-        .accessibilityValue(isOn ? "On" : "Off")
-    }
-}
-
-struct SettingsSearchField: View {
-    @Binding var text: String
-    var placeholder: String = "Search settings..."
-
-    var body: some View {
-        HStack(spacing: 8) {
-            BeruIcon(name: "search", size: 16)
-                .foregroundStyle(SettingsTheme.textSecondary)
-            TextField(placeholder, text: $text)
-                .textFieldStyle(.plain)
-                .font(BeruSans.search)
-                .foregroundStyle(SettingsTheme.textPrimary)
-                .lineLimit(1)
-                .frame(minWidth: 0, maxWidth: .infinity)
-                .layoutPriority(1)
-        }
-        .padding(.horizontal, SettingsChrome.workspaceListInset)
-        .padding(.vertical, BeruSpace.sm)
-        .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
-        .background {
-            Capsule()
-                .strokeBorder(SettingsTheme.border, lineWidth: 1)
-        }
-        .fixedSize(horizontal: false, vertical: true)
-        .accessibilityLabel(placeholder)
-    }
-}
-
-struct SettingsMenuPill<Selection: Hashable, Content: View>: View {
-    @Binding var selection: Selection
-    let label: String
-    @ViewBuilder var content: Content
-
-    var body: some View {
-        Menu {
-            content
-        } label: {
-            HStack(spacing: BeruSpace.xs) {
-                Text(label)
-                    .font(BeruSans.control)
-                BeruIcon(name: "expand_more", size: 14)
-            }
-            .foregroundStyle(SettingsTheme.textPrimary)
-            .lineLimit(1)
-            .padding(.horizontal, 16)
-            .padding(.vertical, BeruSpace.xs)
-            .background {
-                Capsule()
-                    .strokeBorder(SettingsTheme.border, lineWidth: 1)
-            }
-        }
-        .menuStyle(.borderlessButton)
-        .fixedSize()
-    }
-}
-
 extension View {
     func settingsWorkspacePane() -> some View {
         frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            .background(SettingsTheme.window)
+            .background(BeruColor.canvas)
     }
 
     func settingsSidebarList() -> some View {
         listStyle(.sidebar)
             .scrollContentBackground(.hidden)
-            .contentMargins(.horizontal, SettingsChrome.workspaceListInset, for: .scrollContent)
-            .background(SettingsTheme.window)
+            .contentMargins(.horizontal, BeruMetrics.workspaceListInset, for: .scrollContent)
+            .background(BeruColor.canvas)
     }
 
     /// Inset list-row highlight so selection pills do not touch column edges.
-    func settingsListRowBackground(isHighlighted: Bool, fill: some ShapeStyle = SettingsTheme.active) -> some View {
+    func settingsListRowBackground(
+        isHighlighted: Bool,
+        fill: some ShapeStyle = BeruColor.accent
+    ) -> some View {
         listRowBackground(
-            RoundedRectangle(cornerRadius: SettingsChrome.rowRadius, style: .continuous)
+            BeruRadius.shape(BeruRadius.md)
                 .fill(isHighlighted ? AnyShapeStyle(fill) : AnyShapeStyle(Color.clear))
-                .padding(.horizontal, SettingsChrome.workspaceListInset)
+                .padding(.horizontal, BeruMetrics.workspaceListInset)
         )
     }
 
     func settingsEditorSurface() -> some View {
         padding(BeruSpace.sm)
             .background {
-                RoundedRectangle(cornerRadius: SettingsChrome.rowRadius, style: .continuous)
-                    .fill(SettingsTheme.inputBg)
+                BeruRadius.shape(BeruRadius.md)
+                    .fill(BeruColor.input)
                     .overlay {
-                        RoundedRectangle(cornerRadius: SettingsChrome.rowRadius, style: .continuous)
-                            .strokeBorder(SettingsTheme.border, lineWidth: 1)
+                        BeruRadius.shape(BeruRadius.md)
+                            .strokeBorder(BeruColor.border, lineWidth: 1)
                     }
             }
     }

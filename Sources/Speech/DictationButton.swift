@@ -17,7 +17,7 @@ struct DictationButton: View {
         ZStack {
             DictationPressView(onToggle: toggle)
             Circle()
-                .strokeBorder(BrandColors.border, lineWidth: 1)
+                .strokeBorder(BeruColor.border, lineWidth: 1)
             BeruIcon(name: symbol, size: 14, strokeWidth: 2)
                 .foregroundStyle(tint)
                 .allowsHitTesting(false)
@@ -57,7 +57,7 @@ struct DictationButton: View {
 
     private var tint: AnyShapeStyle {
         if dictation.isRecording { return AnyShapeStyle(.red) }
-        return isActionable ? AnyShapeStyle(BrandColors.accentColor) : AnyShapeStyle(.tertiary)
+        return isActionable ? AnyShapeStyle(BeruColor.accent) : AnyShapeStyle(.tertiary)
     }
 
     private var helpText: String {

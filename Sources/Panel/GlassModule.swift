@@ -36,9 +36,9 @@ struct GlassModule: ViewModifier {
 
     private var border: Color {
         switch scrim {
-        case .base: return BrandColors.border
-        case .chrome: return BrandColors.border
-        case .content: return BrandColors.border.opacity(0.78)
+        case .base: return BeruColor.border
+        case .chrome: return BeruColor.border
+        case .content: return BeruColor.border.opacity(0.78)
         }
     }
 
@@ -54,7 +54,7 @@ struct GlassModule: ViewModifier {
         // Chrome modules must not clipShape their content: a short card plus
         // an inner radius inside the window mask shears top/bottom padding.
         // The fill is already a rounded rect; only the result surface clips.
-        let filled = content.background { shape.fill(BrandColors.surface) }
+        let filled = content.background { shape.fill(BeruColor.surface) }
         Group {
             if scrim == .content {
                 filled.clipShape(shape)
@@ -71,7 +71,7 @@ struct GlassModule: ViewModifier {
     @ViewBuilder
     private var focusEdge: some View {
         if focusRing {
-            shape.strokeBorder(BrandColors.accentColor, lineWidth: 1.5)
+            shape.strokeBorder(BeruColor.accent, lineWidth: 1.5)
         }
     }
 }

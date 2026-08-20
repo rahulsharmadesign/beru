@@ -28,7 +28,7 @@ struct TargetsView: View {
                 }
             }
         }
-        .tint(DashboardTheme.accent)
+        .tint(BeruColor.accent)
         .onAppear {
             if selection == nil {
                 selection = registry.profiles.first?.id

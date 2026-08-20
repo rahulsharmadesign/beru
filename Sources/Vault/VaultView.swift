@@ -41,7 +41,7 @@ struct VaultView: View {
                 .clipped()
             }
         }
-        .tint(DashboardTheme.accent)
+        .tint(BeruColor.accent)
         .onAppear(perform: prepare)
         .sheet(isPresented: $showingLinkSheet) {
             linkSheet

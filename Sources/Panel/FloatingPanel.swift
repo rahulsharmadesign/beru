@@ -25,7 +25,7 @@ private final class RoundedPanelView: NSView {
     func refreshColors() {
         wantsLayer = true
         effectiveAppearance.performAsCurrentDrawingAppearance { [self] in
-            layer?.backgroundColor = BrandColors.canvasNSColor.cgColor
+            layer?.backgroundColor = BeruColor.canvasNSColor.cgColor
         }
     }
 
@@ -81,7 +81,7 @@ final class FloatingPanel: NSPanel {
     func syncAppearance(with appearance: NSAppearance = NSApp.effectiveAppearance) {
         self.appearance = appearance
         appearance.performAsCurrentDrawingAppearance { [self] in
-            backgroundColor = BrandColors.canvasNSColor
+            backgroundColor = BeruColor.canvasNSColor
             (backdropView as? RoundedPanelView)?.refreshColors()
         }
     }

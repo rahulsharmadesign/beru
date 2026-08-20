@@ -26,7 +26,7 @@ struct RunsView: View {
                 }
             }
         }
-        .tint(DashboardTheme.accent)
+        .tint(BeruColor.accent)
         .task { await model.load() }
     }
 
