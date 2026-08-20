@@ -124,8 +124,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md). This project follows the [Code of Conduc
 brew install xcodegen
 ./scripts/make-signing-cert.sh
 ./scripts/install.sh
-xcodegen generate
-xcodebuild -scheme Beru -destination 'platform=macOS' test
+./scripts/qa.sh
 ```
 
 ## License

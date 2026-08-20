@@ -1,0 +1,48 @@
+---
+description: Beru design tokens. Every color, size, space and radius comes from Sources/Design
+globs: Sources/**/*.swift
+alwaysApply: false
+---
+
+# Tokens only
+
+`Sources/Design/` is the single source of truth. Raw literals in a view are a
+gate failure (`system_fonts`, `raw_colors`, `raw_radius`, `offgrid_spacing`).
+
+| Need | Use | Never |
+|---|---|---|
+| Color | `BeruColor.canvas` `.surface` `.border` `.textPrimary` `.textSecondary` `.accent` `.onAccent` `.positive` `.destructive` | `Color(red:)`, `.secondary`, `.primary.opacity(0.85)` |
+| Type | `BeruType.pageTitle` `.section` `.rowTitle` `.body` `.footnote` `.caption` `.mono` | `.font(.system(size: 11))`, `.headline`, `.caption` |
+| Space | `BeruSpace.hair/xxs/xs/sm/md/lg/xl/xxl` = 2/4/8/12/16/24/32/48 | `spacing: 5`, `padding(14)` |
+| Radius | `BeruRadius.sm/md/lg/xl` = 6/10/16/20, always `.continuous` | `cornerRadius(10)`, `.circular` |
+| Geometry | `BeruMetrics` | duplicate window/panel constants |
+
+```swift
+// BAD
+VStack(spacing: 6) { Text(t).font(.system(size: 11)).foregroundStyle(.secondary) }
+    .padding(14)
+    .background(Color(red: 0.125, green: 0.13, blue: 0.16))
+
+// GOOD
+VStack(spacing: BeruSpace.xxs) { Text(t).font(BeruType.caption).foregroundStyle(BeruColor.textSecondary) }
+    .padding(BeruSpace.md)
+    .background(BeruColor.surface)
+```
+
+# One button system
+
+Use `BeruButton` variants (`.primary`, `.pill`, `.inline`, `.icon`). Do not add
+`.borderedProminent` or `.bordered` next to Beru capsules, and do not hand-roll
+a new capsule.
+
+# Off the grid
+
+If a value genuinely needs to be off-grid, add a named token in `Sources/Design`
+with a comment explaining why. Do not inline the number.
+
+# Panel height contract
+
+The panel window sizes itself from child height preferences. Any state view in
+`Sources/Panel/` must call `.contributesPanelHeight()`. Do not use
+`maxHeight: .infinity` on an intrinsically sized empty or error state; it fills
+a clipped container and gets sheared at the top and bottom.

@@ -1,0 +1,41 @@
+name: QA
+
+on:
+  pull_request:
+  push:
+    branches:
+      - ship
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: qa-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  qa:
+    runs-on: macos-15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      # Static guards run first and separately so a token or architecture
+      # regression is reported without waiting on a full Xcode build.
+      - name: Static guards
+        run: |
+          chmod +x scripts/*.sh
+          ./scripts/qa.sh --static
+
+      - name: Build and test
+        run: ./scripts/qa.sh
+
+      - name: Upload logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: qa-logs
+          path: /tmp/beru-qa-*.log
+          if-no-files-found: ignore

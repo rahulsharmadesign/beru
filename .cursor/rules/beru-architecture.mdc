@@ -1,0 +1,54 @@
+---
+description: Beru folder boundaries, observation conventions and state ownership
+globs: Sources/**/*.swift
+alwaysApply: false
+---
+
+# Folder boundaries
+
+| Folder | Holds | Never holds |
+|---|---|---|
+| `Design/` | tokens, shared controls, `BeruIcon` | feature logic |
+| `Engine/` | providers, prompts, registries, diff | SwiftUI `View`s |
+| `Panel/` | the floating panel only | app-wide tokens |
+| `Dashboard/` | settings window and its pages | secret handling |
+| `Settings/` | `SettingsStore`, `KeychainStore` | dashboard pages |
+| `Capture` `Speech` `Vault` `Logging` `Support` | one concern each | cross-imports upward |
+
+A type belongs where its only consumer lives. A SwiftUI `View` never lives in
+`Engine/`.
+
+# Observation
+
+One convention for shared `@Observable` singletons:
+
+```swift
+// GOOD
+@Bindable private var settings = SettingsStore.shared
+
+// BAD - a plain property can miss updates
+private var registry = TargetRegistry.shared
+
+// BAD - fake observation that only refreshes by accident
+let _ = SettingsStore.shared.primaryColorID
+```
+
+Do not add a new `static let shared`. Prefer injecting the dependency; the
+`shared_singletons` guard counts them.
+
+# Single source of truth
+
+A default value is declared once and referenced everywhere else. The default
+local model id lives on `RecommendedOllamaModel`; `SettingsStore` and
+`OllamaPullService` read it rather than repeating the string.
+
+# File size
+
+Split anything over 400 lines by responsibility, not by line count. The
+`oversized_files` guard tracks this.
+
+# Secrets and network
+
+`KeychainStore` is the only place secrets are persisted, and only
+`SettingsStore` may reach it. Network calls go to the configured provider only.
+No analytics, no telemetry. Changes here need a look at `SECURITY.md`.
