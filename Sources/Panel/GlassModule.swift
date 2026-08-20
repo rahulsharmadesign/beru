@@ -1,16 +1,9 @@
 import SwiftUI
 
-/// Retained for Settings and panel-state compatibility; the plain-white skin no longer uses this value visually.
-private struct PanelFrostingKey: EnvironmentKey {
-    static let defaultValue: Double = 0.5
-}
-
-extension EnvironmentValues {
-    var panelFrosting: Double {
-        get { self[PanelFrostingKey.self] }
-        set { self[PanelFrostingKey.self] = newValue }
-    }
-}
+// A `panelFrosting` environment key used to sit here, fed from a persisted
+// setting and injected by PanelView on every invocation. Nothing below ever
+// read it — the plain-white skin replaced the gradient it controlled — and no
+// UI had set it since. The whole chain is gone.
 
 /// A neutral white surface used by the floating composer.
 ///

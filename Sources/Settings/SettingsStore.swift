@@ -66,23 +66,6 @@ final class SettingsStore {
     var explainChanges: Bool {
         didSet { defaults.set(explainChanges, forKey: Keys.explainChanges) }
     }
-    /// How frosted the panel is, 0 (clear glass) to 1 (opaque enough to read
-    /// anything over anything). 0.5 is the shipped balance.
-    ///
-    /// This is a preference rather than a constant because there is no single
-    /// right answer: iOS can keep its glass extremely transparent because the
-    /// backdrop is always a wallpaper the OS controls, while this panel floats
-    /// over arbitrary app content. Clear glass over a dense document is
-    /// unreadable; heavy frosting over a wallpaper is wasted. Only the person
-    /// looking at it knows which they want.
-    ///
-    /// The panel reads this value once per invocation and injects it through
-    /// `.environment(\.panelFrosting, …)`, so every glass module shares one
-    /// value without subscribing to the full store. A live preview in General
-    /// settings renders the same three-stop gradient the panel uses.
-    var panelFrosting: Double {
-        didSet { defaults.set(panelFrosting, forKey: Keys.panelFrosting) }
-    }
     var historyRetentionDays: Int {
         didSet { defaults.set(historyRetentionDays, forKey: Keys.historyRetentionDays) }
     }
@@ -124,7 +107,6 @@ final class SettingsStore {
         static let defaultActionID = "defaultActionID"
         static let usageLoggingEnabled = "usageLoggingEnabled"
         static let explainChanges = "explainChanges"
-        static let panelFrosting = "panelFrosting"
         static let historyRetentionDays = "historyRetentionDays"
         static let historyMaxMegabytes = "historyMaxMegabytes"
         static let lastTargetID = "lastTargetID"
@@ -174,9 +156,6 @@ final class SettingsStore {
         explainChanges = defaults.object(forKey: Keys.explainChanges) == nil
             ? true
             : defaults.bool(forKey: Keys.explainChanges)
-        panelFrosting = defaults.object(forKey: Keys.panelFrosting) == nil
-            ? 0.5
-            : min(1, max(0, defaults.double(forKey: Keys.panelFrosting)))
         let storedRetention = defaults.integer(forKey: Keys.historyRetentionDays)
         historyRetentionDays = storedRetention > 0 ? storedRetention : 90
         let storedMax = defaults.integer(forKey: Keys.historyMaxMegabytes)
