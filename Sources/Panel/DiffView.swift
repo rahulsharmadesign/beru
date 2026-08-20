@@ -308,16 +308,16 @@ struct DiffView: View {
         Group {
             if let attributed {
                 Text(attributed)
-                    .font(.system(size: 13))
+                    .font(BeruType.body)
             } else {
                 Text(revised)
-                    .font(.system(size: 13))
+                    .font(BeruType.body)
             }
         }
         .textSelection(.enabled)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, scrolls ? 16 : 0)
-        .padding(.vertical, scrolls ? 16 : 0)
+        .padding(.horizontal, scrolls ? BeruSpace.md : 0)
+        .padding(.vertical, scrolls ? BeruSpace.md : 0)
     }
 
     private static func attributedString(from ops: [DiffOp]) -> AttributedString {
@@ -328,13 +328,13 @@ struct DiffView: View {
                 result += AttributedString(s)
             case .deletion(let s):
                 var segment = AttributedString(s)
-                segment.foregroundColor = SettingsTheme.destructive
-                segment.strikethroughStyle = .init(pattern: .solid, color: SettingsTheme.destructive)
+                segment.foregroundColor = BeruColor.destructive
+                segment.strikethroughStyle = .init(pattern: .solid, color: BeruColor.destructive)
                 result += segment
             case .insertion(let s):
                 var segment = AttributedString(s)
-                segment.foregroundColor = SettingsTheme.positive
-                segment.underlineStyle = .init(pattern: .solid, color: SettingsTheme.positive)
+                segment.foregroundColor = BeruColor.positive
+                segment.underlineStyle = .init(pattern: .solid, color: BeruColor.positive)
                 result += segment
             }
         }

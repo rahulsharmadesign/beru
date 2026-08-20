@@ -20,19 +20,17 @@ struct SavingsPill: View {
     /// An opaque-enough surface that whatever is behind the glass cannot bleed
     /// through far enough to swallow 11pt text.
     private var surface: Color {
-        BrandColors.canvas.opacity(0.9)
+        BeruColor.canvas.opacity(0.9)
     }
 
-    /// Hand-picked per appearance rather than using `.green` / `.orange`, whose
-    /// system values are bright enough that 11pt text over a light surface falls
-    /// well short of a readable contrast ratio.
+    /// Contrast-tuned per appearance; see `BeruColor.Status`.
     private var accent: Color {
         switch (savings.direction, colorScheme) {
-        case (.leaner, .dark): return Color(red: 0.44, green: 0.86, blue: 0.54)
-        case (.leaner, _): return Color(red: 0.07, green: 0.42, blue: 0.18)
-        case (.longer, .dark): return Color(red: 1.00, green: 0.74, blue: 0.38)
-        case (.longer, _): return Color(red: 0.56, green: 0.32, blue: 0.02)
-        case (.unchanged, _): return .primary
+        case (.leaner, .dark): return BeruColor.Status.leanerDark
+        case (.leaner, _): return BeruColor.Status.leanerLight
+        case (.longer, .dark): return BeruColor.Status.longerDark
+        case (.longer, _): return BeruColor.Status.longerLight
+        case (.unchanged, _): return BeruColor.textPrimary
         }
     }
 
@@ -45,10 +43,10 @@ struct SavingsPill: View {
     }
 
     var body: some View {
-        HStack(spacing: 5) {
+        HStack(spacing: BeruSpace.xxs) {
             BeruIcon(name: icon, size: 9, strokeWidth: 2.5)
             Text(savings.shortLabel)
-                .font(.system(size: 11, weight: .medium))
+                .font(BeruType.captionMedium)
                 .monospacedDigit()
                 // The label is a single string like "−38 tok". Without this the
                 // footer's HStack can squeeze the Text below its natural width,
@@ -58,8 +56,8 @@ struct SavingsPill: View {
             meter
         }
         .foregroundStyle(accent)
-        .padding(.horizontal, 7)
-        .padding(.vertical, 3)
+        .padding(.horizontal, BeruSpace.xs)
+        .padding(.vertical, BeruSpace.hair)
         .background(
             Capsule()
                 .fill(surface)

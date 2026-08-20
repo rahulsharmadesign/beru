@@ -12,21 +12,21 @@ struct RationaleNote: View {
     @State private var isExpanded = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: BeruSpace.xxs) {
             Button {
                 withAnimation(.easeOut(duration: 0.16)) { isExpanded.toggle() }
             } label: {
-                HStack(spacing: 5) {
+                HStack(spacing: BeruSpace.xxs) {
                     BeruIcon(name: "graduation-cap", size: 10, strokeWidth: 2)
                     Text(isExpanded ? "Why" : text)
-                        .font(.system(size: 11))
+                        .font(BeruType.caption)
                         .lineLimit(1)
                         .truncationMode(.tail)
                     BeruIcon(name: "chevron-down", size: 8, strokeWidth: 2.5)
                         .rotationEffect(.degrees(isExpanded ? 0 : -90))
                     Spacer(minLength: 0)
                 }
-                .foregroundStyle(.secondary)
+                .foregroundStyle(BeruColor.textSecondary)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -34,15 +34,15 @@ struct RationaleNote: View {
 
             if isExpanded {
                 Text(text)
-                    .font(.system(size: 11))
-                    .foregroundStyle(.secondary)
+                    .font(BeruType.caption)
+                    .foregroundStyle(BeruColor.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
                     .textSelection(.enabled)
                     .transition(.opacity)
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.bottom, 6)
+        .padding(.horizontal, BeruSpace.md)
+        .padding(.bottom, BeruSpace.xxs)
         .frame(maxWidth: .infinity, alignment: .leading)
         // The panel sizes itself from measured content; without this the window
         // does not grow and the expanded text is clipped.

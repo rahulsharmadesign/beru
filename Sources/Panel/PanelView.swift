@@ -48,10 +48,10 @@ struct PanelView: View {
                     .contributesPanelHeight()
             }
         }
-        .background(BrandColors.canvas)
+        .background(BeruColor.canvas)
         .background(PanelDragRegion())
         .environment(\.panelFrosting, frosting)
-        .tint(BrandColors.accentColor)
+        .tint(BeruColor.accent)
         .onPreferenceChange(PanelHeightKey.self) { total in
             onHeightChange(total + PanelMetrics.moduleChromeHeight)
         }
@@ -105,12 +105,12 @@ struct PanelView: View {
     /// Outer-frame chrome matching the widget mock: red close sits above the
     /// inner cards, on the right, not over the chips.
     private var closeStrip: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: BeruSpace.xs) {
             Spacer(minLength: 0)
             PanelUpdateButton()
             PanelCloseDot { engine.cancel() }
         }
-        .padding(.trailing, 4)
+        .padding(.trailing, BeruSpace.xxs)
         .frame(height: PanelMetrics.closeStripHeight)
         .background(PanelDragRegion())
     }
@@ -119,7 +119,7 @@ struct PanelView: View {
 
     /// Single top module: verb chips + one quiet metadata line.
     private var toolbar: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: BeruSpace.xs) {
             verbRow
             if !appState.isQuickSearch || hasCapturedText {
                 contextLine
@@ -154,7 +154,7 @@ struct PanelView: View {
         ScrollView(.horizontal, showsIndicators: false) {
             ZStack(alignment: .topLeading) {
                 tabSelectionPill
-                HStack(spacing: 6) {
+                HStack(spacing: BeruSpace.xs) {
                     ForEach(panelTabs) { action in
                         chip(for: action)
                     }
@@ -171,13 +171,13 @@ struct PanelView: View {
     private var tabSelectionPill: some View {
         if let frame = chipFrames[appState.selectedActionID] {
             Capsule()
-                .fill(BrandColors.accentColor)
+                .fill(BeruColor.accent)
                 .frame(width: frame.width, height: frame.height)
                 .offset(x: frame.minX, y: frame.minY)
                 .shadow(
-                    color: a11y.reduceTransparency ? .clear : BrandColors.accentColor.opacity(0.18),
-                    radius: 5,
-                    y: 2
+                    color: a11y.reduceTransparency ? .clear : BeruColor.accent.opacity(0.18),
+                    radius: BeruSpace.xxs,
+                    y: BeruSpace.hair
                 )
                 .allowsHitTesting(false)
         }
@@ -202,7 +202,7 @@ struct PanelView: View {
         } label: {
             BeruLabel(title: action.name, icon: action.icon, iconSize: 14, strokeWidth: 2)
                 .labelStyle(.titleAndIcon)
-                .font(.system(size: 12, weight: isSelected ? .semibold : .medium))
+                .font(isSelected ? BeruType.footnoteSemibold : BeruType.footnoteMedium)
                 .glassChip(selected: isSelected)
                 .background {
                     GeometryReader { geo in
@@ -219,19 +219,19 @@ struct PanelView: View {
 
     /// Context as caption text — not a second chip row competing with verbs.
     private var contextLine: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: BeruSpace.xs) {
             Text(contextSummary)
-                .font(.system(size: 11))
-                .foregroundStyle(.secondary)
+                .font(BeruType.caption)
+                .foregroundStyle(BeruColor.textSecondary)
                 .lineLimit(1)
-            Spacer(minLength: 8)
+            Spacer(minLength: BeruSpace.xs)
             if appState.clipboardText != nil {
                 Button {
                     appState.includeClipboard.toggle()
                 } label: {
                     Text(appState.includeClipboard ? "Clipboard ✓" : "Clipboard")
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundStyle(appState.includeClipboard ? BrandColors.accentColor : Color.secondary)
+                        .font(BeruType.captionMedium)
+                        .foregroundStyle(appState.includeClipboard ? BeruColor.accent : BeruColor.textSecondary)
                 }
                 .buttonStyle(.plain)
                 .help(appState.includeClipboard
@@ -328,25 +328,23 @@ struct PanelView: View {
     }
 
     private var accessibilityPlaceholder: some View {
-        VStack(spacing: 10) {
+        VStack(spacing: BeruSpace.sm) {
             Text("Allow Accessibility")
-                .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(.primary.opacity(0.85))
+                .font(BeruType.bodyMedium)
+                .foregroundStyle(BeruColor.textPrimary)
             Text("Beru needs Accessibility to read and replace selected text in other apps.")
-                .font(.system(size: 12))
-                .foregroundStyle(.secondary)
+                .font(BeruType.footnote)
+                .foregroundStyle(BeruColor.textSecondary)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
-            Button("Open System Settings") {
+            BeruButton(title: "Open System Settings", variant: .primary, size: .compact) {
                 Permissions.requestAccessibilityIfNeeded()
                 Permissions.openAccessibilitySettings()
             }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.small)
-            .padding(.top, 4)
+            .padding(.top, BeruSpace.xxs)
         }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 16)
+        .padding(.horizontal, BeruSpace.lg)
+        .padding(.vertical, BeruSpace.md)
         .frame(maxWidth: .infinity)
         .background(PanelDragRegion())
         // Intrinsic height so the window grows instead of clipping this card
@@ -359,18 +357,18 @@ struct PanelView: View {
         let name = registry.action(withID: actionID)?.name
             ?? (actionID == EnhancementAction.searchID ? "AI Search" : "This action")
         let copy = EnhancementAction.emptyCaptureCopy(actionID: actionID, actionName: name)
-        return VStack(spacing: 6) {
+        return VStack(spacing: BeruSpace.xxs) {
             Text(copy.title)
-                .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(.primary.opacity(0.85))
+                .font(BeruType.bodyMedium)
+                .foregroundStyle(BeruColor.textPrimary)
             Text(copy.subtitle)
-                .font(.system(size: 12))
-                .foregroundStyle(.secondary)
+                .font(BeruType.footnote)
+                .foregroundStyle(BeruColor.textSecondary)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
         }
-        .padding(.horizontal, 24)
-        .padding(.vertical, 28)
+        .padding(.horizontal, BeruSpace.lg)
+        .padding(.vertical, BeruSpace.lg)
         .frame(maxWidth: .infinity)
         .background(PanelDragRegion())
         // Intrinsic height, reported to the window. Filling the parent instead
@@ -380,31 +378,27 @@ struct PanelView: View {
     }
 
     private var providerSetupPlaceholder: some View {
-        VStack(spacing: 10) {
+        VStack(spacing: BeruSpace.sm) {
             Text("Choose your AI model")
-                .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(.primary.opacity(0.85))
+                .font(BeruType.bodyMedium)
+                .foregroundStyle(BeruColor.textPrimary)
             Text("Connect an AI provider or choose a local model to start using Beru.")
-                .font(.system(size: 12))
-                .foregroundStyle(.secondary)
+                .font(BeruType.footnote)
+                .foregroundStyle(BeruColor.textSecondary)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
-            VStack(spacing: 8) {
-                Button("Connect a provider") {
+            VStack(spacing: BeruSpace.xs) {
+                BeruButton(title: "Connect a provider", variant: .primary, size: .compact) {
                     engine.requestProviderSetup(preferLocal: false)
                 }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.small)
-                Button("Use a local model") {
+                BeruButton(title: "Use a local model", size: .compact) {
                     engine.requestProviderSetup(preferLocal: true)
                 }
-                .buttonStyle(.bordered)
-                .controlSize(.small)
             }
-            .padding(.top, 4)
+            .padding(.top, BeruSpace.xxs)
         }
-        .padding(.horizontal, 24)
-        .padding(.vertical, 28)
+        .padding(.horizontal, BeruSpace.lg)
+        .padding(.vertical, BeruSpace.lg)
         .frame(maxWidth: .infinity)
         .background(PanelDragRegion())
         .contributesPanelHeight()
@@ -412,10 +406,10 @@ struct PanelView: View {
 
     private var truncationBanner: some View {
         Text("Selection was truncated to \(PanelEngine.maxCapturedLength) characters")
-            .font(.system(size: 11))
-            .foregroundStyle(.secondary)
-            .padding(.horizontal, 12)
-            .padding(.bottom, 8)
+            .font(BeruType.caption)
+            .foregroundStyle(BeruColor.textSecondary)
+            .padding(.horizontal, BeruSpace.sm)
+            .padding(.bottom, BeruSpace.xs)
             .frame(maxWidth: .infinity, alignment: .leading)
     }
 
@@ -429,11 +423,11 @@ struct PanelView: View {
 
     private func noticeLine(_ text: String) -> some View {
         Text(text)
-            .font(.system(size: 11))
-            .foregroundStyle(.secondary)
+            .font(BeruType.caption)
+            .foregroundStyle(BeruColor.textSecondary)
             .fixedSize(horizontal: false, vertical: true)
-            .padding(.horizontal, 16)
-            .padding(.top, 6)
+            .padding(.horizontal, BeruSpace.md)
+            .padding(.top, BeruSpace.xxs)
             .frame(maxWidth: .infinity, alignment: .leading)
             .contributesPanelHeight()
     }
@@ -456,37 +450,35 @@ struct PanelView: View {
         let actionID = appState.selectedActionID
         let fallbacks = SettingsStore.shared.fallbackProviders
         let showConnectCTA = appState.errorNeedsModelSetup.contains(actionID)
-        return VStack(spacing: 10) {
+        return VStack(spacing: BeruSpace.sm) {
             Text(message)
-                .font(.system(size: 13))
-                .foregroundStyle(.secondary)
+                .font(BeruType.body)
+                .foregroundStyle(BeruColor.textSecondary)
                 .multilineTextAlignment(.center)
-            HStack(spacing: 8) {
-                Button("Retry") { engine.retry(actionID: actionID) }
-                    .controlSize(.small)
+            HStack(spacing: BeruSpace.xs) {
+                BeruButton(title: "Retry", size: .compact) {
+                    engine.retry(actionID: actionID)
+                }
 
                 // Connect to model: 404 / unknown model — open Models so the
                 // user can install or pick one instead of retrying blindly.
                 if showConnectCTA {
-                    Button("Connect to model") {
+                    BeruButton(title: "Connect to model", variant: .primary, size: .compact) {
                         engine.requestProviderSetup(preferLocal: true)
                     }
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.small)
                 }
 
                 // If another provider is configured, offer it here so a failed
                 // request doesn't dead-end the user into opening Settings.
                 ForEach(fallbacks, id: \.self) { kind in
-                    Button(fallbackLabel(for: kind)) {
+                    BeruButton(title: fallbackLabel(for: kind), size: .compact) {
                         engine.retryWithProvider(kind, actionID: actionID)
                     }
-                    .controlSize(.small)
                 }
             }
         }
         .frame(maxWidth: .infinity)
-        .padding(20)
+        .padding(BeruSpace.lg)
         // The retry row can wrap onto a second line once a fallback provider
         // and Connect to model are both present, so the window has to be told.
         .contributesPanelHeight()
@@ -527,7 +519,7 @@ struct PanelView: View {
     }
 
     private var footer: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: BeruSpace.xs) {
             if let savings = appState.savings[appState.selectedActionID] {
                 SavingsPill(savings: savings)
                     .transition(.opacity)
@@ -535,8 +527,8 @@ struct PanelView: View {
 
             if let provenance = contextProvenance {
                 Text(provenance)
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(.secondary)
+                    .font(BeruType.captionMedium)
+                    .foregroundStyle(BeruColor.textSecondary)
                     .lineLimit(1)
                     .help("Local context applied to this result")
             }
@@ -544,39 +536,37 @@ struct PanelView: View {
 
             if appState.copiedFeedback {
                 Text("Copied")
-                    .font(.system(size: 12))
-                    .foregroundStyle(.secondary)
+                    .font(BeruType.footnote)
+                    .foregroundStyle(BeruColor.textSecondary)
                     .transition(.opacity)
             }
 
             if appState.pinnedFeedback {
                 Text("Pinned")
-                    .font(.system(size: 12))
-                    .foregroundStyle(.secondary)
+                    .font(BeruType.footnote)
+                    .foregroundStyle(BeruColor.textSecondary)
                     .transition(.opacity)
             }
 
-            Button(appState.vaultNoteID == nil ? "Replace" : "Apply") { performReplace() }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.small)
+            BeruButton(
+                title: appState.vaultNoteID == nil ? "Replace" : "Apply",
+                variant: .primary,
+                size: .compact
+            ) { performReplace() }
                 .help(
                     appState.vaultNoteID == nil
                         ? "Replace the selection (Cmd-Return)"
                         : "Write this result back into the vault note (Cmd-Return)"
                 )
 
-            Button("Copy") { performCopy() }
-                .buttonStyle(.bordered)
-                .controlSize(.small)
+            BeruButton(title: "Copy", size: .compact) { performCopy() }
 
-            Button("Pin") { performPin() }
-                .buttonStyle(.bordered)
-                .controlSize(.small)
+            BeruButton(title: "Pin", size: .compact) { performPin() }
                 .help("Save this result in the vault")
         }
         .padding(.horizontal, PanelMetrics.moduleInset)
-        .padding(.top, 6)
-        .padding(.bottom, PanelMetrics.composerOverlap + 6)
+        .padding(.top, BeruSpace.xxs)
+        .padding(.bottom, PanelMetrics.composerOverlap + BeruSpace.xxs)
         .frame(minHeight: PanelMetrics.footerMinHeight, alignment: .center)
         .frame(maxWidth: .infinity)
     }
@@ -595,20 +585,20 @@ struct PanelView: View {
     }
 
     private var intentField: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 8) {
+        VStack(alignment: .leading, spacing: BeruSpace.xs) {
+            HStack(spacing: BeruSpace.xs) {
                 BeruIcon(
                     name: appState.isQuickSearch ? "search" : "sparkles",
                     size: 16
                 )
-                .foregroundStyle(.secondary)
+                .foregroundStyle(BeruColor.textSecondary)
                 TextField(composerPlaceholder, text: $appState.describeInstruction)
                     .textFieldStyle(.plain)
-                    .font(.system(size: 13))
+                    .font(BeruType.body)
                     .focused($describeFieldFocused)
                     .onSubmit { submitDescribe() }
             }
-            HStack(spacing: 8) {
+            HStack(spacing: BeruSpace.xs) {
                 if targetPickerVisible {
                     targetMenu
                 } else {
@@ -622,7 +612,7 @@ struct PanelView: View {
                 ) {
                     engine.retry(actionID: appState.selectedActionID)
                 }
-                Spacer(minLength: 8)
+                Spacer(minLength: BeruSpace.xs)
                 DictationButton(onNeedsPermission: { engine.requestDictationPermission() })
                 sendButton
             }
@@ -631,7 +621,7 @@ struct PanelView: View {
         // Scoped here so the composer card's own frame is not part of it.
         .animation(tabAnimation, value: appState.isQuickSearch)
         .padding(.horizontal, PanelMetrics.moduleInset)
-        .padding(.vertical, 8)
+        .padding(.vertical, BeruSpace.xs)
         .frame(minHeight: PanelMetrics.composerMinHeight, alignment: .center)
         .frame(maxWidth: .infinity)
     }
@@ -643,11 +633,11 @@ struct PanelView: View {
         } label: {
             ZStack {
                 Circle()
-                    .fill(canSubmitDescribe ? BrandColors.accentColor : Color.primary.opacity(0.14))
+                    .fill(canSubmitDescribe ? BeruColor.accent : BeruColor.disabledFill)
                 BeruIcon(name: "arrow-up", size: 15, strokeWidth: 2.4)
-                    .foregroundStyle(canSubmitDescribe ? Color.white : Color.secondary)
+                    .foregroundStyle(canSubmitDescribe ? BeruColor.onAccent : BeruColor.textSecondary)
             }
-            .frame(width: 28, height: 28)
+            .frame(width: BeruMetrics.hitTarget, height: BeruMetrics.hitTarget)
         }
         .buttonStyle(.plain)
         .animation(.easeOut(duration: 0.12), value: canSubmitDescribe)
@@ -719,22 +709,22 @@ struct PanelView: View {
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
-            HStack(spacing: 5) {
+            HStack(spacing: BeruSpace.xxs) {
                 BeruIcon(name: icon, size: 12, strokeWidth: 2)
-                    .foregroundStyle(BrandColors.accentColor)
+                    .foregroundStyle(BeruColor.accent)
                 Text(title)
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(.secondary)
+                    .font(BeruType.captionMedium)
+                    .foregroundStyle(BeruColor.textSecondary)
                     .lineLimit(1)
                 BeruIcon(name: "chevron-down", size: 10, strokeWidth: 2)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(BeruColor.textSecondary)
             }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 5)
+            .padding(.horizontal, BeruSpace.xs)
+            .padding(.vertical, BeruSpace.xxs)
             .background {
                 Capsule()
-                    .fill(Color.primary.opacity(0.05))
-                    .overlay(Capsule().strokeBorder(BrandColors.border, lineWidth: 1))
+                    .fill(BeruColor.subtleFill)
+                    .overlay(Capsule().strokeBorder(BeruColor.border, lineWidth: 1))
             }
             .contentShape(Capsule())
         }
@@ -867,11 +857,11 @@ private struct PanelUpdateButton: View {
                     updates.install()
                 }
                 Text(updates.buttonTitle)
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 5)
-                    .background(Capsule().fill(BrandColors.accentColor))
+                    .font(BeruType.captionSemibold)
+                    .foregroundStyle(BeruColor.onAccent)
+                    .padding(.horizontal, BeruSpace.xs)
+                    .padding(.vertical, BeruSpace.xxs)
+                    .background(Capsule().fill(BeruColor.accent))
                     .allowsHitTesting(false)
             }
             .fixedSize()
@@ -895,11 +885,11 @@ private struct PanelIconHitButton: View {
         ZStack {
             DictationPressView(onToggle: { if enabled { action() } })
             BeruIcon(name: icon, size: 16)
-                .foregroundStyle(.primary)
+                .foregroundStyle(BeruColor.textPrimary)
                 .opacity(enabled ? 1 : 0.35)
                 .allowsHitTesting(false)
         }
-        .frame(width: 28, height: 28)
+        .frame(width: BeruMetrics.hitTarget, height: BeruMetrics.hitTarget)
         .contentShape(Rectangle())
         .help(help)
         .accessibilityLabel(help)

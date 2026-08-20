@@ -14,10 +14,10 @@ struct ResultView: View {
                     .frame(maxWidth: .infinity, minHeight: PanelMetrics.resultPlaceholderHeight)
                     .contributesPanelHeight()
             } else if state == .thinking {
-                VStack(spacing: 8) {
+                VStack(spacing: BeruSpace.xs) {
                     Text("Thinking…")
-                        .font(.system(size: 11))
-                        .foregroundStyle(.secondary)
+                        .font(BeruType.caption)
+                        .foregroundStyle(BeruColor.textSecondary)
                 }
                 .frame(
                     maxWidth: .infinity,
@@ -31,8 +31,8 @@ struct ResultView: View {
                 streamingText(text, isDone: true)
             } else if case .error(let message) = state {
                 Text(message)
-                    .font(.system(size: 13))
-                    .foregroundStyle(.secondary)
+                    .font(BeruType.body)
+                    .foregroundStyle(BeruColor.textSecondary)
                     .contributesPanelHeight()
             }
         }
@@ -43,12 +43,12 @@ struct ResultView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 Text(isDone ? text : text)
-                    .font(.system(size: 13))
+                    .font(BeruType.body)
                     .textSelection(.enabled)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 16)
+            .padding(.horizontal, BeruSpace.md)
+            .padding(.vertical, BeruSpace.md)
             // Reported from inside the scroll view: this is the text's natural
             // height, which is what the window needs in order to show it all.
             .contributesPanelHeight()

@@ -52,6 +52,12 @@ enum BeruColor {
     static var selectedRow: Color { Color(nsColor: .unemphasizedSelectedContentBackgroundColor) }
     static var badge: Color { Color(nsColor: .unemphasizedSelectedContentBackgroundColor) }
     static var hoverFill: Color { Color(nsColor: .quaternaryLabelColor) }
+    /// A filled control that is currently unavailable, such as the panel's send
+    /// button before an instruction is typed.
+    static let disabledFill = Color.primary.opacity(0.14)
+    /// Barely-there fill that separates a control from the card behind it
+    /// without reading as a button, used by the composer's picker pills.
+    static let subtleFill = Color.primary.opacity(0.05)
     static var positive: Color { Color(nsColor: .systemGreen) }
     static var destructive: Color { Color(nsColor: .systemRed) }
 
@@ -69,6 +75,17 @@ enum BeruColor {
         static let canvas = BrandColors.darkCanvas
         static let surface = BrandColors.darkSurface
         static let border = BrandColors.darkBorder
+    }
+
+    /// Contrast-tuned status colors for small text sitting on the panel's own
+    /// surface. Hand-picked per appearance rather than using system green and
+    /// orange, whose values are bright enough that 11pt text over a light card
+    /// falls well short of a readable contrast ratio.
+    enum Status {
+        static let leanerLight = Color(red: 0.07, green: 0.42, blue: 0.18)
+        static let leanerDark = Color(red: 0.44, green: 0.86, blue: 0.54)
+        static let longerLight = Color(red: 0.56, green: 0.32, blue: 0.02)
+        static let longerDark = Color(red: 1.00, green: 0.74, blue: 0.38)
     }
 
     // MARK: - Elevation

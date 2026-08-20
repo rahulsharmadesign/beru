@@ -14,20 +14,20 @@ private struct GlassChipModifier: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .padding(.horizontal, 9)
-            .padding(.vertical, 7)
+            .padding(.horizontal, BeruSpace.xs)
+            .padding(.vertical, BeruSpace.xs)
             .background {
                 Capsule().fill(
                     selected
                         ? Color.clear
-                        : colorScheme == .dark ? BrandColors.darkSurface : BrandColors.lightSurface
+                        : colorScheme == .dark ? BeruColor.Dark.surface : BeruColor.Light.surface
                 )
             }
-            .foregroundStyle(selected ? PrimaryColor.selected.selectedForeground : Color.primary)
+            .foregroundStyle(selected ? PrimaryColor.selected.selectedForeground : BeruColor.textPrimary)
             .overlay {
                 if !selected {
                     Capsule().strokeBorder(
-                        colorScheme == .dark ? BrandColors.darkBorder : BrandColors.lightBorder,
+                        colorScheme == .dark ? BeruColor.Dark.border : BeruColor.Light.border,
                         lineWidth: 0.75
                     )
                 }
