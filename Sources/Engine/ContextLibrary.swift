@@ -4,6 +4,14 @@ import Observation
 // Reusable context — rules, playbooks, workspaces and glossary — that the
 // prompt chain layers onto a request. Shared a file with the unrelated
 // markdown profile registry purely because both are prompt inputs.
+//
+// Deliberately seeded-only: this is fully persisted and does reach the prompt,
+// but nothing in the app can edit it, so in practice only the seeded defaults
+// ever apply. Editors are a feature, not a refactor, and shipping half of one
+// is worse than shipping none — a rule the user cannot see or turn off silently
+// shapes every result. Kept because the seeds are load-bearing and the prompt
+// chain is built around the layer. Removing it is the alternative if editors
+// never arrive.
 
 struct ContextRule: Identifiable, Codable, Equatable, Sendable {
     enum Scope: String, Codable, CaseIterable, Sendable { case global, action, target }

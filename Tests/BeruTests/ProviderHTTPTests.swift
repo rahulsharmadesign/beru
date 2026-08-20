@@ -41,4 +41,18 @@ final class ProviderHTTPTests: XCTestCase {
         XCTAssertEqual(RecommendedOllamaModel.all.first?.title, "Gemma 3 1B")
         XCTAssertTrue(RecommendedOllamaModel.all.contains(where: { $0.name == "qwen2.5:7b" }))
     }
+
+    /// The install list used to label one model "Default" while the store
+    /// shipped another. Exactly one entry may claim it, and it must be the id
+    /// the store actually defaults to.
+    func testExactlyOneCatalogEntryIsTheShippedDefault() {
+        let defaults = RecommendedOllamaModel.all.filter(\.isDefault)
+        XCTAssertEqual(defaults.count, 1)
+        XCTAssertEqual(defaults.first?.name, RecommendedOllamaModel.defaultID)
+        XCTAssertTrue(defaults.first?.caption.contains("Default") == true)
+        XCTAssertFalse(
+            RecommendedOllamaModel.all.contains { !$0.isDefault && $0.note.contains("Default") },
+            "Default is derived from defaultID; do not type it into a note"
+        )
+    }
 }

@@ -10,7 +10,18 @@ struct RecommendedOllamaModel: Identifiable, Hashable {
     let size: String
     let note: String
 
-    var caption: String { "\(size) · \(note)" }
+    var isDefault: Bool { name == Self.defaultID }
+
+    /// "Default" is derived, never typed into `note`. It used to be, on the
+    /// wrong entry, so the install list advertised one model as the default
+    /// while the setting shipped another.
+    var caption: String {
+        isDefault ? "\(size) · Default. \(note)" : "\(size) · \(note)"
+    }
+
+    /// The shipped default, in one place. SettingsStore hardcoded this id twice
+    /// and OllamaPullService a third time.
+    static let defaultID = "qwen2.5:7b"
 
     /// Gemma first so the lightweight option from the Tip is visible without scrolling.
     static let all: [RecommendedOllamaModel] = [
@@ -24,13 +35,13 @@ struct RecommendedOllamaModel: Identifiable, Hashable {
             name: "qwen3:8b",
             title: "Qwen 3 8B",
             size: "~5 GB",
-            note: "Reasoning suppressed automatically."
+            note: "Strongest of the three. Reasoning suppressed automatically."
         ),
         RecommendedOllamaModel(
             name: "qwen2.5:7b",
             title: "Qwen 2.5 7B",
             size: "~4.7 GB",
-            note: "Default. No reasoning pass; faster first token."
+            note: "No reasoning pass; faster first token."
         )
     ]
 }

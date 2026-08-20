@@ -126,11 +126,13 @@ final class SettingsStore {
 
         activeProvider = defaults.string(forKey: Keys.activeProvider).flatMap(ProviderKind.init(rawValue:)) ?? .ollama
         ollamaBaseURL = defaults.string(forKey: Keys.ollamaBaseURL) ?? "http://localhost:11434/v1"
-        ollamaEnhanceModel = defaults.string(forKey: Keys.ollamaEnhanceModel) ?? "qwen2.5:7b"
+        ollamaEnhanceModel = defaults.string(forKey: Keys.ollamaEnhanceModel)
+            ?? RecommendedOllamaModel.defaultID
         // Same model for both roles by default: two different models make
         // Ollama swap weights in and out when the user switches tabs, which
         // costs seconds; one resident model serves both instantly.
-        ollamaGrammarModel = defaults.string(forKey: Keys.ollamaGrammarModel) ?? "qwen2.5:7b"
+        ollamaGrammarModel = defaults.string(forKey: Keys.ollamaGrammarModel)
+            ?? RecommendedOllamaModel.defaultID
         customBaseURL = defaults.string(forKey: Keys.customBaseURL) ?? ""
         var enhanceModel = defaults.string(forKey: Keys.customEnhanceModel) ?? ""
         var grammarModel = defaults.string(forKey: Keys.customGrammarModel) ?? ""

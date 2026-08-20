@@ -7,8 +7,6 @@ import Observation
 final class OllamaPullService {
     static let shared = OllamaPullService()
 
-    private static let defaultOllamaModel = "qwen2.5:7b"
-
     private(set) var pulling: String?
     private(set) var progress: OllamaAdmin.PullProgress?
     private(set) var error: String?
@@ -87,10 +85,10 @@ final class OllamaPullService {
     /// installed so the widget can use it without a second trip to Settings.
     private func applyModelIfDefaults(_ name: String) {
         let settings = SettingsStore.shared
-        if settings.ollamaEnhanceModel == Self.defaultOllamaModel {
+        if settings.ollamaEnhanceModel == RecommendedOllamaModel.defaultID {
             settings.ollamaEnhanceModel = name
         }
-        if settings.ollamaGrammarModel == Self.defaultOllamaModel {
+        if settings.ollamaGrammarModel == RecommendedOllamaModel.defaultID {
             settings.ollamaGrammarModel = name
         }
     }
