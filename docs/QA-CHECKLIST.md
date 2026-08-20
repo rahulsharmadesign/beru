@@ -41,9 +41,11 @@ Open Settings and visit every sidebar route twice, in this order:
 ## Session context (when touched)
 
 - [ ] Enhance twice in the same app: the second result builds on the first
-- [ ] Indicator chip shows the turn count and clears on demand
-- [ ] Switch to a different app: chip resets
-- [ ] Toggle the setting off: no context is used
+- [ ] Chip reads "Using 1 prior turn", then "Using 2 prior turns"
+- [ ] Click the chip: it disappears and the next result ignores history
+- [ ] Switch to a different app and invoke: no chip
+- [ ] Grammar shows no chip even with turns recorded
+- [ ] Toggle "Remember recent turns" off in General: chip gone immediately
 
 ## Accent and appearance
 

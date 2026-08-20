@@ -26,6 +26,12 @@ Selected text, instructions, and playbook context are sent to the LLM provider y
 - Cloud providers receive whatever you selected. Do not run Beru on secrets you would not paste into that provider.
 - Custom base URLs must be `http://` or `https://`. `file:`, `unix:`, and other schemes are rejected.
 
+### Session context
+
+"Remember recent turns" (General settings, **on by default**) lets Enhance, Describe and Search build on your last three requests in the same app. The turns are held in memory only and are **never written to disk at any setting** — independent of usage recording below. They are keyed by the host app's bundle id, cleared when you switch apps, and expire after 30 minutes idle; the panel shows a "Using N prior turns" chip whenever they apply, and clicking it forgets them immediately. They die with the process.
+
+Because a turn's truncated input and output are re-sent as part of the next request's system prompt, a cloud provider sees them again on each follow-up in that app. Turn the setting off if that matters for what you are working on.
+
 ### Local history and vault
 
 Usage recording is **off by default**. When enabled, full input and output are written to:

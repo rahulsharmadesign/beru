@@ -114,6 +114,7 @@ extension PanelView {
                 .foregroundStyle(BeruColor.textSecondary)
                 .lineLimit(1)
             Spacer(minLength: BeruSpace.xs)
+            sessionContextChip
             if appState.clipboardText != nil {
                 Button {
                     appState.includeClipboard.toggle()
@@ -128,6 +129,36 @@ extension PanelView {
                       : "Include clipboard as reference")
             }
         }
+    }
+
+    /// Says when prior turns are shaping this request, and lets you drop them.
+    ///
+    /// Context that silently changes the output is the kind that makes a tool
+    /// feel unpredictable, so this is visible whenever it applies rather than
+    /// hidden in settings — and clicking it clears the thread, which is the
+    /// thing you want the instant a result looks contaminated.
+    @ViewBuilder
+    var sessionContextChip: some View {
+        let turns = priorTurnCount
+        if turns > 0 {
+            Button {
+                thread.clear()
+            } label: {
+                Text(turns == 1 ? "Using 1 prior turn" : "Using \(turns) prior turns")
+                    .font(BeruType.captionMedium)
+                    .foregroundStyle(BeruColor.textSecondary)
+                    .lineLimit(1)
+            }
+            .buttonStyle(.plain)
+            .help("This request can build on your last \(turns) in this app. Click to forget them.")
+            .accessibilityLabel("Using \(turns) prior turns. Activate to clear.")
+        }
+    }
+
+    var priorTurnCount: Int {
+        guard settings.sessionContextEnabled,
+              Prompts.threadApplies(actionID: appState.selectedActionID) else { return 0 }
+        return thread.turns(forBundleID: appState.hostBundleID).count
     }
 
     var contextSummary: String {

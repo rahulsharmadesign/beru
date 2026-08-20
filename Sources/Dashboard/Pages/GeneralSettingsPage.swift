@@ -93,6 +93,21 @@ struct GeneralSettingsTab: View {
                         accessibilityLabel: "Explain what changed"
                     )
                 }
+                SettingsRow(
+                    title: "Remember recent turns",
+                    caption: """
+                    Lets Enhance, Describe and Search build on your last \
+                    \(SessionThread.maxTurns) requests in the same app, so a follow-up like \
+                    "shorter" has something to refer to. Kept in memory only, never written \
+                    to disk, and forgotten when you switch apps or after \
+                    \(Int(SessionThread.idleTimeout / 60)) minutes idle.
+                    """
+                ) {
+                    SettingsSwitch(
+                        isOn: $settings.sessionContextEnabled,
+                        accessibilityLabel: "Remember recent turns"
+                    )
+                }
             }
         }
     }

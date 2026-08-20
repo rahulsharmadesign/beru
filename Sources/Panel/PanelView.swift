@@ -18,6 +18,7 @@ struct PanelView: View {
     @Bindable var a11y = AccessibilityPreferences.shared
     @Bindable var settings = SettingsStore.shared
     @Bindable var appearance = AppearanceObserver.shared
+    @Bindable var thread = SessionThread.shared
 
     init(appState: AppState, engine: PanelEngine, onHeightChange: @escaping (CGFloat) -> Void = { _ in }) {
         self.appState = appState
