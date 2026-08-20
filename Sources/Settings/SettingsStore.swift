@@ -8,7 +8,9 @@ import Observation
 final class SettingsStore {
     static let shared = SettingsStore()
 
-    private let defaults = UserDefaults.standard
+    /// Injectable so the defaults and migrations below can be tested against a
+    /// scratch domain. The app only ever uses `shared`, on `.standard`.
+    private let defaults: UserDefaults
 
     var activeProvider: ProviderKind {
         didSet { defaults.set(activeProvider.rawValue, forKey: Keys.activeProvider) }
@@ -128,7 +130,8 @@ final class SettingsStore {
         static let hasDismissedSettingsTip = "hasDismissedSettingsTip"
     }
 
-    private init() {
+    init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
         let hasLaunchedBefore = defaults.bool(forKey: Keys.hasLaunchedBefore)
         if !hasLaunchedBefore {
             // Dev default: zero-config free testing against local Ollama.
