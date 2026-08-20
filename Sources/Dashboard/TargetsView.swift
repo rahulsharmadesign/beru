@@ -2,7 +2,7 @@ import SwiftUI
 
 /// Targets — list + inspector.
 struct TargetsView: View {
-    @State private var registry = TargetRegistry.shared
+    @Bindable private var registry = TargetRegistry.shared
     @State private var selection: String?
     @State private var operationError: String?
     @State private var query = ""

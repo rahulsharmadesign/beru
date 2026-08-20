@@ -8,7 +8,7 @@ import SwiftUI
 
 struct PermissionsSettingsTab: View {
     @State private var isTrusted = Permissions.isAccessibilityTrusted()
-    @State private var dictation = DictationService.shared
+    @Bindable private var dictation = DictationService.shared
 
     var body: some View {
         SettingsPage(title: "Permissions", subtitle: DashboardRoute.permissions.pageSubtitle) {

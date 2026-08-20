@@ -2,7 +2,7 @@ import SwiftUI
 
 /// Actions — list + inspector.
 struct ActionsView: View {
-    @State private var registry = ActionRegistry.shared
+    @Bindable private var registry = ActionRegistry.shared
     @State private var selection: String?
     @State private var operationError: String?
     @State private var query = ""

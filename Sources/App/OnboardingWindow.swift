@@ -109,15 +109,21 @@ struct GetStartedView: View {
 
     @State private var step: GetStartedStep = .welcome
     @State private var isTrusted = Permissions.isAccessibilityTrusted()
-    @State private var dictation = DictationService.shared
-    private var a11y = AccessibilityPreferences.shared
+    @Bindable private var dictation = DictationService.shared
+    /// Was a plain stored property, which reads the current value but never
+    /// subscribes, so a preference changed mid-onboarding went unnoticed.
+    @Bindable private var a11y = AccessibilityPreferences.shared
+    @Bindable private var appearance = AppearanceObserver.shared
 
     init(controller: OnboardingWindowController?) {
         self.controller = controller
     }
 
     var body: some View {
-        let _ = AppearanceObserver.shared.signature
+        // Observation only invalidates on values read while body runs, and
+        // nothing in this tree reads the system appearance. This read is the
+        // subscription that repaints AppKit-backed surfaces on a light/dark switch.
+        let _ = appearance.signature
 
         VStack(spacing: 0) {
             Group {

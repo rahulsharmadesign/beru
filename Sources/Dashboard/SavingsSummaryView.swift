@@ -9,7 +9,7 @@ struct SavingsSummaryView: View {
 
     var style: Style = .card
 
-    @State private var savings = SavingsStore.shared
+    @Bindable private var savings = SavingsStore.shared
     @State private var showResetConfirmation = false
 
     var body: some View {

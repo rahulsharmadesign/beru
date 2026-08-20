@@ -30,14 +30,14 @@ struct PanelView: View {
         // Chips live inside a chrome module with real inset so they never kiss the
         // rounded window edge (that was the "broken top" look).
         //
-        // Observation only invalidates on values read while body runs. The
-        // accent and the active provider are read further down by .tint and the
-        // provider pill, but nothing in the tree reads the system appearance,
-        // and the panel paints AppKit-backed surfaces that must follow it. This
-        // read is the subscription, so a light/dark switch repaints the panel.
-        _ = appearance.signature
+        // Observation only invalidates on values read while body runs. The accent
+        // and the active provider are read further down by .tint and the provider
+        // pill, but nothing in this tree reads the system appearance, and the
+        // panel paints AppKit-backed surfaces that must follow it. This read is
+        // the subscription that repaints on a light/dark switch.
+        let _ = appearance.signature
 
-        return VStack(spacing: 0) {
+        VStack(spacing: 0) {
             closeStrip
                 .contributesPanelHeight()
             VStack(spacing: PanelMetrics.moduleSpacing) {

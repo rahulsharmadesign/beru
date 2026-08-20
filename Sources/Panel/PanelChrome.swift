@@ -6,7 +6,7 @@ import SwiftUI
 
 /// Solid Update pill, left of the close disc. Hidden unless a newer release exists.
 struct PanelUpdateButton: View {
-    @State var updates = AppUpdateService.shared
+    @Bindable var updates = AppUpdateService.shared
 
     var body: some View {
         if updates.showsUpdateButton {

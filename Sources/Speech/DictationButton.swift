@@ -7,7 +7,7 @@ import SwiftUI
 /// An `NSView` owns the click. A SwiftUI `Button` on this panel is stolen by
 /// the window-drag hit test, so the mic never started recording.
 struct DictationButton: View {
-    @State private var dictation = DictationService.shared
+    @Bindable private var dictation = DictationService.shared
 
     /// Fallback when permission is denied or dictation cannot start: open
     /// Settings → Permissions so the user can fix it.

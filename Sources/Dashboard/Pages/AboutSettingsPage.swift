@@ -16,7 +16,7 @@ enum BeruAbout {
 }
 
 struct AboutSettingsTab: View {
-    @State private var updates = AppUpdateService.shared
+    @Bindable private var updates = AppUpdateService.shared
 
     private var version: String {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "—"

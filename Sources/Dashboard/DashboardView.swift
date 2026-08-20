@@ -4,14 +4,18 @@ import SwiftUI
 struct DashboardView: View {
     @Bindable var model: DashboardModel
     @State private var query = ""
-    @State private var updates = AppUpdateService.shared
+    @Bindable private var updates = AppUpdateService.shared
+    @Bindable private var appearance = AppearanceObserver.shared
 
     init(model: DashboardModel) {
         _model = Bindable(model)
     }
 
     var body: some View {
-        let _ = AppearanceObserver.shared.signature
+        // Observation only invalidates on values read while body runs, and
+        // nothing in this tree reads the system appearance. This read is the
+        // subscription that repaints AppKit-backed surfaces on a light/dark switch.
+        let _ = appearance.signature
         HStack(spacing: 0) {
             sidebar
                 .frame(width: SettingsChrome.sidebarWidth)
@@ -227,7 +231,7 @@ private struct SettingsTipCard: View {
 }
 
 private struct SidebarUpdateChip: View {
-    @State private var updates = AppUpdateService.shared
+    @Bindable private var updates = AppUpdateService.shared
 
     var body: some View {
         BeruButton(

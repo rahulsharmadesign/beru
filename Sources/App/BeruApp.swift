@@ -29,6 +29,7 @@ struct BeruApp: App {
 struct MenuBarContent: View {
     let coordinator: AppCoordinator
     @Bindable private var settings = SettingsStore.shared
+    @Bindable private var appearance = AppearanceObserver.shared
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.dismiss) private var dismiss
 
@@ -36,7 +37,10 @@ struct MenuBarContent: View {
     private let rowRadius = BeruRadius.md
 
     var body: some View {
-        let _ = AppearanceObserver.shared.signature
+        // Observation only invalidates on values read while body runs, and
+        // nothing in this tree reads the system appearance. This read is the
+        // subscription that repaints AppKit-backed surfaces on a light/dark switch.
+        let _ = appearance.signature
         let _ = settings.primaryColorID
         VStack(spacing: BeruSpace.xs) {
             header
