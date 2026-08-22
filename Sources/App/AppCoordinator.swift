@@ -61,6 +61,9 @@ final class AppCoordinator {
             }
             self?.showDashboard(route: .models)
         }
+        engine.onOpenSettings = { [weak self] in
+            self?.showDashboard(route: .general)
+        }
         DictationService.shared.onText = { [weak self] text in
             self?.applyDictated(text)
         }
@@ -227,17 +230,19 @@ final class AppCoordinator {
                 )
             }
         }
-        // Empty hotkey → AI Search. Text selected in Cursor / Claude / ChatGPT
-        // → Enhance with that target. Anything else → Settings default skill.
+        // Empty invoke or no integrated host → AI Search. A seeded tool (Cursor,
+        // Claude, ChatGPT, …) lands on the default skill so Grammar and Enhance
+        // Prompt both stay in the chip row instead of jumping to Enhance alone.
         // Unconfigured installs stay on AI Search so setup copy is visible.
         let needsSetup = !SettingsStore.shared.isConfigured(SettingsStore.shared.activeProvider)
-        if openOnSearch || needsSetup {
-            appState.selectAction(EnhancementAction.searchID)
-        } else if host.flatMap({ TargetProfile.seededID(forBundleID: $0.bundleID, name: $0.name) }) != nil {
-            appState.selectAction(EnhancementAction.enhanceID)
-        } else {
-            appState.selectAction(SettingsStore.shared.defaultActionID)
-        }
+        appState.selectAction(
+            Self.initialActionID(
+                openOnSearch: openOnSearch,
+                needsSetup: needsSetup,
+                host: host,
+                defaultActionID: SettingsStore.shared.defaultActionID
+            )
+        )
         panelController.show(at: anchor, appState: appState, engine: engine)
         // The dictate key listens only while the panel is up.
         pushToTalk.arm()
@@ -246,6 +251,30 @@ final class AppCoordinator {
         if hasCapture, appState.selectedActionID != EnhancementAction.searchID {
             engine.startIfNeeded(actionID: appState.selectedActionID)
         }
+    }
+
+    /// Chip to select when the invoke hotkey fires.
+    ///
+    /// Empty invoke, no host, or a host that is not a seeded tool → AI Search.
+    /// Cursor / Claude / ChatGPT / Kimi → the Settings default skill (shipped:
+    /// Grammar), so Grammar and Enhance Prompt are both in the tab row instead
+    /// of opening on Enhance Prompt alone.
+    static func initialActionID(
+        openOnSearch: Bool,
+        needsSetup: Bool,
+        host: HostApp.Info?,
+        defaultActionID: String
+    ) -> String {
+        if openOnSearch || needsSetup {
+            return EnhancementAction.searchID
+        }
+        let isIntegratedTool = host.flatMap {
+            TargetProfile.seededID(forBundleID: $0.bundleID, name: $0.name)
+        } != nil
+        if isIntegratedTool {
+            return defaultActionID
+        }
+        return EnhancementAction.searchID
     }
 
     /// Pasteboard snapshot for the context chip. Only kept when it differs from

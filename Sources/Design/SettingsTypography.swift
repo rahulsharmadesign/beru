@@ -20,6 +20,10 @@ enum BeruSans {
     static let sidebarHeader = BeruType.sidebarHeader
     static let control = BeruType.control
     static let search = BeruType.search
+    static let resultBody = BeruType.resultBody
+    static let heading1 = BeruType.heading1
+    static let heading2 = BeruType.heading2
+    static let heading3 = BeruType.heading3
     static let footnote = BeruType.footnote
     static let mono = BeruType.mono
 }

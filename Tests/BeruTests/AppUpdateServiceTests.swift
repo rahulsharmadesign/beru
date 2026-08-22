@@ -14,6 +14,18 @@ final class AppUpdateServiceTests: XCTestCase {
         XCTAssertFalse(AppUpdateFeed.isNewer("1.1.0", than: "1.1.1"))
     }
 
+    func testLocalDevelopmentBuildNeverOffersUpdate() {
+        XCTAssertFalse(
+            AppUpdateFeed.shouldOfferUpdate(latest: "1.1.8", current: "1.1.7", isLocalDevelopmentBuild: true)
+        )
+        XCTAssertTrue(
+            AppUpdateFeed.shouldOfferUpdate(latest: "1.1.8", current: "1.1.7", isLocalDevelopmentBuild: false)
+        )
+        XCTAssertFalse(
+            AppUpdateFeed.shouldOfferUpdate(latest: "1.1.8", current: "1.1.8", isLocalDevelopmentBuild: false)
+        )
+    }
+
     func testPrefersMatchingBeruDMG() {
         let assets = ["notes.txt", "Beru-1.1.2.dmg", "Beru-1.1.2.zip"]
         XCTAssertEqual(AppUpdateFeed.dmgAsset(named: assets, preferring: "1.1.2"), "Beru-1.1.2.dmg")

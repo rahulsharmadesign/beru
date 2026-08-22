@@ -112,6 +112,7 @@ struct PanelView: View {
         HStack(spacing: BeruSpace.xs) {
             Spacer(minLength: 0)
             PanelUpdateButton()
+            PanelSettingsLink { engine.openSettings() }
             PanelCloseDot { engine.cancel() }
         }
         .padding(.trailing, BeruSpace.xxs)

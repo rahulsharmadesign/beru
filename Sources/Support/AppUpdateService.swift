@@ -1,6 +1,7 @@
 import AppKit
 import Foundation
 import Observation
+import Security
 
 /// GitHub Releases feed used to notice a newer Beru DMG.
 enum AppUpdateFeed {
@@ -24,6 +25,13 @@ enum AppUpdateFeed {
 
     static func isNewer(_ candidate: String, than current: String) -> Bool {
         compare(candidate, current) == .orderedDescending
+    }
+
+    /// Local `install.sh` builds keep a marketing version that can sit behind
+    /// GitHub. Offering a DMG there would replace the working tree with the
+    /// last release.
+    static func shouldOfferUpdate(latest: String, current: String, isLocalDevelopmentBuild: Bool) -> Bool {
+        !isLocalDevelopmentBuild && isNewer(latest, than: current)
     }
 
     static func dmgAsset(named assets: [String], preferring version: String) -> String? {
@@ -103,6 +111,10 @@ final class AppUpdateService {
 
     func check() {
         guard !isBusy else { return }
+        guard !AppSigning.isLocalDevelopmentBuild else {
+            status = .idle
+            return
+        }
         checkTask?.cancel()
         checkTask = Task { await performCheck() }
     }
@@ -132,7 +144,11 @@ final class AppUpdateService {
             let release = try JSONDecoder().decode(GitHubRelease.self, from: data)
             let latest = AppUpdateFeed.version(fromTag: release.tagName)
             let current = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0"
-            guard AppUpdateFeed.isNewer(latest, than: current) else {
+            guard AppUpdateFeed.shouldOfferUpdate(
+                latest: latest,
+                current: current,
+                isLocalDevelopmentBuild: AppSigning.isLocalDevelopmentBuild
+            ) else {
                 status = .idle
                 return
             }
@@ -218,6 +234,33 @@ final class AppUpdateService {
         process.executableURL = URL(fileURLWithPath: "/bin/bash")
         process.arguments = [scriptURL.path]
         try process.run()
+    }
+}
+
+/// Leaf certificate of the running binary. `install.sh` re-signs with
+/// "Beru Local Signing"; GitHub DMGs do not.
+enum AppSigning {
+    static let localCertificateName = "Beru Local Signing"
+
+    static var isLocalDevelopmentBuild: Bool {
+        leafCertificateCommonName == localCertificateName
+    }
+
+    static var leafCertificateCommonName: String? {
+        var staticCode: SecStaticCode?
+        guard SecStaticCodeCreateWithPath(Bundle.main.bundleURL as CFURL, [], &staticCode) == errSecSuccess,
+              let staticCode else { return nil }
+        var info: CFDictionary?
+        guard SecCodeCopySigningInformation(
+            staticCode,
+            SecCSFlags(rawValue: kSecCSSigningInformation),
+            &info
+        ) == errSecSuccess, let info else { return nil }
+        let certificates = (info as NSDictionary)[kSecCodeInfoCertificates] as? [SecCertificate]
+        guard let leaf = certificates?.first else { return nil }
+        var commonName: CFString?
+        guard SecCertificateCopyCommonName(leaf, &commonName) == errSecSuccess else { return nil }
+        return commonName as String?
     }
 }
 

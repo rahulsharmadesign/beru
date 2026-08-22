@@ -31,6 +31,29 @@ struct PanelUpdateButton: View {
     }
 }
 
+/// Gray “Settings” label left of the close disc. AppKit hit target so window-drag
+/// does not swallow the click — same reason as the Update pill.
+struct PanelSettingsLink: View {
+    let action: () -> Void
+    @State private var isHovered = false
+
+    var body: some View {
+        ZStack {
+            DictationPressView(onToggle: action)
+            Text("Settings")
+                .font(BeruType.caption)
+                .foregroundStyle(isHovered ? BeruColor.textPrimary : BeruColor.textSecondary)
+                .padding(.horizontal, BeruSpace.xs)
+                .allowsHitTesting(false)
+        }
+        .fixedSize()
+        .onHover { isHovered = $0 }
+        .help("Settings")
+        .accessibilityLabel("Settings")
+        .accessibilityAddTraits(.isButton)
+    }
+}
+
 /// AppKit click target so the panel's window-drag hit test leaves footer icons
 /// alone — the same reason the mic is an `NSView` instead of a SwiftUI `Button`.
 struct PanelIconHitButton: View {

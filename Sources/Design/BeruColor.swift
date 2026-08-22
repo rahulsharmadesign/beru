@@ -37,6 +37,9 @@ enum BeruColor {
 
     static var textPrimary: Color { Color(nsColor: .labelColor) }
     static var textSecondary: Color { Color(nsColor: .secondaryLabelColor) }
+    /// Markdown links in search answers and vault preview. System link color so
+    /// it stays a distinct hue from `textPrimary` in both appearances.
+    static var link: Color { Color(nsColor: .linkColor) }
 
     // MARK: - Accent
 

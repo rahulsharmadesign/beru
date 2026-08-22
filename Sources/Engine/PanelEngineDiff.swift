@@ -192,8 +192,9 @@ extension PanelEngine {
         return result.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
-    /// Search answers are shown as plain text, so ATX headings (`### Yes`)
-    /// would print as hashes. Strip only the heading markers; keep the words.
+    /// Search answers used to render as plain text, so ATX headings (`### Yes`)
+    /// printed as hashes. The panel now styles those lines as headings; this
+    /// remains for tests and any caller that still needs the stripped form.
     nonisolated static func strippedSearchChrome(_ text: String) -> String {
         let lines = text.components(separatedBy: "\n").map { line -> String in
             let trimmed = line.trimmingCharacters(in: .whitespaces)

@@ -115,9 +115,6 @@ extension PanelEngine {
                     Self.strippedWrapping(body),
                     input: request.capturedText
                 )
-                if request.isQuickSearch {
-                    final = Self.strippedSearchChrome(final)
-                }
                 let totalMs = Self.milliseconds(clock.now - requestStart)
                 let ttfbMs = firstTokenAt.map { Self.milliseconds($0 - requestStart) }
                 engineLogger.notice("stream done for \(request.actionID), length = \(final.count), total = \(totalMs) ms, reasoning chunks discarded = \(reasoningChunks)")

@@ -2,6 +2,9 @@ import SwiftUI
 
 struct ResultView: View {
     let state: ResultState
+    /// AI Search answers render as markdown (headings, bold, links). Other
+    /// actions stay plain so prompt hashes like `# Task` are not restyled.
+    var usesMarkdown: Bool = false
 
     var body: some View {
         Group {
@@ -42,10 +45,14 @@ struct ResultView: View {
     private func streamingText(_ text: String, isDone: Bool = false) -> some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                Text(isDone ? text : text)
-                    .font(BeruType.body)
-                    .textSelection(.enabled)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                if usesMarkdown {
+                    BeruMarkdown(text: text)
+                } else {
+                    Text(isDone ? text : text)
+                        .font(BeruType.resultBody)
+                        .textSelection(.enabled)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
             }
             .padding(.horizontal, BeruSpace.md)
             .padding(.vertical, BeruSpace.md)

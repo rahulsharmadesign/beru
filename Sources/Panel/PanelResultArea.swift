@@ -37,7 +37,7 @@ extension PanelView {
                             ? "No spelling, grammar or punctuation errors found — your text is unchanged"
                             : "The model returned your text unchanged"
                     )
-                    ResultView(state: state)
+                    ResultView(state: state, usesMarkdown: usesSearchMarkdown)
                 }
             } else if case .done(let revised) = state,
                       appState.diffs[appState.selectedActionID] != nil {
@@ -46,7 +46,7 @@ extension PanelView {
                       appState.heavyRewriteNotices.contains(appState.selectedActionID) {
                 VStack(alignment: .leading, spacing: 0) {
                     rewrittenNotice
-                    ResultView(state: state)
+                    ResultView(state: state, usesMarkdown: usesSearchMarkdown)
                 }
             } else if case .error(let message) = state {
                 errorView(message: message)
@@ -56,7 +56,7 @@ extension PanelView {
                         || appState.capturedText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 idlePlaceholder
             } else {
-                ResultView(state: state)
+                ResultView(state: state, usesMarkdown: usesSearchMarkdown)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -65,6 +65,10 @@ extension PanelView {
         // Only the swapped content crossfades. On the enclosing module this
         // also animated the card padding and glass background on every switch.
         .animation(tabAnimation, value: appState.selectedActionID)
+    }
+
+    var usesSearchMarkdown: Bool {
+        appState.selectedActionID == EnhancementAction.searchID
     }
 
     @ViewBuilder

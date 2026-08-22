@@ -33,6 +33,13 @@ final class PanelEngine {
         onRequestProviderSetup?(preferLocal)
     }
 
+    /// Opens Settings → General. The panel stays up so an in-flight run is not killed.
+    var onOpenSettings: (() -> Void)?
+
+    func openSettings() {
+        onOpenSettings?()
+    }
+
     let powerActivity = PowerActivity()
     var lastDescribeInstruction: String?
     /// Regeneration count per action within the current invocation.

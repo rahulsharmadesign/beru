@@ -33,6 +33,14 @@ enum BeruType {
     /// Result text, composer input, error copy.
     static let body = font(13)
     static let bodyMedium = font(13, weight: .medium)
+    /// Long-form result text (AI Search and the diff / vault preview). One step
+    /// above `body`. A +14pt jump would overflow the 420pt panel.
+    static let resultBody = font(14)
+    static let resultBodyBold = font(14, weight: .semibold)
+    /// Markdown heading scale for search answers and vault preview.
+    static let heading1 = font(22, weight: .bold)
+    static let heading2 = font(18, weight: .semibold)
+    static let heading3 = font(16, weight: .semibold)
     /// Row captions and secondary list lines.
     static let footnote = font(12)
     static let footnoteMedium = font(12, weight: .medium)
