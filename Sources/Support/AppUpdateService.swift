@@ -62,6 +62,13 @@ enum AppUpdateFeed {
     }
 }
 
+enum AppUpdateCheckNote: Equatable {
+    case none
+    case upToDate
+    case localBuild
+    case failed
+}
+
 /// Checks GitHub Releases and replaces this app with the latest DMG.
 @MainActor
 @Observable
@@ -82,7 +89,33 @@ final class AppUpdateService {
         }
     }
 
+    static func statusCaption(status: Status, note: AppUpdateCheckNote) -> String {
+        switch status {
+        case .checking:
+            return "Checking GitHub for a newer build…"
+        case .available(let version, _):
+            return "Beru \(version) is ready to install."
+        case .downloading, .installing:
+            return "Downloading the latest DMG…"
+        case .failed(let message):
+            return message
+        case .idle:
+            switch note {
+            case .upToDate:
+                return "You’re on the latest version."
+            case .localBuild:
+                return "This is a local signing build. GitHub updates are skipped so they don’t overwrite it."
+            case .failed:
+                return "Couldn’t reach GitHub. Try again."
+            case .none:
+                return "Check GitHub for a newer DMG."
+            }
+        }
+    }
+
     private(set) var status: Status = .idle
+    /// Survives a return to `.idle` so About can say "you're current" vs "not checked yet".
+    private(set) var lastCheckNote: AppUpdateCheckNote = .none
     private var checkTask: Task<Void, Never>?
     private var periodicTask: Task<Void, Never>?
     /// Menu-bar apps stay launched for days. Re-check so a release published
@@ -116,6 +149,15 @@ final class AppUpdateService {
         return nil
     }
 
+    var statusCaption: String {
+        Self.statusCaption(status: status, note: lastCheckNote)
+    }
+
+    var checkButtonTitle: String {
+        if case .checking = status { return "Checking…" }
+        return "Check for Update"
+    }
+
     private init() {}
 
     /// Starts the launch check and a slow background poll. Safe to call once.
@@ -138,6 +180,7 @@ final class AppUpdateService {
         guard !isBusy else { return }
         guard !AppSigning.isLocalDevelopmentBuild else {
             status = .idle
+            lastCheckNote = .localBuild
             return
         }
         if !force, case .available = status { return }
@@ -170,6 +213,7 @@ final class AppUpdateService {
                 // Keep a known-good Update chip if GitHub blips.
                 if !(preservingAvailable && previous.isAvailable) {
                     status = .idle
+                    lastCheckNote = .failed
                 }
                 return
             }
@@ -182,6 +226,7 @@ final class AppUpdateService {
                 isLocalDevelopmentBuild: AppSigning.isLocalDevelopmentBuild
             ) else {
                 status = .idle
+                lastCheckNote = AppSigning.isLocalDevelopmentBuild ? .localBuild : .upToDate
                 return
             }
             let names = release.assets.map(\.name)
@@ -190,13 +235,16 @@ final class AppUpdateService {
                   AppUpdateFeed.isTrustedDownload(asset.browserDownloadURL) else {
                 if !(preservingAvailable && previous.isAvailable) {
                     status = .idle
+                    lastCheckNote = .failed
                 }
                 return
             }
             status = .available(version: latest, downloadURL: asset.browserDownloadURL)
+            lastCheckNote = .none
         } catch {
             if !Task.isCancelled, !(preservingAvailable && previous.isAvailable) {
                 status = .idle
+                lastCheckNote = .failed
             }
         }
     }

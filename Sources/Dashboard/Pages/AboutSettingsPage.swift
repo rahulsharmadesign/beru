@@ -46,6 +46,30 @@ struct AboutSettingsTab: View {
             }
 
             SettingsSection(
+                title: "Updates",
+                subtitle: "Beru checks GitHub Releases for a newer DMG."
+            ) {
+                SettingsRow(title: "Latest version", caption: updates.statusCaption) {
+                    HStack(spacing: BeruSpace.sm) {
+                        SettingsPillButton(
+                            title: updates.checkButtonTitle,
+                            enabled: !updates.isBusy
+                        ) {
+                            updates.check(force: true)
+                        }
+                        if updates.showsUpdateButton {
+                            SettingsPrimaryButton(
+                                title: updates.buttonTitle,
+                                enabled: !updates.isBusy
+                            ) {
+                                updates.install()
+                            }
+                        }
+                    }
+                }
+            }
+
+            SettingsSection(
                 title: "Privacy",
                 subtitle: "Beru does not phone home. Requests go only to the provider you configure."
             ) {
@@ -98,11 +122,6 @@ struct AboutSettingsTab: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
             Spacer(minLength: 0)
-            if updates.showsUpdateButton {
-                SettingsPrimaryButton(title: updates.buttonTitle, enabled: !updates.isBusy) {
-                    updates.install()
-                }
-            }
         }
         .padding(.bottom, 8)
         .accessibilityElement(children: .combine)

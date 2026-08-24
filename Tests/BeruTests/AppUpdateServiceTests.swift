@@ -54,4 +54,28 @@ final class AppUpdateServiceTests: XCTestCase {
             AppUpdateFeed.isTrustedDownload(URL(string: "https://example.com/Beru.dmg")!)
         )
     }
+
+    func testAboutStatusCaption() {
+        let dummy = URL(string: "https://github.com/rahulsharmadesign/beru/releases/download/v1.1.10/Beru-1.1.10.dmg")!
+        XCTAssertEqual(
+            AppUpdateService.statusCaption(status: .idle, note: .none),
+            "Check GitHub for a newer DMG."
+        )
+        XCTAssertEqual(
+            AppUpdateService.statusCaption(status: .idle, note: .upToDate),
+            "You’re on the latest version."
+        )
+        XCTAssertEqual(
+            AppUpdateService.statusCaption(status: .checking, note: .none),
+            "Checking GitHub for a newer build…"
+        )
+        XCTAssertEqual(
+            AppUpdateService.statusCaption(status: .available(version: "1.1.10", downloadURL: dummy), note: .none),
+            "Beru 1.1.10 is ready to install."
+        )
+        XCTAssertEqual(
+            AppUpdateService.statusCaption(status: .idle, note: .localBuild),
+            "This is a local signing build. GitHub updates are skipped so they don’t overwrite it."
+        )
+    }
 }

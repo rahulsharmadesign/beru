@@ -360,7 +360,7 @@ Host matching (examples): Cursor / VS Code → Cursor; ChatGPT app → ChatGPT; 
 
 ### 10.9 About
 
-This build’s version, MIT, privacy summary, tip (Razorpay), GitHub, update check.
+This build’s version, MIT, privacy summary, tip (Razorpay), GitHub, and a **Check for Update** button that queries GitHub Releases.
 
 ---
 

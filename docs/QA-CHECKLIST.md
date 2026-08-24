@@ -65,7 +65,11 @@ Highlight a message in another app, invoke, then tap **Smart Reply**:
 - [ ] No selection: “No text selected”
 - [ ] Grammar still copy-edits; switching tabs only animates the chip pill
 
-## Before release only
+## About
+
+- [ ] **Check for Update** is always visible (not only after an update is found)
+- [ ] Clicking it reports “latest version” or shows **Update** when a newer DMG exists
+- [ ] Local `install.sh` builds explain that GitHub updates are skipped
 
 - [ ] `./scripts/qa.sh` green
 - [ ] Version bumped in `project.yml` (only when explicitly releasing)
