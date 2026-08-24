@@ -26,6 +26,14 @@ final class AppUpdateServiceTests: XCTestCase {
         )
     }
 
+    func testPatchTenIsNewerThanPatchEight() {
+        // Guards the 1.1.8 → 1.1.10 case that exposed the "no Update chip"
+        // complaint: compare must not treat "10" as less than "8".
+        XCTAssertTrue(AppUpdateFeed.isNewer("1.1.10", than: "1.1.8"))
+        XCTAssertTrue(AppUpdateFeed.isNewer("1.1.9", than: "1.1.8"))
+        XCTAssertFalse(AppUpdateFeed.isNewer("1.1.8", than: "1.1.10"))
+    }
+
     func testPrefersMatchingBeruDMG() {
         let assets = ["notes.txt", "Beru-1.1.2.dmg", "Beru-1.1.2.zip"]
         XCTAssertEqual(AppUpdateFeed.dmgAsset(named: assets, preferring: "1.1.2"), "Beru-1.1.2.dmg")

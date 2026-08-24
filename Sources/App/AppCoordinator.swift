@@ -82,7 +82,7 @@ final class AppCoordinator {
         // immediately instead of paying a cold start.
         warmUpProvider()
         migrateDictateShortcutIfNeeded()
-        AppUpdateService.shared.check()
+        AppUpdateService.shared.start()
     }
 
     /// Fire-and-forget pre-load of the model the next invocation will most
@@ -124,6 +124,9 @@ final class AppCoordinator {
         // idled out by Ollama's keep-alive is loading while we read the
         // selection.
         warmUpProvider()
+        // Hotkey is the natural wake event for a menu-bar app that may have
+        // been running since before the latest release was published.
+        AppUpdateService.shared.check()
 
         Task {
             // Pin the host app's focused element now, before our panel takes

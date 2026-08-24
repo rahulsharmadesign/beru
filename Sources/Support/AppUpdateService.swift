@@ -75,10 +75,19 @@ final class AppUpdateService {
         case downloading
         case installing
         case failed(String)
+
+        var isAvailable: Bool {
+            if case .available = self { return true }
+            return false
+        }
     }
 
     private(set) var status: Status = .idle
     private var checkTask: Task<Void, Never>?
+    private var periodicTask: Task<Void, Never>?
+    /// Menu-bar apps stay launched for days. Re-check so a release published
+    /// after startup still surfaces an Update chip without requiring a relaunch.
+    private static let periodicInterval: Duration = .seconds(6 * 60 * 60)
 
     var showsUpdateButton: Bool {
         switch status {
@@ -109,14 +118,31 @@ final class AppUpdateService {
 
     private init() {}
 
-    func check() {
+    /// Starts the launch check and a slow background poll. Safe to call once.
+    func start() {
+        check()
+        guard periodicTask == nil else { return }
+        periodicTask = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: Self.periodicInterval)
+                guard !Task.isCancelled else { break }
+                await MainActor.run { self?.check() }
+            }
+        }
+    }
+
+    /// Looks for a newer GitHub release. Pass `force` from About so opening
+    /// that page always refreshes, even when an older "available" result is
+    /// already showing.
+    func check(force: Bool = false) {
         guard !isBusy else { return }
         guard !AppSigning.isLocalDevelopmentBuild else {
             status = .idle
             return
         }
+        if !force, case .available = status { return }
         checkTask?.cancel()
-        checkTask = Task { await performCheck() }
+        checkTask = Task { await performCheck(preservingAvailable: !force) }
     }
 
     func install() {
@@ -128,8 +154,11 @@ final class AppUpdateService {
         }
     }
 
-    private func performCheck() async {
-        status = .checking
+    private func performCheck(preservingAvailable: Bool) async {
+        let previous = status
+        if !(preservingAvailable && previous.isAvailable) {
+            status = .checking
+        }
         do {
             var request = URLRequest(url: AppUpdateFeed.latestRelease)
             request.setValue("Beru", forHTTPHeaderField: "User-Agent")
@@ -138,7 +167,10 @@ final class AppUpdateService {
             let (data, response) = try await URLSession.shared.data(for: request)
             if Task.isCancelled { return }
             if let http = response as? HTTPURLResponse, http.statusCode != 200 {
-                status = .idle
+                // Keep a known-good Update chip if GitHub blips.
+                if !(preservingAvailable && previous.isAvailable) {
+                    status = .idle
+                }
                 return
             }
             let release = try JSONDecoder().decode(GitHubRelease.self, from: data)
@@ -156,12 +188,14 @@ final class AppUpdateService {
             guard let dmgName = AppUpdateFeed.dmgAsset(named: names, preferring: latest),
                   let asset = release.assets.first(where: { $0.name == dmgName }),
                   AppUpdateFeed.isTrustedDownload(asset.browserDownloadURL) else {
-                status = .idle
+                if !(preservingAvailable && previous.isAvailable) {
+                    status = .idle
+                }
                 return
             }
             status = .available(version: latest, downloadURL: asset.browserDownloadURL)
         } catch {
-            if !Task.isCancelled {
+            if !Task.isCancelled, !(preservingAvailable && previous.isAvailable) {
                 status = .idle
             }
         }
@@ -173,7 +207,7 @@ final class AppUpdateService {
         case .available(_, let url):
             downloadURL = url
         case .failed:
-            await performCheck()
+            await performCheck(preservingAvailable: false)
             if case .available(_, let url) = status {
                 downloadURL = url
             } else {

@@ -107,5 +107,6 @@ struct AboutSettingsTab: View {
         .padding(.bottom, 8)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Beru, a menu bar utility that refines selected text in any app.")
+        .onAppear { updates.check(force: true) }
     }
 }
