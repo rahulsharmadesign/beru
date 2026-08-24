@@ -49,17 +49,22 @@ final class ActionRegistry {
         refreshShippedVerbPrompts()
     }
 
-    /// Keeps Reply / Summarize / Explain prompts in sync with `Prompts.swift`.
-    /// Those chips are seeded into UserDefaults once; without this, improving
-    /// the prompts in code would never reach existing installs.
+    /// Keeps Reply / Summarize / Explain prompts in sync with `Prompts.swift`,
+    /// and migrates the shipped Reply chip label to Smart Reply without
+    /// overwriting a name the user already changed.
     private func refreshShippedVerbPrompts() {
         var changed = false
         for index in customActions.indices {
             let id = customActions[index].id
-            guard let live = EnhancementAction.liveSystemPrompt(for: id),
-                  customActions[index].systemPrompt != live else { continue }
-            customActions[index].systemPrompt = live
-            changed = true
+            if let live = EnhancementAction.liveSystemPrompt(for: id),
+               customActions[index].systemPrompt != live {
+                customActions[index].systemPrompt = live
+                changed = true
+            }
+            if id == EnhancementAction.replyID, customActions[index].name == "Reply" {
+                customActions[index].name = "Smart Reply"
+                changed = true
+            }
         }
         if changed { persist() }
     }

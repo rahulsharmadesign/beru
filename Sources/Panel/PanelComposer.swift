@@ -62,15 +62,11 @@ extension PanelView {
             }
 
             BeruButton(
-                title: appState.vaultNoteID == nil ? "Replace" : "Apply",
+                title: primaryFooterTitle,
                 variant: .primary,
                 size: .compact
             ) { performReplace() }
-                .help(
-                    appState.vaultNoteID == nil
-                        ? "Replace the selection (Cmd-Return)"
-                        : "Write this result back into the vault note (Cmd-Return)"
-                )
+                .help(primaryFooterHelp)
 
             BeruButton(title: "Copy", size: .compact) { performCopy() }
 
@@ -112,6 +108,9 @@ extension PanelView {
                     .onSubmit { submitDescribe() }
             }
             HStack(spacing: BeruSpace.xs) {
+                if isSmartReply {
+                    toneMenu
+                }
                 if targetPickerVisible {
                     targetMenu
                 } else {
@@ -161,12 +160,25 @@ extension PanelView {
 
     var composerPlaceholder: String {
         if appState.isQuickSearch || appState.selectedActionID == EnhancementAction.searchID {
-            return "Ask a question…"
+            return "Ask anything — no selection needed"
         }
         if appState.capturedText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            return "Or type a question to search…"
+            return "Nothing selected — ask instead"
         }
-        return "Optional instruction for this action…"
+        // A concrete example beats "instruction for this action", which read
+        // as required. Custom actions keep the generic line.
+        switch appState.selectedActionID {
+        case EnhancementAction.grammarID:
+            return "Optional: e.g. \u{201C}keep my tone\u{201D}"
+        case EnhancementAction.enhanceID:
+            return "Optional: e.g. \u{201C}for beginners\u{201D}"
+        case EnhancementAction.replyID:
+            return "Optional: e.g. \u{201C}mention Friday\u{201D}"
+        case EnhancementAction.summarizeID, EnhancementAction.explainID:
+            return "Optional: e.g. \u{201C}in 5 bullets\u{201D}"
+        default:
+            return "Optional instruction for this action…"
+        }
     }
 
     var canSubmitDescribe: Bool {
@@ -303,17 +315,17 @@ extension PanelView {
     }
 
     func performReplace() {
-        guard case .done(let text) = appState.resultState(for: appState.selectedActionID) else { return }
+        guard let text = appState.acceptedText() else { return }
         engine.replace(text: text)
     }
 
     func performCopy() {
-        guard case .done(let text) = appState.resultState(for: appState.selectedActionID) else { return }
+        guard let text = appState.acceptedText() else { return }
         engine.copy(text: text)
     }
 
     func performPin() {
-        guard case .done(let text) = appState.resultState(for: appState.selectedActionID) else { return }
+        guard let text = appState.acceptedText() else { return }
         engine.pin(text: text)
     }
 }

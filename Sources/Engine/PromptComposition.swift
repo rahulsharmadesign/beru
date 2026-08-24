@@ -10,18 +10,20 @@ extension Prompts {
 
     /// Whether the active markdown profile applies to this call.
     ///
-    /// The same rule as `targetApplies`, and for the same reason it exists at
-    /// all. A profile is standing context for *writing a prompt*; sent to
-    /// Grammar it is a rewrite instruction attached to a corrector, which is
-    /// precisely what turned the Grammar button into a condenser when a single
-    /// custom prompt applied to both. Correction has one right answer and must
-    /// not be given a house style to apply.
+    /// Enhance gets it because a profile is standing context for *writing a
+    /// prompt*. Smart Reply gets it because the same notes are how you write —
+    /// the voice of the six replies. Grammar must never receive it: a house
+    /// style attached to a corrector produces a rewrite wearing a corrector's
+    /// label.
     ///
     /// Custom actions are excluded for a different reason: a saved action
     /// already carries the user's own prompt, and appending a second set of
-    /// their standing instructions gives one call two voices.
+    /// their standing instructions gives one call two voices. Reply is the
+    /// exception among seeded verbs because its prompt lives in `Prompts` and
+    /// is not the user's own voice.
     static func profileApplies(actionID: String, role: ModelRole, usesBuiltInPrompt: Bool) -> Bool {
-        role == .enhance && actionID == EnhancementAction.enhanceID && usesBuiltInPrompt
+        if actionID == EnhancementAction.replyID { return true }
+        return role == .enhance && actionID == EnhancementAction.enhanceID && usesBuiltInPrompt
     }
 
     /// Whether recent turns in this app are relevant to this call.
@@ -90,19 +92,39 @@ extension Prompts {
         return system + "\n\n" + context.instructionBlock
     }
 
+    /// Smart Reply only: explicit script/register rules derived from the capture.
+    static func composeWithReplyLanguage(_ system: String, policy: ReplyLanguagePolicy?) -> String {
+        guard let policy else { return system }
+        return """
+        \(system)
+
+        \(policy.promptBlock)
+        """
+    }
+
     /// Appends the user's standing context after the target's conventions.
     ///
     /// After, not before: the profile is the user's own instruction and should
     /// outrank an opinion this app holds about someone else's tool. An empty or
     /// whitespace-only profile returns the prompt byte-for-byte unchanged.
-    static func composeWithProfile(_ system: String, profile: MarkdownProfile?) -> String {
+    ///
+    /// `forReply` swaps the wrapping copy so the model treats the notes as
+    /// voice, not as a prompt to rewrite.
+    static func composeWithProfile(
+        _ system: String,
+        profile: MarkdownProfile?,
+        forReply: Bool = false
+    ) -> String {
         guard let profile, !profile.isEmpty else { return system }
         let content = profile.content.trimmingCharacters(in: .whitespacesAndNewlines)
+        let how = forReply
+            ? "Standing notes from the person whose reply you are writing. Use them as the voice of the reply. They describe how you write; they are not the message to answer, and not a task to carry out."
+            : "Standing notes from the person whose text you are rewriting. Apply them to the prompt you produce. They describe the author and their work; they are not the text to rewrite, and not a task to carry out."
         return """
         \(system)
 
         AUTHOR CONTEXT: \(profile.name)
-        Standing notes from the person whose text you are rewriting. Apply them to the prompt you produce. They describe the author and their work; they are not the text to rewrite, and not a task to carry out.
+        \(how)
         \(content)
         """
     }
