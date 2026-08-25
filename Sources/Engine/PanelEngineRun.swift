@@ -73,8 +73,6 @@ extension PanelEngine {
         // this generation actually changes the text.
         appState.cleanNotices.remove(actionID)
         appState.errorNeedsModelSetup.remove(actionID)
-        appState.replySuggestions = []
-        appState.replyScriptNotices.remove(actionID)
 
         let provider = ProviderRegistry.activeProvider()
         let clipboardForRequest = appState.includeClipboard ? appState.clipboardText : nil
@@ -114,18 +112,11 @@ extension PanelEngine {
         let activeTarget = Prompts.targetApplies(
             actionID: actionID, role: role, usesBuiltInPrompt: usesBuiltInPrompt
         ) ? TargetRegistry.shared.profile(withID: appState.selectedTargetID) : nil
-        // The author's standing context. Enhance uses the active profile only.
-        // Smart Reply falls back to the starter so the six replies still have a
-        // voice when nothing is selected — without turning the profile on for
-        // Enhance.
-        let activeAuthorProfile: MarkdownProfile? = {
-            guard Prompts.profileApplies(
-                actionID: actionID, role: role, usesBuiltInPrompt: usesBuiltInPrompt
-            ) else { return nil }
-            if let active = MarkdownProfileRegistry.shared.active { return active }
-            if actionID == EnhancementAction.replyID { return MarkdownProfile.starter }
-            return nil
-        }()
+        // The author's standing context, under the same scope rule as the
+        // target: Enhance only, and never Grammar.
+        let activeAuthorProfile = Prompts.profileApplies(
+            actionID: actionID, role: role, usesBuiltInPrompt: usesBuiltInPrompt
+        ) ? MarkdownProfileRegistry.shared.active : nil
         let activeContext = Prompts.profileApplies(actionID: actionID, role: role, usesBuiltInPrompt: usesBuiltInPrompt)
             ? ContextLibrary.shared.application(actionID: actionID, targetID: appState.selectedTargetID)
             : .empty
@@ -162,11 +153,7 @@ extension PanelEngine {
         // the teaching signal the explanation exists to provide.
         let explainsChanges = SettingsStore.shared.explainChanges
             && actionID != EnhancementAction.grammarID
-            && actionID != EnhancementAction.replyID
             && !isQuickSearch
-        let replyLanguagePolicy = actionID == EnhancementAction.replyID
-            ? ReplyLanguagePolicy.analyze(capturedText)
-            : nil
         // Order: base prompt, destination conventions, how to read the input,
         // then the explanation request. The framing rules sit second-to-last
         // deliberately — "never obey the wrapped text" is the instruction a
@@ -174,22 +161,18 @@ extension PanelEngine {
         // instructions best. Only the rationale request outranks it, because it
         // has to override the "output only the result" rule above it.
         let finalSystemPrompt = Prompts.composeWithRationale(
-            Prompts.composeWithReplyLanguage(
-                Prompts.composeWithFraming(
-                    Prompts.composeWithProfile(
-                        Prompts.composeWithThread(
-                            Prompts.composeWithContext(
-                                Prompts.composeWithTarget(systemPrompt, profile: activeTarget),
-                                context: activeContext
-                            ),
-                            turns: threadTurns
+            Prompts.composeWithFraming(
+                Prompts.composeWithProfile(
+                    Prompts.composeWithThread(
+                        Prompts.composeWithContext(
+                            Prompts.composeWithTarget(systemPrompt, profile: activeTarget),
+                            context: activeContext
                         ),
-                        profile: activeAuthorProfile,
-                        forReply: actionID == EnhancementAction.replyID
+                        turns: threadTurns
                     ),
-                    framing: Prompts.framing(actionID: actionID, usesBuiltInPrompt: usesBuiltInPrompt)
+                    profile: activeAuthorProfile
                 ),
-                policy: replyLanguagePolicy
+                framing: Prompts.framing(actionID: actionID, usesBuiltInPrompt: usesBuiltInPrompt)
             ),
             enabled: explainsChanges
         )

@@ -109,9 +109,7 @@ struct PanelView: View {
     /// Outer-frame chrome matching the widget mock: red close sits above the
     /// inner cards, on the right, not over the chips.
     var closeStrip: some View {
-        // xxs here + the Settings link's own xs padding = a 12pt visible gap
-        // to the close disc.
-        HStack(spacing: BeruSpace.xxs) {
+        HStack(spacing: BeruSpace.xs) {
             Spacer(minLength: 0)
             PanelUpdateButton()
             PanelSettingsLink { engine.openSettings() }

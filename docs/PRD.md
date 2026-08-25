@@ -39,7 +39,7 @@ Three rules the product is not allowed to violate:
 |---|---|---|
 | Someone writing for an LLM (Cursor, Claude, ChatGPT, Codex, Gemini, Kimi) | Turn a rough idea into a prompt that tool will follow | Select → hotkey → Enhance → Replace, without leaving the editor |
 | Someone writing anything | Fix grammar without changing voice | Grammar returns a copy-edit, shown as a diff, not a rewrite |
-| Someone answering mail, Slack, comments | Draft a reply in a chosen voice | Smart Reply: six tones, Insert or Copy one |
+| Someone answering mail, Slack, comments | Draft a reply in a chosen voice | Reply (or a saved “for my VP”) on the selected thread |
 | Someone who does not want to type | Speak the rough idea | ⌃⌥⌘L, talk, Enhance still does the rewrite |
 | Someone who will not send work to the cloud | Same jobs, local model | Ollama + a pulled model; no API key |
 
@@ -125,7 +125,7 @@ Install → launch → Get Started
 In any app: select rough text
 → ⌃⌥⌘P (Open Beru)
 → Beru captures selection (AX, else ⌘C)
-→ If the selection sits in an editable field of Cursor / ChatGPT / Claude / Kimi: land on Enhance Prompt
+→ If host looks like Cursor / ChatGPT / Claude / Kimi: land on Enhance Prompt
 → Stream result (optionally with a short “Why”)
 → Read it
 → Replace (writes back) or Copy or Pin
@@ -133,35 +133,31 @@ In any app: select rough text
 
 **Replace** is the primary success. The person should not have to copy-paste unless they choose to.
 
-If the host is not a known LLM tool, routing picks the skill from context (first match wins): a chat/mail/social app → Smart Reply; an editable field → Grammar; otherwise short conversational text → Smart Reply, longer prose → Summarize. No selection anywhere, or clipboard/vault sources → AI Search.
+If the host is not a known LLM tool, the **default action** runs instead (shipped default: Grammar).
 
 ### 7.3 Grammar
 
 Same invoke. Chip: **Grammar**. Result is a copy-edit with an inline **word diff** when enough of the original survived. Meaning and tone must be preserved. Session context does **not** apply. “Explain what changed” does **not** apply (correction must not be traded for commentary).
 
-### 7.4 Smart Reply
-
-Same invoke. Chip: **Smart Reply**. Highlight the incoming message in any app (Mail, Slack, a comment in the browser) — Beru reads the selection, it does not scrape the page. One model call returns **six** ready-to-send replies (Formal, Casual, Funny, Professional, Witty, Sharp). Pick a card or the tone pill, then **Insert** or **Copy** that body only. The author markdown profile is folded in as voice; if none is active, the starter “My defaults” is used. Session context and “explain what changed” do not apply.
-
-### 7.5 Ask without a selection
+### 7.4 Ask without a selection
 
 Empty selection, or menu **Dictate**, or ⌃⌥⌘L: panel opens on **AI Search**. Type or speak a question. Capture is optional.
 
-### 7.6 Follow-up in the same app
+### 7.5 Follow-up in the same app
 
 With **Remember recent turns** on (default): Enhance, Instruction, or Search in the same host app can see the last 3 turns for ~30 minutes. The panel shows **Using N prior turns**. Click the chip to forget. Switch apps → thread cleared. Grammar never sees it.
 
-### 7.7 Voice instead of keyboard
+### 7.6 Voice instead of keyboard
 
 ⌃⌥⌘L or the mic: Beru listens **on this Mac** (no Apple servers, no Beru servers). Hard stop at 60 seconds. Press the shortcut again, the mic, or Escape to stop. Spoken text lands in the instruction field (Ask) or as the working text, depending on how dictation was started. Enhance still rewrites it.
 
 If on-device recognition is unavailable, dictation is refused. There is no cloud fallback.
 
-### 7.8 Local model setup
+### 7.7 Local model setup
 
 Settings → Models: install Ollama if needed, pull a recommended model (Gemma 3 1B ~815 MB, Qwen 2.5 7B default, Qwen 3 8B). **Install continues if the user leaves Models.** Sidebar shows a download badge. Enhance/Grammar pickers include the recommended tags so an advertised model is actually selectable.
 
-### 7.9 Vault note
+### 7.8 Vault note
 
 Settings → Vault: write markdown locally. **Enhance this note** opens the panel with the note as capture. **Apply** writes the result back into the note (not into some other app).
 
@@ -214,8 +210,7 @@ Order: **AI Search** always first; **Instruction** only while a one-off describe
 | Instruction | `describe` | No | No | Yes | No |
 | Grammar | `grammar` | Yes | Yes | No | No |
 | Enhance Prompt | `enhance` | Yes | Yes | Yes | Yes |
-| Smart Reply | `verb-reply` | Yes | No | No | No |
-| Summarize / Explain (seeded customs) | `verb-*` | Yes | No | No | No |
+| Reply / Summarize / Explain (seeded customs) | `verb-*` | Yes | No | No | No |
 | User-saved actions | custom | Yes | No | No | No |
 
 Hover copy is the `summary` on each action (e.g. Grammar: “Fix spelling, grammar, and punctuation while keeping your meaning and tone”).
@@ -232,28 +227,27 @@ Hover copy is the `summary` on each action (e.g. Grammar: “Fix spelling, gramm
 | Loading | Placeholder height, not an infinite fill |
 | Thinking | “Thinking…” (reasoning models; reasoning never enters the document) |
 | Streaming | Visible text grows; rationale markup is not shown live |
-| Done | Result, optional diff, optional Why, savings, footer actions. Smart Reply: six selectable tone cards |
+| Done | Result, optional diff, optional Why, savings, footer actions |
 | Error | Message + **Retry**. Unknown/missing model also **Connect to model**. Other configured providers: **Try with Ollama / Anthropic / API** |
 
 ### 9.4 Composer
 
-- Intent field placeholders: “Ask anything — no selection needed”, “Nothing selected — ask instead”, and per-skill hints (“Optional: e.g. ‘keep my tone’”)
-- **Return** submits the intent if the field has text; otherwise Replace / Insert
-- **⌘Return** Replace / Insert / Apply
+- Intent field placeholders: “Ask a question…”, “Or type a question to search…”, “Optional instruction for this action…”
+- **Return** submits the intent if the field has text; otherwise Replace
+- **⌘Return** Replace / Apply
 - **⌘C** Copy result (when a result exists)
 - **Esc** cancel / dismiss (if dictating, Escape stops the mic first)
 - Send control enabled only when there is an instruction
 - Mic: on-device dictation, 60s cap
 - Regenerate when done or on error
 - **Target** pill only on built-in Enhance Prompt
-- **Tone** pill on Smart Reply; choosing a tone highlights a card and does not re-run
 - **Provider** pill otherwise (Ollama / Anthropic / API)
 
 ### 9.5 Footer (done only)
 
 - Token savings estimate: `−N tok` / `+N tok` / `±0 tok`
-- **Replace** (or **Insert** on Smart Reply, or **Apply** when the source was a vault note)
-- **Copy** — transient “Copied”. Smart Reply copies the selected card only
+- **Replace** (or **Apply** when the source was a vault note)
+- **Copy** — transient “Copied”
 - **Pin** — saves a pin in the vault; transient “Pinned”
 
 ### 9.6 Session context chip
@@ -267,7 +261,7 @@ Visible on Enhance / Instruction / Search when there is at least one prior turn 
 
 ### 9.7 Explain what changed
 
-General toggle, **default on**. Appends a short rationale to Enhance-style jobs **except Grammar, Search, and Smart Reply**. Shown collapsed under the result as “Why”. Must not cause Grammar to echo the input unchanged. Smart Reply skips it so a `<why>` block cannot break the six-tone parse.
+General toggle, **default on**. Appends a short rationale to Enhance-style jobs **except Grammar and Search**. Shown collapsed under the result as “Why”. Must not cause Grammar to echo the input unchanged.
 
 ---
 
@@ -291,7 +285,7 @@ Switching routes must **not** show “Beru wants to use your confidential inform
 | Dictate shortcut | ⌃⌥⌘L | Old bare-Space shortcut migrated once |
 | Run Beru at login | Off | `SMAppService` |
 | Default action | Grammar | Used for clipboard / vault / unknown hosts |
-| Explain what changed | On | Not Grammar, not Search, not Smart Reply |
+| Explain what changed | On | Not Grammar, not Search |
 | Remember recent turns | On | 3 turns, 30 min idle, memory only |
 
 ### 10.2 Models
@@ -345,7 +339,7 @@ Outcomes folded from events: Replaced, Copied, Dismissed, Cancelled, Failed, No 
 ### 10.7 Actions
 
 - Built-in Grammar and Enhance: prompts are the live shipped text (not a stale saved copy)
-- Seeded customs: Smart Reply, Summarize, Explain — editable
+- Seeded customs: Reply, Summarize, Explain — editable
 - User customs: name, Lucide icon, prompt; drag reorder when search is empty
 - Add / delete / export / import; Insert Tone Preset
 - AI Search and Instruction are **not** listed here
@@ -459,7 +453,7 @@ Every row is a required UI, not a nice-to-have.
 | Item | Decision |
 |---|---|
 | Context Library (rules, playbooks, workspaces, glossary) | Engine applies seeded context; **no editor**. Do not ship a half-UI. Removing the engine is the alternative if editors never arrive |
-| Author Markdown profile (“My defaults”) | Applied on Enhance and Smart Reply; no Settings page |
+| Author Markdown profile (“My defaults”) | Same: applied on Enhance, no Settings page |
 | Codex / Gemini as shipped targets | README mentions them as destinations people write *for*; they are custom Targets, not built-in profiles |
 | `historyMaxMegabytes` | Enforced at 200; no control in Data |
 | Windows | Not this product yet |

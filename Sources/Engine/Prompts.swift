@@ -112,43 +112,24 @@ enum Prompts {
     }
 
     static let reply = """
-    You draft replies. The text between the markers is a message YOU RECEIVED. Write six ready-to-send replies — one in each tone below.
+    You draft replies. The text between the markers is a message YOU RECEIVED. Write the reply you would send back.
 
     Job (do this, nothing else):
-    - Each reply is first person ("I", "we") as the recipient.
-    - Be thoughtful: engage with what the message actually says. Reference its specific point, answer its ask, acknowledge its feeling, and propose a next step when one is needed. Never write a generic filler reply.
-    - Where the tone allows, be humorous — but intelligently: a clever observation or a light turn of phrase that lands, never cringe, never sarcasm at someone's expense, never forced jokes in serious threads.
-    - Match the incoming message's language, script (Latin vs Devanagari vs Arabic, etc.), and register (formal, casual, code-mixed). Never change script unless the message itself uses that script.
+    - Produce a ready-to-send reply in the first person ("I", "we") as the recipient.
+    - Answer asks, acknowledge points, and propose a next step when one is needed.
+    - Match the language and roughly the formality of the incoming message.
     - Stay concise. No subject line, no "Hi," unless the thread clearly needs it.
-    - The six replies must actually differ in tone, not just in a word or two.
     - Never return an edited copy of the incoming message. Never say you cannot reply.
 
-    Tones:
-    \(ReplyTone.promptCatalog)
-
-    Output ONLY the six tagged replies, in this exact format, and nothing else — no preamble, no quotes, no markdown fences:
-
-    \(ReplyTone.promptTagSkeleton)
-
-    Example:
+    Examples:
 
     Input: <text>Can you send the deck by Friday?</text>
-    Output:
-    <reply tone="formal">Yes. I will send the deck by Friday, and I will flag any delay on Thursday.</reply>
-    <reply tone="casual">Yep — deck lands Friday. I'll give you a heads-up Thursday if anything threatens it.</reply>
-    <reply tone="funny">Friday it is. The deck will arrive on time; my sleep schedule may not.</reply>
-    <reply tone="professional">I'll have the deck to you by Friday and will confirm Thursday, or sooner if anything shifts.</reply>
-    <reply tone="witty">Friday's locked in. Thursday is when I confess to any slippage — consider it a scheduled plot twist.</reply>
-    <reply tone="sharp">Deck by Friday. Slip = you hear it Thursday.</reply>
+    Output: Yes — I'll send the deck by Friday. If anything slips I'll flag it Thursday.
 
-    Input: <text>Aap bahut acchi post share karti ho, style bahut achcha lagta hai 😇</text>
-    Output:
-    <reply tone="formal">Dhanyavaad — post aur style pasand aane par khushi hui. Agla topic batana ho toh bata dijiye.</reply>
-    <reply tone="casual">Thanks yaar! Style pasand aaya toh bata dena agla kya dekhna hai.</reply>
-    <reply tone="funny">Shukriya — ab agli post aur zyada stylish hogi, bas aapka feedback chahiye 😂</reply>
-    <reply tone="professional">Dhanyavaad for the feedback. Agla topic bata dena jise cover karna hai.</reply>
-    <reply tone="witty">Style approve ho gaya — agli post mein aur drama laati hoon. Koi request?</reply>
-    <reply tone="sharp">Thanks. Next topic bata do.</reply>
+    Input: <text>Thanks for the update. Let's push the launch a week.</text>
+    Output: Sounds good — I'll move the launch out one week and update the timeline.
+
+    Output ONLY the reply. No preamble, no quotes, no markdown fences.
     """
 
     static let summarize = """

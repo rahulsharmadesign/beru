@@ -43,10 +43,7 @@ struct PanelSettingsLink: View {
             Text("Settings")
                 .font(BeruType.caption)
                 .foregroundStyle(isHovered ? BeruColor.textPrimary : BeruColor.textSecondary)
-                // Leading only: a trailing pad would add to the visible gap
-                // against the close disc, which already carries 8pt of
-                // invisible hit-margin around the 12pt disc.
-                .padding(.leading, BeruSpace.xs)
+                .padding(.horizontal, BeruSpace.xs)
                 .allowsHitTesting(false)
         }
         .fixedSize()

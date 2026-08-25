@@ -37,10 +37,6 @@ final class ActionRegistryTests: XCTestCase {
         XCTAssertTrue(ids.contains(EnhancementAction.replyID))
         XCTAssertTrue(ids.contains(EnhancementAction.summarizeID))
         XCTAssertTrue(ids.contains(EnhancementAction.explainID))
-        XCTAssertEqual(
-            EnhancementAction.starterVerbActions.first { $0.id == EnhancementAction.replyID }?.name,
-            "Smart Reply"
-        )
     }
 
     func testVerbPromptsExistAndSkipTargetFragment() {

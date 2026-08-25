@@ -7,7 +7,7 @@ enum ModelRole: String, Codable {
 
 /// One panel action: a named, icon-tagged system prompt. Grammar and Enhance
 /// are built in; users can save any number of custom verb/tone actions
-/// ("Smart Reply", "For my VP", ...) which behave identically.
+/// ("Reply", "For my VP", ...) which behave identically.
 struct EnhancementAction: Identifiable, Codable, Equatable {
     var id: String
     var name: String
@@ -26,7 +26,7 @@ struct EnhancementAction: Identifiable, Codable, Equatable {
         case Self.enhanceID:
             return "Rewrite your rough idea into a clear, effective prompt for an AI"
         case Self.replyID:
-            return "Six reply options in your voice"
+            return "Draft a reply to the selected message"
         case Self.summarizeID:
             return "Compress the selected text into its key facts"
         case Self.explainID:
@@ -158,7 +158,7 @@ struct EnhancementAction: Identifiable, Codable, Equatable {
     static let starterVerbActions: [EnhancementAction] = [
         EnhancementAction(
             id: replyID,
-            name: "Smart Reply",
+            name: "Reply",
             icon: "corner-up-left",
             role: .enhance,
             systemPrompt: Prompts.reply,

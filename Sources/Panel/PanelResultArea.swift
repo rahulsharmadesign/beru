@@ -29,20 +29,7 @@ extension PanelView {
     var resultArea: some View {
         let state = appState.resultState(for: appState.selectedActionID)
         VStack(alignment: .trailing, spacing: 0) {
-            if appState.selectedActionID == EnhancementAction.replyID,
-               case .done = state,
-               !appState.replySuggestions.isEmpty {
-                VStack(alignment: .leading, spacing: 0) {
-                    if appState.replyScriptNotices.contains(appState.selectedActionID) {
-                        noticeLine("Replies used the wrong language or script — try Regenerate to match the message")
-                    }
-                    ReplySuggestionsView(
-                        suggestions: appState.replySuggestions,
-                        selected: appState.selectedReplyTone,
-                        onSelect: { appState.selectedReplyTone = $0 }
-                    )
-                }
-            } else if case .done = state,
+            if case .done = state,
                appState.cleanNotices.contains(appState.selectedActionID) {
                 VStack(alignment: .leading, spacing: 0) {
                     noticeLine(
