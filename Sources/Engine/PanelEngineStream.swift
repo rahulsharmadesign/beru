@@ -142,6 +142,21 @@ extension PanelEngine {
                     if let rationale, self.isLive(request.generation, for: request.actionID) {
                         self.appState.rationales[request.actionID] = rationale
                     }
+                    if request.actionID == EnhancementAction.replyID,
+                       self.isLive(request.generation, for: request.actionID) {
+                        let policy = ReplyLanguagePolicy.analyze(request.capturedText)
+                        let parsed = ReplySuggestions.parse(final)
+                        self.appState.replySuggestions = parsed
+                        if ReplyLanguagePolicy.repliesViolatePolicy(parsed, input: policy) {
+                            self.appState.replyScriptNotices.insert(request.actionID)
+                        } else {
+                            self.appState.replyScriptNotices.remove(request.actionID)
+                        }
+                        if let first = parsed.first,
+                           !parsed.contains(where: { $0.tone == self.appState.selectedReplyTone }) {
+                            self.appState.selectedReplyTone = first.tone
+                        }
+                    }
                     self.publish(.done(final), for: request.actionID, generation: request.generation)
                     // Recorded only for a result that actually reached the
                     // panel. A superseded request.generation never became something the

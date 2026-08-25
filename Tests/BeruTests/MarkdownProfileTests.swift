@@ -40,6 +40,18 @@ final class MarkdownProfileTests: XCTestCase {
         )
     }
 
+    /// Smart Reply is a seeded custom (`isBuiltIn` false) whose prompt lives in
+    /// `Prompts`, so the profile is the user's voice — not a second prompt.
+    func testProfileAppliesToReplyEvenWhenNotBuiltIn() {
+        XCTAssertTrue(
+            Prompts.profileApplies(
+                actionID: EnhancementAction.replyID,
+                role: .enhance,
+                usesBuiltInPrompt: false
+            )
+        )
+    }
+
     /// A saved custom action already carries the user's own prompt. Adding their
     /// standing notes on top gives one call two voices.
     func testProfileDoesNotApplyToCustomActions() {
@@ -59,8 +71,8 @@ final class MarkdownProfileTests: XCTestCase {
         )
     }
 
-    /// Whatever else changes, these two must not converge: the day a profile
-    /// reaches Grammar is the day Grammar stops being a corrector.
+    /// Enhance and Grammar still share a scope. Reply is the intentional
+    /// exception: it receives the author profile, but never a target fragment.
     func testScopeMatchesTheTargetRuleExactly() {
         let cases: [(String, ModelRole, Bool)] = [
             (EnhancementAction.enhanceID, .enhance, true),
@@ -75,6 +87,14 @@ final class MarkdownProfileTests: XCTestCase {
                 "scope diverged for \(id)"
             )
         }
+        XCTAssertNotEqual(
+            Prompts.profileApplies(
+                actionID: EnhancementAction.replyID, role: .enhance, usesBuiltInPrompt: false
+            ),
+            Prompts.targetApplies(
+                actionID: EnhancementAction.replyID, role: .enhance, usesBuiltInPrompt: false
+            )
+        )
     }
 
     // MARK: - Composition
@@ -118,6 +138,14 @@ final class MarkdownProfileTests: XCTestCase {
     func testCompositionSaysTheProfileIsNotTheTextToRewrite() {
         let composed = Prompts.composeWithProfile(Prompts.enhance, profile: profile)
         XCTAssertTrue(composed.lowercased().contains("not the text to rewrite"))
+    }
+
+    func testReplyCompositionTreatsTheProfileAsVoice() {
+        let composed = Prompts.composeWithProfile(Prompts.reply, profile: profile, forReply: true)
+        XCTAssertTrue(composed.hasPrefix(Prompts.reply))
+        XCTAssertTrue(composed.contains("AUTHOR CONTEXT: Work"))
+        XCTAssertTrue(composed.lowercased().contains("not the message to answer"))
+        XCTAssertFalse(composed.lowercased().contains("not the text to rewrite"))
     }
 
     func testEmptinessIgnoresWhitespaceOnly() {

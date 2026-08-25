@@ -52,6 +52,19 @@ Open Settings and visit every sidebar route twice, in this order:
 - [ ] Change the accent color: panel and Settings both repaint immediately
 - [ ] Switch system appearance while the panel is open: it follows
 
+## Smart Reply
+
+Highlight a message in another app, invoke, then tap **Smart Reply**:
+
+- [ ] Six tone cards appear (Formal, Casual, Funny, Professional, Witty, Sharp)
+- [ ] Tone pill jumps the highlight; clicking a card does the same; neither re-runs the model
+- [ ] Copy / Insert send only the selected card, not the tagged blob
+- [ ] Hotkey with a comment selected in Chrome/Safari opens **Smart Reply** automatically
+- [ ] Roman Hinglish comment → all six replies stay in Roman/Latin (not Devanagari or German)
+- [ ] If the model mixes languages across cards, a language notice appears — try Regenerate
+- [ ] No selection: “No text selected”
+- [ ] Grammar still copy-edits; switching tabs only animates the chip pill
+
 ## Before release only
 
 - [ ] `./scripts/qa.sh` green

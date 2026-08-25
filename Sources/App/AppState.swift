@@ -77,6 +77,14 @@ final class AppState {
     /// Keyed like `results`, and cleared with them — a savings figure outliving
     /// the result it describes would be attached to the wrong text.
     var savings: [String: TokenSavings] = [:]
+    /// Parsed Smart Reply cards. Empty until a Reply stream finishes, and
+    /// cleared when that action re-runs.
+    var replySuggestions: [ReplySuggestion] = []
+    /// Which of the six tones Insert / Copy / Pin will send. Choosing a tone
+    /// does not re-run the model.
+    var selectedReplyTone: ReplyTone = .formal
+    /// Smart Reply when the model switched script (e.g. Roman in, Devanagari out).
+    var replyScriptNotices: Set<String> = []
     /// Search mode is the AI Search tab — a question, not a rewrite skill.
     var isQuickSearch = false
     /// When set, Replace writes the result back into this vault note instead of
@@ -148,6 +156,8 @@ final class AppState {
         cleanNotices.removeAll()
         errorProviders.removeAll()
         errorNeedsModelSetup.removeAll()
+        replySuggestions = []
+        replyScriptNotices.removeAll()
     }
 
     func dismiss() {
@@ -172,6 +182,8 @@ final class AppState {
         cleanNotices.removeAll()
         errorProviders.removeAll()
         errorNeedsModelSetup.removeAll()
+        replySuggestions = []
+        replyScriptNotices.removeAll()
     }
 
     func setResult(_ state: ResultState, for actionID: String) {
@@ -185,5 +197,16 @@ final class AppState {
 
     func hasStarted(_ actionID: String) -> Bool {
         results[actionID] != nil
+    }
+
+    /// Text Insert / Copy / Pin should send. Smart Reply uses the selected
+    /// card, not the tagged stream blob.
+    func acceptedText(for actionID: String? = nil) -> String? {
+        let id = actionID ?? selectedActionID
+        if id == EnhancementAction.replyID, !replySuggestions.isEmpty {
+            return ReplySuggestions.body(in: replySuggestions, matching: selectedReplyTone)
+        }
+        if case .done(let text) = resultState(for: id) { return text }
+        return nil
     }
 }

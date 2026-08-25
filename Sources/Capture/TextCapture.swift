@@ -45,6 +45,24 @@ enum TextCapture {
         return (element as! AXUIElement)
     }
 
+    private static let editableRoles: Set<String> = [
+        "AXTextArea", "AXTextField", "AXComboBox", "AXSecureTextField"
+    ]
+
+    /// Whether the focused element is a field the user composes in (editor,
+    /// chat box, comment box) as opposed to static content they are reading.
+    /// Decides between the writing skills (Grammar) and the reading skills
+    /// (Summarize) when the invoke lands. Unknown roles read as static —
+    /// misrouting a message to Smart Reply is one chip away; misrouting the
+    /// user's own draft there is a wrong model call.
+    static func isEditableElement(_ element: AXUIElement?) -> Bool {
+        guard let element else { return false }
+        var value: AnyObject?
+        let result = AXUIElementCopyAttributeValue(element, kAXRoleAttribute as CFString, &value)
+        guard result == .success, let role = value as? String else { return false }
+        return editableRoles.contains(role)
+    }
+
     private static func focusedSelectedText() -> String? {
         guard let element = focusedElement() else { return nil }
 
