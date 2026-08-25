@@ -189,7 +189,12 @@ final class PanelController {
         let reference = panel?.frame.origin ?? .zero
         let screen = NSScreen.screens.first(where: { $0.frame.contains(reference) }) ?? NSScreen.main
         let visible = screen?.visibleFrame.height ?? PanelMetrics.maxHeight
-        return min(PanelMetrics.maxHeight, (visible * PanelMetrics.maxViewportFraction).rounded() - PanelMetrics.shadowInset * 2)
+        // Subtract window chrome so widget + insets stay within the viewport cap.
+        let windowChrome = PanelMetrics.shadowInset * 2
+            + PanelMetrics.windowTopInset
+            + PanelMetrics.windowInset
+        let cap = (visible * PanelMetrics.maxViewportFraction).rounded() - windowChrome
+        return min(PanelMetrics.maxHeight, max(PanelMetrics.minHeight, cap))
     }
 
     private func applyHeight(_ height: CGFloat) {
@@ -261,6 +266,7 @@ final class PanelController {
         )
         hosting.wantsLayer = true
         hosting.layer?.backgroundColor = .clear
+        hosting.clipsToBounds = true
         hosting.translatesAutoresizingMaskIntoConstraints = false
         panel.backdropView.addSubview(hosting)
         let inset = PanelMetrics.windowInset

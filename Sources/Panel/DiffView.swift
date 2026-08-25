@@ -24,6 +24,7 @@ struct DiffView: View {
         Group {
             if scrolls {
                 ScrollView { content.contributesPanelHeight() }
+                    .frame(maxHeight: .infinity)
             } else {
                 content
             }
