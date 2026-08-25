@@ -48,6 +48,7 @@ struct PanelView: View {
                     .layoutPriority(1)
                     .contributesPanelHeight()
                 resultModule
+                    .layoutPriority(0)
                 composerColumn
                     .layoutPriority(1)
                     .contributesPanelHeight()

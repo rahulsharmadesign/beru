@@ -60,5 +60,6 @@ struct ResultView: View {
             // height, which is what the window needs in order to show it all.
             .contributesPanelHeight()
         }
+        .frame(maxHeight: .infinity)
     }
 }
