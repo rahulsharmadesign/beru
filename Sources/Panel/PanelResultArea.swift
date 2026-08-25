@@ -21,7 +21,7 @@ extension PanelView {
         // Inset inside clipShape so placeholder copy is not sheared by the
         // card radius against the toolbar and composer.
         .padding(PanelMetrics.moduleInset)
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .glassModule(scrim: .content)
     }
 
@@ -72,7 +72,7 @@ extension PanelView {
                 ResultView(state: state, usesMarkdown: usesSearchMarkdown)
             }
         }
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .id(appState.selectedActionID)
         .transition(.opacity)
         // Only the swapped content crossfades. On the enclosing module this

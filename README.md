@@ -57,7 +57,7 @@ cd beru
 
 That builds Beru, signs it on *your* Mac, installs it to `/Applications`, and launches it. The certificate script is one-time. After that, `./scripts/install.sh` is enough.
 
-To publish a DMG, push a version tag (`v1.01`). GitHub Actions builds it. Locally: `./scripts/make-dmg.sh`.
+To publish a DMG, push a version tag (`v1.1.0`). GitHub Actions builds it. Locally: `./scripts/make-dmg.sh`.
 
 ## First run
 
