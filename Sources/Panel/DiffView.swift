@@ -23,8 +23,7 @@ struct DiffView: View {
     var body: some View {
         Group {
             if scrolls {
-                ScrollView { content.contributesPanelHeight() }
-                    .frame(maxHeight: .infinity)
+                ScrollView { content }
             } else {
                 content
             }

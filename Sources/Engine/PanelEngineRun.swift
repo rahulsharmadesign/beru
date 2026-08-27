@@ -63,6 +63,11 @@ extension PanelEngine {
         let usedCustomSkillPrompt = !usesBuiltInPrompt
 
         let generation = beginGeneration(for: actionID)
+        if actionID == EnhancementAction.searchID {
+            let question = (instruction ?? appState.describeInstruction)
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            appState.beginSearchTurn(question: question, regenerating: previousResult != nil)
+        }
         appState.setResult(.loading, for: actionID)
         appState.savings[actionID] = nil
         appState.diffs[actionID] = nil

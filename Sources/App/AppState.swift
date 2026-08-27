@@ -13,11 +13,28 @@ enum ResultState: Equatable {
     case error(String)
 }
 
+/// One Q&A in the AI Search panel thread. Lives only while the widget is open.
+struct SearchThreadTurn: Identifiable, Equatable {
+    let id: UUID
+    let question: String
+    var answer: ResultState
+
+    init(id: UUID = UUID(), question: String, answer: ResultState = .loading) {
+        self.id = id
+        self.question = question
+        self.answer = answer
+    }
+}
+
 @MainActor
 @Observable
 final class AppState {
     var isPanelVisible: Bool = false
     var panelOrigin: CGPoint = .zero
+    /// When non-nil, the result module scrolls inside this height and the
+    /// window is at the 75% viewport cap. Nil = result sizes intrinsically.
+    /// Owned by `PanelController` from layout measures — views must not write it.
+    var panelResultScrollHeight: CGFloat? = nil
 
     var capturedText: String = ""
     /// The host app's focused AX element at capture time. Replace must target
@@ -28,6 +45,11 @@ final class AppState {
     /// reserved `EnhancementAction.describeID` for one-off instructions.
     var selectedActionID: String
     var results: [String: ResultState] = [:]
+    /// AI Search Q&A stack for this panel open. Cleared on dismiss / reset —
+    /// not persisted. Soft-capped so a long session cannot balloon forever.
+    var searchThread: [SearchThreadTurn] = []
+    /// Soft ceiling for stacked Search turns in one panel session.
+    static let searchThreadMaxTurns = 20
     /// The instruction text typed into the intent bar.
     var describeInstruction: String = ""
     /// Which AI environment an enhanced prompt is being written for.
@@ -127,15 +149,36 @@ final class AppState {
         }
     }
 
+    /// Starts a new Search Q&A. Regenerate rewrites the live turn instead.
+    func beginSearchTurn(question: String, regenerating: Bool) {
+        let trimmed = question.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        if regenerating, !searchThread.isEmpty {
+            searchThread[searchThread.count - 1].answer = .loading
+            return
+        }
+        searchThread.append(SearchThreadTurn(question: trimmed, answer: .loading))
+        if searchThread.count > Self.searchThreadMaxTurns {
+            searchThread.removeFirst(searchThread.count - Self.searchThreadMaxTurns)
+        }
+    }
+
+    func updateLiveSearchTurn(_ state: ResultState) {
+        guard !searchThread.isEmpty else { return }
+        searchThread[searchThread.count - 1].answer = state
+    }
+
     func reset(withCapturedText text: String) {
         for task in streamTasks.values { task.cancel() }
         streamTasks.removeAll()
         results.removeAll()
+        searchThread.removeAll()
         savings.removeAll()
         // Only on reset, never on dismiss: regenerating during the fade-out
         // would rebuild the view hierarchy mid-animation.
         panelSessionID = UUID()
         invocationID = UUID()
+        panelResultScrollHeight = nil
         capturedText = text
         capturedElement = nil
         hostBundleID = nil
@@ -165,6 +208,7 @@ final class AppState {
         for task in streamTasks.values { task.cancel() }
         streamTasks.removeAll()
         results.removeAll()
+        searchThread.removeAll()
         savings.removeAll()
         capturedText = ""
         capturedElement = nil

@@ -61,8 +61,18 @@ BUILT=$(ls -td "$HOME"/Library/Developer/Xcode/DerivedData/Beru-*/Build/Products
 
 echo "==> installing to /Applications"
 killall Beru 2>/dev/null || true
-pkill -f "Beru.app" 2>/dev/null || true
-sleep 1
+pkill -f "Beru.app/Contents/MacOS/Beru" 2>/dev/null || true
+# Wait until the old process is gone so the new binary owns the hotkey.
+for _ in $(seq 1 40); do
+    if ! pgrep -x Beru >/dev/null 2>&1; then
+        break
+    fi
+    sleep 0.1
+done
+if pgrep -x Beru >/dev/null 2>&1; then
+    echo "error: Beru is still running; quit it from the menu bar and retry." >&2
+    exit 1
+fi
 rm -rf /Applications/Beru.app
 cp -R "$BUILT" /Applications/Beru.app
 
@@ -78,4 +88,13 @@ codesign -d -r- /Applications/Beru.app 2>&1 | grep designated
 codesign -dvvv /Applications/Beru.app 2>&1 | grep -E "(Runtime|Flags)"
 
 open /Applications/Beru.app
-echo "==> launched"
+# Confirm the new process is up (hotkey registration happens in start()).
+for _ in $(seq 1 30); do
+    if pgrep -x Beru >/dev/null 2>&1; then
+        echo "==> launched"
+        exit 0
+    fi
+    sleep 0.1
+done
+echo "error: Beru did not start. Open /Applications/Beru.app from Finder." >&2
+exit 1

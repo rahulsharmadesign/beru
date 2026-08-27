@@ -6,22 +6,23 @@ import SwiftUI
 extension PanelView {
     // MARK: - Toolbar (verbs + context)
 
-    /// Single top module: verb chips + one quiet metadata line.
+    /// Verb chips + quiet metadata. Context line always occupies height
+    /// (opacity only) so Search ↔ skill does not change toolbar size mid-frame
+    /// and crop the composer before the window can grow.
     var toolbar: some View {
         VStack(alignment: .leading, spacing: BeruSpace.xs) {
             verbRow
-            if !appState.isQuickSearch || hasCapturedText {
-                contextLine
-                    .transition(.opacity)
-            }
+            contextLine
+                .opacity(showsContextLine ? 1 : 0)
+                .accessibilityHidden(!showsContextLine)
         }
-        // Scoped to the stack that holds the conditional context line. Applied
-        // after padding and the drag region it also animated the module's
-        // chrome, so switching tabs relaid out the whole toolbar card.
-        .animation(tabAnimation, value: appState.selectedActionID)
-        .padding(PanelMetrics.moduleInset)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(PanelDragRegion())
+        .animation(nil, value: appState.selectedActionID)
+        .animation(nil, value: appState.isQuickSearch)
+    }
+
+    var showsContextLine: Bool {
+        !appState.isQuickSearch || hasCapturedText
     }
 
     var hasCapturedText: Bool {
@@ -40,70 +41,86 @@ extension PanelView {
     }
 
     var verbRow: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            ZStack(alignment: .topLeading) {
-                tabSelectionPill
+        ScrollViewReader { proxy in
+            ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: BeruSpace.xs) {
                     ForEach(panelTabs) { action in
                         chip(for: action)
+                            .id(action.id)
                     }
                 }
+                .animation(tabMorph, value: appState.selectedActionID)
             }
-            .coordinateSpace(name: "verbRow")
-            .onPreferenceChange(ChipFramesKey.self) { chipFrames = $0 }
-        }
-        .frame(height: PanelMetrics.chipRowHeight)
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    @ViewBuilder
-    var tabSelectionPill: some View {
-        if let frame = chipFrames[appState.selectedActionID] {
-            Capsule()
-                .fill(BeruColor.accent)
-                .frame(width: frame.width, height: frame.height)
-                .offset(x: frame.minX, y: frame.minY)
-                .shadow(
-                    color: a11y.reduceTransparency ? .clear : BeruColor.accent.opacity(0.18),
-                    radius: BeruSpace.xxs,
-                    y: BeruSpace.hair
-                )
-                .allowsHitTesting(false)
+            .frame(height: BeruMetrics.tabPillHeight)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            // Webpage → Summarize (and similar) land on a chip past the fold;
+            // bring the active tab into view without a manual swipe.
+            .onAppear { scrollChipIntoView(proxy) }
+            .onChange(of: appState.selectedActionID) { _, _ in
+                scrollChipIntoView(proxy)
+            }
+            .onChange(of: appState.panelSessionID) { _, _ in
+                scrollChipIntoView(proxy)
+            }
         }
     }
 
-    var tabAnimation: Animation {
+    func scrollChipIntoView(_ proxy: ScrollViewProxy) {
+        let id = appState.selectedActionID
+        let animated = !a11y.reduceMotion
+        DispatchQueue.main.async {
+            withAnimation(animated ? .easeOut(duration: 0.2) : nil) {
+                proxy.scrollTo(id, anchor: .center)
+            }
+        }
+    }
+
+    /// Selection morph. Ease-in only — interpolating the label font or the
+    /// chip identity is what looked like a text zoom.
+    var tabMorph: Animation {
         a11y.reduceMotion
             ? .easeOut(duration: 0.12)
-            : .easeInOut(duration: 0.28)
+            : .easeIn(duration: 0.28)
     }
 
     func selectTab(_ actionID: String) {
-        withAnimation(tabAnimation) {
-            appState.selectAction(actionID)
-        }
+        appState.selectAction(actionID)
     }
 
     func chip(for action: EnhancementAction) -> some View {
         let isSelected = appState.selectedActionID == action.id
-        return Button {
-            selectTab(action.id)
-        } label: {
-            BeruLabel(title: action.name, icon: action.icon, iconSize: 14, strokeWidth: 2)
-                .labelStyle(.titleAndIcon)
-                .font(isSelected ? BeruType.footnoteSemibold : BeruType.footnoteMedium)
-                .glassChip(selected: isSelected)
+        let label = BeruLabel(title: action.name, icon: action.icon, iconSize: 14, strokeWidth: 2)
+            .labelStyle(.titleAndIcon)
+            .font(BeruType.footnoteMedium)
+            .foregroundStyle(isSelected ? BeruColor.onAccent : BeruColor.textPrimary)
+
+        return Button { selectTab(action.id) } label: {
+            label
+                .padding(.horizontal, BeruSpace.sm)
+                .frame(height: BeruMetrics.tabPillHeight)
+                .contentShape(Capsule())
                 .background {
-                    GeometryReader { geo in
-                        Color.clear.preference(
-                            key: ChipFramesKey.self,
-                            value: [action.id: geo.frame(in: .named("verbRow"))]
-                        )
-                    }
+                    chipFill(selected: isSelected)
                 }
         }
         .buttonStyle(.plain)
+        .frame(height: BeruMetrics.tabPillHeight)
         .help(action.summary)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+
+    /// The selected fill is the accent. Idle chips have no fill — a clear glass
+    /// capsule was painting the gray pill on top of the slab.
+    @ViewBuilder
+    func chipFill(selected: Bool) -> some View {
+        if selected {
+            Capsule()
+                .fill(BeruColor.accent)
+                .matchedGeometryEffect(id: "tab-selection", in: tabGlass)
+        } else {
+            Capsule()
+                .strokeBorder(BeruColor.border, lineWidth: 0.75)
+        }
     }
 
     /// Context as caption text — not a second chip row competing with verbs.

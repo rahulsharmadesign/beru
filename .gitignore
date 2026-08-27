@@ -19,3 +19,6 @@ xcshareddata/swiftpm/
 *.p12
 *.key
 secrets/
+
+# Apple's Landmarks sample — local cookbook only, nested git repo.
+LandmarksBuildingAnAppWithLiquidGlass/

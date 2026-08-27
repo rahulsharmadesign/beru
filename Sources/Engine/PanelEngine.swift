@@ -14,6 +14,8 @@ final class PanelEngine {
     let onDismiss: () -> Void
     /// Notified when no stream is in flight, so the panel may shrink to fit.
     var onStreamingEnded: (() -> Void)?
+    /// Notified when a stream begins, so the panel only grows until it ends.
+    var onStreamingStarted: (() -> Void)?
 
     /// Set by the coordinator to open the dashboard's Permissions screen.
     ///
@@ -81,6 +83,9 @@ final class PanelEngine {
     func publish(_ state: ResultState, for actionID: String, generation: Int) {
         guard isLive(generation, for: actionID) else { return }
         appState.setResult(state, for: actionID)
+        if actionID == EnhancementAction.searchID {
+            appState.updateLiveSearchTurn(state)
+        }
     }
 
     init(appState: AppState, onDismiss: @escaping () -> Void) {

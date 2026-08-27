@@ -5,6 +5,14 @@ import SwiftUI
 // FloatingPanel, which is the window itself.
 
 /// Owns the lifecycle of the floating panel and hosts the SwiftUI content.
+///
+/// Height contract (frozen):
+/// - SwiftUI reports chrome + result ideal heights via band preferences.
+/// - Window height = min(chrome + result, 75% of visible screen).
+/// - Below the cap: result is intrinsic. At the cap: result scrolls inside
+///   `appState.panelResultScrollHeight`; close / chips / composer stay pinned.
+/// - Grow immediately; shrink after a short debounce. Never drive height from
+///   `NSHostingView.intrinsicContentSize`.
 @MainActor
 final class PanelController {
     private var panel: FloatingPanel?
@@ -14,56 +22,40 @@ final class PanelController {
         self.appState = appState
     }
 
-    /// Incremented on every show so a stale hide completion can't order out a
-    /// panel that has since been re-shown.
     private var showGeneration = 0
     private var pendingResize: DispatchWorkItem?
-    /// While tokens are arriving the panel only grows; shrinking on every
-    /// reflow makes it visibly oscillate.
     private var isStreaming = false
     private var growsDownward = true
-    /// Absolute top edge to pin while growing downward. Incremental
-    /// `origin += current - target` plus clamp was letting the panel creep
-    /// down across resizes within a run.
     private var pinnedTopY: CGFloat?
-    /// Block preference-driven animated resizes while the entrance spring runs,
-    /// so the top of the panel doesn't tear against the window shadow.
     private var entranceSettledAt: CFAbsoluteTime = 0
-
-    /// True while the controller itself is setting the panel's frame. Used to
-    /// tell a programming-driven move apart from a user drag in `panelDidMove`,
-    /// so a manual drag re-pins growth instead of being mistaken for our resize.
     private var isProgrammaticMove = false
-    /// Tracks user-initiated drags so a later height change extends from where
-    /// the user dropped the panel rather than snapping back to the anchor it was
-    /// presented at.
     private var moveObserver: NSObjectProtocol?
+    private var isApplyingHeight = false
+    private var lastAppliedHeight: CGFloat = 0
+    private var lastChrome: CGFloat = 0
 
     private var a11y: AccessibilityPreferences { AccessibilityPreferences.shared }
 
     func show(at point: CGPoint, appState: AppState, engine: PanelEngine) {
         showGeneration += 1
         pendingResize?.cancel()
-        isStreaming = true
-        // Spring settle; height applies still run, but without animator/shadow
-        // thrash until this passes.
+        isStreaming = false
+        lastAppliedHeight = 0
+        lastChrome = 0
+        appState.panelResultScrollHeight = nil
         entranceSettledAt = CFAbsoluteTimeGetCurrent() + 0.55
 
-        let widgetSize = CGSize(width: PanelMetrics.width, height: PanelMetrics.minHeight)
+        let widgetSize = CGSize(width: PanelMetrics.width, height: PanelMetrics.seedHeight)
         let size = CGSize(
             width: PanelMetrics.windowWidth,
             height: PanelMetrics.windowHeight(for: widgetSize.height)
         )
         let inset = PanelMetrics.shadowInset
-        // `point` is the selection's bottom-left (or mouse). The visible widget
-        // still sits below it; the transparent margin only contains the soft shadow.
         let preferred = CGPoint(
             x: point.x - inset,
             y: point.y - widgetSize.height - SelectionLocator.panelGapBelowSelection - inset
         )
         let origin = clampedOrigin(preferred: preferred, size: size)
-        // If clamping pushed the panel up past the selection it is now above
-        // the anchor, so it should grow upward instead.
         growsDownward = origin.y <= preferred.y + 1
 
         let panel = self.panel ?? makePanel(engine: engine)
@@ -78,19 +70,13 @@ final class PanelController {
         panel.alphaValue = 1
         panel.makeKeyAndOrderFront(nil)
         panel.invalidateShadow()
-
-        // Drop the responder left over from the previous invocation, then seat
-        // a fresh one after the hosting view has materialized its AppKit
-        // backing (which happens after the window is ordered in).
         panel.makeFirstResponder(nil)
-        DispatchQueue.main.async { panel.focusFirstTextField() }
-
+        DispatchQueue.main.async {
+            panel.focusFirstTextField()
+        }
         animateIn(panel)
     }
 
-    /// Springs up from the edge nearest the selection. Driven from AppKit
-    /// because the hosting view is reused, so SwiftUI's onAppear never fires
-    /// again after the first invocation.
     private func animateIn(_ panel: FloatingPanel) {
         guard let layer = panel.contentView?.layer else { return }
         layer.removeAllAnimations()
@@ -125,8 +111,6 @@ final class PanelController {
         layer.add(fade, forKey: "panel.in.opacity")
     }
 
-    /// Scale about an arbitrary point without touching layer.anchorPoint,
-    /// which AppKit re-derives during layout and would fight on every resize.
     private static func scaleTransform(_ scale: CGFloat, about point: CGPoint, in size: CGSize) -> CATransform3D {
         let center = CGPoint(x: size.width / 2, y: size.height / 2)
         let dx = (1 - scale) * (point.x - center.x)
@@ -141,6 +125,7 @@ final class PanelController {
         guard let panel else { return }
         pendingResize?.cancel()
         isStreaming = false
+        appState.panelResultScrollHeight = nil
         showGeneration += 1
         let generation = showGeneration
 
@@ -154,62 +139,90 @@ final class PanelController {
         }
     }
 
-    /// Called from SwiftUI as content is laid out. Debounced on top of the
-    /// engine's stream coalescing, with a deadband, so the window doesn't
-    /// resize on every token. Longer debounce while streaming — height thrash
-    /// plus `invalidateShadow` was a major heat source.
-    func setDesiredHeight(_ height: CGFloat) {
+    /// Chrome + result ideal heights from SwiftUI band preferences.
+    func setLayoutHeights(_ layout: PanelLayoutHeights) {
+        guard layout.chrome > 1 || layout.result > 1 else { return }
+        lastChrome = max(layout.chrome, lastChrome)
+
+        let cap = maxPanelHeight()
+        let chrome = layout.chrome > 1 ? layout.chrome : lastChrome
+        let ideal = chrome + layout.result
+        let capped = ideal > cap + 0.5
+
+        let target: CGFloat
+        let scrollHeight: CGFloat?
+        if capped, chrome < cap {
+            let scroll = max(PanelMetrics.resultIdleMinHeight, (cap - chrome).rounded())
+            scrollHeight = scroll
+            target = min(cap, (chrome + scroll).rounded())
+        } else {
+            scrollHeight = nil
+            target = min(ideal, cap).rounded()
+        }
+
+        // Apply scroll budget before resizing so the next SwiftUI pass lays
+        // out chrome + ScrollView inside the capped window (composer visible).
+        if appState.panelResultScrollHeight != scrollHeight {
+            appState.panelResultScrollHeight = scrollHeight
+        }
+
+        let growing = target > (panel?.frame.height ?? 0) + 0.5
+        if growing {
+            pendingResize?.cancel()
+            applyContentHeight(target)
+            return
+        }
+
+        if isStreaming { return }
+        if CFAbsoluteTimeGetCurrent() < entranceSettledAt { return }
+
         pendingResize?.cancel()
-        let work = DispatchWorkItem { [weak self] in self?.applyHeight(height) }
+        let work = DispatchWorkItem { [weak self] in
+            self?.applyContentHeight(target)
+        }
         pendingResize = work
-        let delay: TimeInterval = isStreaming ? 0.16 : 0.08
-        DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: work)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.12, execute: work)
     }
 
-    /// Lets the panel settle to its true content height once a stream ends.
+    func streamingDidStart() {
+        isStreaming = true
+    }
+
     func streamingDidEnd() {
         isStreaming = false
-        // One shadow refresh after growth finishes — not on every token.
         panel?.invalidateShadow()
     }
 
-    /// The panel moved. This fires for every frame change — our own resizes and
-    /// the user's drags alike. A move we did not programmatically set is a user
-    /// drag: re-pin the growth anchor so the panel keeps growing from wherever
-    /// the user placed it instead of jumping back to the presentation position.
     private func panelDidMove() {
         guard !isProgrammaticMove, let panel, growsDownward else { return }
         pinnedTopY = panel.frame.maxY
     }
 
-    /// The tallest the window may grow before its content scrolls: 80% of the
-    /// visible height of whichever screen the panel is on. Auto-sizing to content
-    /// (via PanelHeightKey) means the panel only scrolls once it hits this.
-    private func maxPanelHeight() -> CGFloat {
+    /// 75% of the visible frame on the panel's screen.
+    func maxPanelHeight() -> CGFloat {
         let reference = panel?.frame.origin ?? .zero
         let screen = NSScreen.screens.first(where: { $0.frame.contains(reference) }) ?? NSScreen.main
         let visible = screen?.visibleFrame.height ?? PanelMetrics.maxHeight
-        // Subtract window chrome so widget + insets stay within the viewport cap.
         let windowChrome = PanelMetrics.shadowInset * 2
             + PanelMetrics.windowTopInset
             + PanelMetrics.windowInset
         let cap = (visible * PanelMetrics.maxViewportFraction).rounded() - windowChrome
-        return min(PanelMetrics.maxHeight, max(PanelMetrics.minHeight, cap))
+        return min(PanelMetrics.maxHeight, max(PanelMetrics.seedHeight, cap))
     }
 
-    private func applyHeight(_ height: CGFloat) {
-        guard let panel, panel.isVisible else { return }
-        let targetWidgetHeight = min(max(height.rounded(), PanelMetrics.minHeight), maxPanelHeight())
+    private func applyContentHeight(_ height: CGFloat) {
+        guard let panel, panel.isVisible, !isApplyingHeight else { return }
+        let targetWidgetHeight = min(height.rounded(), maxPanelHeight())
         let targetWindowHeight = PanelMetrics.windowHeight(for: targetWidgetHeight)
         let current = panel.frame.height
-        guard abs(current - targetWindowHeight) >= PanelMetrics.resizeDeadband else { return }
-        if isStreaming, targetWindowHeight < current { return }
+        guard abs(current - targetWindowHeight) >= PanelMetrics.resizeDeadband else {
+            lastAppliedHeight = targetWidgetHeight
+            return
+        }
 
         var frame = panel.frame
         frame.size.height = targetWindowHeight
         if growsDownward {
-            // Pin to the absolute top captured at show — not a delta on the
-            // current origin, which crept after clamp/round trips.
             let top = pinnedTopY ?? frame.maxY
             frame.origin.y = top - targetWindowHeight
         }
@@ -218,25 +231,13 @@ final class PanelController {
             pinnedTopY = frame.maxY
         }
 
-        let entrancePending = CFAbsoluteTimeGetCurrent() < entranceSettledAt
-        // During entrance or streaming: hard setFrame, no animator. Animated
-        // resize + spring + shadow was tearing the top edge for ~2s on open.
-        if a11y.reduceMotion || isStreaming || entrancePending {
-            isProgrammaticMove = true
-            panel.setFrame(frame, display: true)
-            isProgrammaticMove = false
-        } else {
-            NSAnimationContext.runAnimationGroup { context in
-                context.duration = 0.18
-                context.timingFunction = CAMediaTimingFunction(name: .easeOut)
-                panel.animator().setFrame(frame, display: true)
-            }
-        }
-        // Shadow invalidation is expensive (full window backdrop). Skip while
-        // streaming/entrance; `streamingDidEnd` refreshes once.
-        if !isStreaming, !entrancePending {
-            panel.invalidateShadow()
-        }
+        isApplyingHeight = true
+        isProgrammaticMove = true
+        panel.setFrame(frame, display: true)
+        isProgrammaticMove = false
+        isApplyingHeight = false
+        lastAppliedHeight = targetWidgetHeight
+        panel.invalidateShadow()
     }
 
     private func makePanel(engine: PanelEngine) -> FloatingPanel {
@@ -245,7 +246,7 @@ final class PanelController {
                 x: 0,
                 y: 0,
                 width: PanelMetrics.windowWidth,
-                height: PanelMetrics.windowHeight(for: PanelMetrics.minHeight)
+                height: PanelMetrics.windowHeight(for: PanelMetrics.seedHeight)
             )
         )
 
@@ -257,25 +258,17 @@ final class PanelController {
             MainActor.assumeIsolated { self?.panelDidMove() }
         }
 
-        // The white backdrop is the content view (set in FloatingPanel.init).
-        // Add the SwiftUI hosting view as a subview on top of it.
         let hosting = PanelHostingView(
-            rootView: PanelView(appState: appState, engine: engine) { [weak self] height in
-                self?.setDesiredHeight(height)
+            rootView: PanelView(appState: appState, engine: engine) { [weak self] layout in
+                self?.setLayoutHeights(layout)
             }
         )
+        hosting.sceneBridgingOptions = []
+        hosting.safeAreaRegions = []
         hosting.wantsLayer = true
+        hosting.layer?.isOpaque = false
         hosting.layer?.backgroundColor = .clear
-        hosting.clipsToBounds = true
-        hosting.translatesAutoresizingMaskIntoConstraints = false
-        panel.backdropView.addSubview(hosting)
-        let inset = PanelMetrics.windowInset
-        NSLayoutConstraint.activate([
-            hosting.topAnchor.constraint(equalTo: panel.backdropView.topAnchor, constant: PanelMetrics.windowTopInset),
-            hosting.bottomAnchor.constraint(equalTo: panel.backdropView.bottomAnchor, constant: -inset),
-            hosting.leadingAnchor.constraint(equalTo: panel.backdropView.leadingAnchor, constant: inset),
-            hosting.trailingAnchor.constraint(equalTo: panel.backdropView.trailingAnchor, constant: -inset)
-        ])
+        panel.attachHost(hosting)
 
         return panel
     }
@@ -293,17 +286,35 @@ final class PanelController {
     }
 }
 
-/// Clicks on empty chrome drag via `PanelDragRegion`. Do not remap `hitTest` —
-/// SwiftUI chips and the close button are not `NSControl`s, and stealing their
-/// clicks is what broke tab switching and dismiss.
+/// Hosts SwiftUI. Window height comes only from layout band preferences.
 private final class PanelHostingView<Content: View>: NSHostingView<Content> {
+    override var isOpaque: Bool { false }
     override var mouseDownCanMoveWindow: Bool { true }
 
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
+
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        clearHostFill()
+    }
+
+    override func layout() {
+        super.layout()
+        clearHostFill()
+        if let container = superview {
+            frame = container.bounds
+        }
+        clipsToBounds = true
+    }
+
+    private func clearHostFill() {
+        wantsLayer = true
+        layer?.isOpaque = false
+        layer?.backgroundColor = .clear
+    }
 }
 
 extension NSView {
-    /// `NSHostingView` ignores `mouseDownCanMoveWindow`. Track the drag ourselves.
     func beruBeginWindowDrag(with event: NSEvent) {
         guard let window else { return }
         let grab = event.locationInWindow

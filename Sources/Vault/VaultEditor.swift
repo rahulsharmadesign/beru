@@ -18,7 +18,6 @@ extension VaultView {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .clipped()
-        .background(SettingsTheme.window)
     }
 
     @ViewBuilder
@@ -46,12 +45,10 @@ extension VaultView {
                 .frame(minWidth: 0, minHeight: 0)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .layoutPriority(1)
-                .background(SettingsTheme.window)
                 SettingsHeaderRule()
                 editorFooter(for: note)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            .background(SettingsTheme.window)
         } else {
             BeruEmptyState(
                 icon: "sticky-note",
@@ -62,7 +59,6 @@ extension VaultView {
                     selection = store.createNote().id
                 }
             }
-            .background(SettingsTheme.window)
         }
     }
 
@@ -80,7 +76,6 @@ extension VaultView {
         .padding(.horizontal, SettingsChrome.contentPadding)
         .padding(.vertical, BeruSpace.sm)
         .fixedSize(horizontal: false, vertical: true)
-        .background(SettingsTheme.window)
     }
 
     func editorFooter(for note: VaultNote) -> some View {
@@ -113,7 +108,6 @@ extension VaultView {
         .padding(.horizontal, SettingsChrome.contentPadding)
         .padding(.vertical, BeruSpace.sm)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(SettingsTheme.window)
     }
 
     func binding(for note: VaultNote) -> Binding<VaultNote> {

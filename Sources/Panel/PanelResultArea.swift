@@ -10,7 +10,7 @@ extension PanelView {
     var resultModule: some View {
         VStack(alignment: .leading, spacing: 0) {
             if appState.truncationNotice {
-                truncationBanner.contributesPanelHeight()
+                truncationBanner
             }
             resultArea
             if let rationale = appState.rationales[appState.selectedActionID],
@@ -19,9 +19,9 @@ extension PanelView {
             }
         }
         // Inset inside clipShape so placeholder copy is not sheared by the
-        // card radius against the toolbar and composer.
+        // card radius. Height is intrinsic — the window sizes to the stack.
         .padding(PanelMetrics.moduleInset)
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: .infinity, alignment: .topLeading)
         .glassModule(scrim: .content)
     }
 
@@ -41,6 +41,12 @@ extension PanelView {
                         selected: appState.selectedReplyTone,
                         onSelect: { appState.selectedReplyTone = $0 }
                     )
+                }
+            } else if appState.selectedActionID == EnhancementAction.searchID {
+                if appState.searchThread.isEmpty {
+                    idlePlaceholder
+                } else {
+                    searchThreadList
                 }
             } else if case .done = state,
                appState.cleanNotices.contains(appState.selectedActionID) {
@@ -65,7 +71,6 @@ extension PanelView {
                 errorView(message: message)
             } else if case .idle = state,
                       appState.selectedActionID == EnhancementAction.describeID
-                        || appState.selectedActionID == EnhancementAction.searchID
                         || appState.capturedText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 idlePlaceholder
             } else {
@@ -73,11 +78,29 @@ extension PanelView {
             }
         }
         .frame(maxWidth: .infinity)
-        .id(appState.selectedActionID)
-        .transition(.opacity)
-        // Only the swapped content crossfades. On the enclosing module this
-        // also animated the card padding and glass background on every switch.
-        .animation(tabAnimation, value: appState.selectedActionID)
+        // Do not `.id` the tab or animate this swap: that scaled the result
+        // copy and, with the window animator, sheared the close strip and composer.
+        .animation(nil, value: appState.selectedActionID)
+    }
+
+    /// Stacked Search Q&As for this panel open. Window grows to the 75% cap;
+    /// then `panelResultScrollHeight` scrolls this list — chrome stays pinned.
+    var searchThreadList: some View {
+        VStack(alignment: .leading, spacing: BeruSpace.lg) {
+            ForEach(appState.searchThread) { turn in
+                VStack(alignment: .leading, spacing: BeruSpace.xs) {
+                    Text(turn.question)
+                        .font(BeruType.footnoteMedium)
+                        .foregroundStyle(BeruColor.textSecondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .textSelection(.enabled)
+                    ResultView(state: turn.answer, usesMarkdown: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .id(turn.id)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     var usesSearchMarkdown: Bool {
@@ -116,12 +139,9 @@ extension PanelView {
             .padding(.top, BeruSpace.xxs)
         }
         .padding(.horizontal, BeruSpace.lg)
-        .padding(.vertical, BeruSpace.md)
-        .frame(maxWidth: .infinity)
+        .padding(.vertical, PanelMetrics.moduleInset)
+        .frame(maxWidth: .infinity, minHeight: PanelMetrics.resultIdleMinHeight)
         .background(PanelDragRegion())
-        // Intrinsic height so the window grows instead of clipping this card
-        // against the toolbar and composer.
-        .contributesPanelHeight()
     }
 
     var regularIdlePlaceholder: some View {
@@ -140,13 +160,9 @@ extension PanelView {
                 .fixedSize(horizontal: false, vertical: true)
         }
         .padding(.horizontal, BeruSpace.lg)
-        .padding(.vertical, BeruSpace.lg)
-        .frame(maxWidth: .infinity)
+        .padding(.vertical, PanelMetrics.moduleInset)
+        .frame(maxWidth: .infinity, minHeight: PanelMetrics.resultIdleMinHeight)
         .background(PanelDragRegion())
-        // Intrinsic height, reported to the window. Filling the parent instead
-        // left this card taller than the space the window had allocated, which
-        // sheared it against the toolbar and composer.
-        .contributesPanelHeight()
     }
 
     var providerSetupPlaceholder: some View {
@@ -170,10 +186,9 @@ extension PanelView {
             .padding(.top, BeruSpace.xxs)
         }
         .padding(.horizontal, BeruSpace.lg)
-        .padding(.vertical, BeruSpace.lg)
-        .frame(maxWidth: .infinity)
+        .padding(.vertical, PanelMetrics.moduleInset)
+        .frame(maxWidth: .infinity, minHeight: PanelMetrics.resultIdleMinHeight)
         .background(PanelDragRegion())
-        .contributesPanelHeight()
     }
 
     var truncationBanner: some View {
@@ -201,7 +216,6 @@ extension PanelView {
             .padding(.horizontal, BeruSpace.md)
             .padding(.top, BeruSpace.xxs)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .contributesPanelHeight()
     }
 
     @ViewBuilder
@@ -213,7 +227,8 @@ extension PanelView {
             DiffView(
                 ops: appState.diffs[appState.selectedActionID],
                 revised: revised,
-                showDiff: true
+                showDiff: true,
+                scrolls: false
             )
         }
     }
@@ -253,7 +268,6 @@ extension PanelView {
         .padding(BeruSpace.lg)
         // The retry row can wrap onto a second line once a fallback provider
         // and Connect to model are both present, so the window has to be told.
-        .contributesPanelHeight()
     }
 
     /// Short label for the "Try with [X]" button. Takes the first word of the

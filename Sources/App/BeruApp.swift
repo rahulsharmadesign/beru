@@ -259,10 +259,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 && kill(app.processIdentifier, 0) == 0
         }
         if !others.isEmpty {
-            // Hand the request over before yielding. The user just asked for
-            // the app to open; exiting without a word is indistinguishable from
-            // a crash, and was — the running copy is a menu bar process with no
-            // window, so nothing at all appeared.
+            // Hand the request over before yielding. Activate the survivor so
+            // Finder / Spotlight reopen is not silent for a menu-bar app.
+            others.first?.activate(options: [.activateAllWindows])
             DistributedNotificationCenter.default().postNotificationName(
                 Self.showDashboardNotification, object: nil, userInfo: nil, deliverImmediately: true
             )

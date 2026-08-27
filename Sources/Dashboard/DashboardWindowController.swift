@@ -36,6 +36,12 @@ final class DashboardModel {
 @MainActor
 final class DashboardWindowController: NSWindowController, NSWindowDelegate {
     private let model: DashboardModel
+    private var hostedView: NSView?
+    private var glassView: NSGlassEffectView?
+    private var opaqueView: DashboardCanvasView?
+    private var usingOpaqueMaterial = false
+    private var hasInstalledMaterial = false
+    private var materialObserver: NSObjectProtocol?
 
     init(
         enhanceText: @escaping (String) -> Void,
@@ -52,17 +58,21 @@ final class DashboardWindowController: NSWindowController, NSWindowDelegate {
                 width: SettingsChrome.windowWidth,
                 height: SettingsChrome.windowHeight
             ),
-            styleMask: [.titled, .closable, .miniaturizable, .resizable],
+            styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
             backing: .buffered,
             defer: false
         )
         window.title = "Beru"
         window.titleVisibility = .visible
         window.titlebarAppearsTransparent = true
+        // Separator is drawn in SwiftUI under the titleband so it spans the
+        // full window and meets the sidebar rule (AppKit's line only covers
+        // the system titlebar strip and missed the sidebar).
+        window.titlebarSeparatorStyle = .none
         window.toolbar = nil
-        window.isOpaque = true
+        window.isOpaque = false
         window.hasShadow = true
-        window.backgroundColor = BeruColor.canvasNSColor
+        window.backgroundColor = .clear
         window.isReleasedWhenClosed = false
         window.minSize = NSSize(width: 880, height: 560)
         window.setFrameAutosaveName("BeruDashboardFixed")
@@ -75,12 +85,83 @@ final class DashboardWindowController: NSWindowController, NSWindowDelegate {
         hosting.setContentHuggingPriority(.defaultLow, for: .horizontal)
         hosting.setContentCompressionResistancePriority(.defaultLow, for: .vertical)
         hosting.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-        window.contentView = hosting
+        hosting.wantsLayer = true
+        hosting.layer?.isOpaque = false
+        hosting.layer?.backgroundColor = .clear
+        attachHost(hosting)
+        observeMaterial()
+    }
+
+    deinit {
+        if let materialObserver {
+            NSWorkspace.shared.notificationCenter.removeObserver(materialObserver)
+        }
     }
 
     @available(*, unavailable)
     required init?(coder: NSCoder) {
         fatalError("init(coder:) is not used; the dashboard is created in code")
+    }
+
+    /// Seats the SwiftUI host on an `NSGlassEffectView` slab. Reduce
+    /// Transparency swaps to an opaque canvas. SwiftUI's
+    /// `.containerBackground(for: .window)` does not reach an AppKit-hosted
+    /// window, so the material has to live here.
+    private func attachHost(_ view: NSView) {
+        hostedView = view
+        view.translatesAutoresizingMaskIntoConstraints = true
+        view.autoresizingMask = [.width, .height]
+        hasInstalledMaterial = false
+        installMaterial()
+    }
+
+    private func installMaterial() {
+        let wantOpaque = AccessibilityPreferences.shared.reduceTransparency
+        if hasInstalledMaterial, wantOpaque == usingOpaqueMaterial { return }
+        hasInstalledMaterial = true
+
+        hostedView?.removeFromSuperview()
+        glassView?.contentView = nil
+        glassView = nil
+        opaqueView = nil
+
+        guard let host = hostedView, let window else { return }
+
+        let bounds = window.contentLayoutRect
+        if wantOpaque {
+            let canvas = DashboardCanvasView(frame: bounds)
+            canvas.autoresizingMask = [.width, .height]
+            opaqueView = canvas
+            window.contentView = canvas
+            window.isOpaque = true
+            usingOpaqueMaterial = true
+            window.backgroundColor = BeruColor.canvasNSColor
+            host.frame = canvas.bounds
+            canvas.addSubview(host)
+            canvas.refreshColors()
+        } else {
+            let glass = NSGlassEffectView(frame: bounds)
+            glass.style = .regular
+            glass.clipsToBounds = true
+            glass.autoresizingMask = [.width, .height]
+            glassView = glass
+            window.contentView = glass
+            window.isOpaque = false
+            usingOpaqueMaterial = false
+            window.backgroundColor = .clear
+            host.frame = glass.bounds
+            glass.contentView = host
+        }
+    }
+
+    private func observeMaterial() {
+        materialObserver = NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated { self?.installMaterial() }
+        }
     }
 
     /// Brings the window forward, optionally jumping to a section first.
@@ -118,10 +199,58 @@ final class DashboardWindowController: NSWindowController, NSWindowDelegate {
 /// changes. `NSHostingView` forwards that to the window, so General → Models
 /// grows the frame. This view never participates in that chain: the window
 /// size is whatever the user (or the autosave) last set.
+/// Opaque fallback when Reduce Transparency is on.
+private final class DashboardCanvasView: NSView {
+    override var isOpaque: Bool { true }
+
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        refreshColors()
+    }
+
+    override func viewDidChangeEffectiveAppearance() {
+        super.viewDidChangeEffectiveAppearance()
+        refreshColors()
+    }
+
+    override func layout() {
+        super.layout()
+        refreshColors()
+    }
+
+    func refreshColors() {
+        wantsLayer = true
+        effectiveAppearance.performAsCurrentDrawingAppearance { [self] in
+            layer?.backgroundColor = BeruColor.canvasNSColor.cgColor
+        }
+    }
+}
+
 private final class DashboardHostingView<Content: View>: NSHostingView<Content> {
+    override var isOpaque: Bool { false }
+
     override var intrinsicContentSize: NSSize {
         NSSize(width: NSView.noIntrinsicMetric, height: NSView.noIntrinsicMetric)
     }
 
     override func invalidateIntrinsicContentSize() {}
+
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        clearHostFill()
+    }
+
+    override func layout() {
+        super.layout()
+        if let container = superview {
+            frame = container.bounds
+        }
+        clearHostFill()
+    }
+
+    private func clearHostFill() {
+        wantsLayer = true
+        layer?.isOpaque = false
+        layer?.backgroundColor = .clear
+    }
 }

@@ -8,16 +8,14 @@ struct ReplySuggestionsView: View {
     let onSelect: (ReplyTone) -> Void
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: BeruSpace.xs) {
-                ForEach(suggestions) { item in
-                    card(item)
-                }
+        VStack(alignment: .leading, spacing: BeruSpace.xs) {
+            ForEach(suggestions) { item in
+                card(item)
             }
-            .padding(.horizontal, BeruSpace.md)
-            .padding(.vertical, BeruSpace.md)
-            .contributesPanelHeight()
         }
+        .padding(.horizontal, BeruSpace.md)
+        .padding(.vertical, BeruSpace.md)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func card(_ item: ReplySuggestion) -> some View {

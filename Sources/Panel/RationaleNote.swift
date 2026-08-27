@@ -44,8 +44,5 @@ struct RationaleNote: View {
         .padding(.horizontal, BeruSpace.md)
         .padding(.bottom, BeruSpace.xxs)
         .frame(maxWidth: .infinity, alignment: .leading)
-        // The panel sizes itself from measured content; without this the window
-        // does not grow and the expanded text is clipped.
-        .contributesPanelHeight()
     }
 }

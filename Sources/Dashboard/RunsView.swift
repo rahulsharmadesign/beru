@@ -47,7 +47,6 @@ struct RunsView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(SettingsTheme.window)
     }
 
     private var nothingRecorded: some View {
@@ -64,7 +63,6 @@ struct RunsView: View {
                 .frame(maxWidth: 420)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(SettingsTheme.window)
     }
 
     private var browser: some View {
@@ -77,7 +75,6 @@ struct RunsView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(SettingsTheme.window)
     }
 
     private var filterBar: some View {

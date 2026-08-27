@@ -31,8 +31,8 @@ struct PanelUpdateButton: View {
     }
 }
 
-/// Gray “Settings” label left of the close disc. AppKit hit target so window-drag
-/// does not swallow the click — same reason as the Update pill.
+/// Settings gear. AppKit hit target so window-drag does not swallow the click.
+/// SF Symbol `gearshape` at 16pt — the system settings glyph.
 struct PanelSettingsLink: View {
     let action: () -> Void
     @State private var isHovered = false
@@ -40,16 +40,15 @@ struct PanelSettingsLink: View {
     var body: some View {
         ZStack {
             DictationPressView(onToggle: action)
-            Text("Settings")
-                .font(BeruType.caption)
+            Image(systemName: "gearshape")
+                .resizable()
+                .scaledToFit()
+                .frame(width: BeruSpace.md, height: BeruSpace.md)
                 .foregroundStyle(isHovered ? BeruColor.textPrimary : BeruColor.textSecondary)
-                // Leading only: a trailing pad would add to the visible gap
-                // against the close disc, which already carries 8pt of
-                // invisible hit-margin around the 12pt disc.
-                .padding(.leading, BeruSpace.xs)
                 .allowsHitTesting(false)
         }
-        .fixedSize()
+        .frame(width: BeruMetrics.hitTarget, height: BeruMetrics.hitTarget)
+        .contentShape(Rectangle())
         .onHover { isHovered = $0 }
         .help("Settings")
         .accessibilityLabel("Settings")
@@ -83,13 +82,6 @@ struct PanelIconHitButton: View {
     }
 }
 
-struct ChipFramesKey: PreferenceKey {
-    static var defaultValue: [String: CGRect] = [:]
-    static func reduce(value: inout [String: CGRect], nextValue: () -> [String: CGRect]) {
-        value.merge(nextValue(), uniquingKeysWith: { $1 })
-    }
-}
-
 /// Empty chrome that reports itself as the window-move target. Sits behind
 /// chips and text so those keep their clicks.
 struct PanelDragRegion: NSViewRepresentable {
@@ -103,7 +95,18 @@ struct PanelDragRegion: NSViewRepresentable {
 }
 
 final class WindowMoveView: NSView {
+    override var isOpaque: Bool { false }
     override var mouseDownCanMoveWindow: Bool { true }
+
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        wantsLayer = true
+        layer?.isOpaque = false
+        layer?.backgroundColor = .clear
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) { nil }
 
     override func mouseDown(with event: NSEvent) {
         beruBeginWindowDrag(with: event)

@@ -11,11 +11,10 @@ struct ResultView: View {
             if state == .idle {
                 Color.clear
             } else if state == .loading {
-                // A declared height rather than filling the parent, so the
-                // window has something to size to before any text arrives.
+                // Declared height so the window has something to size to before
+                // any text arrives. No ScrollView — the panel sizes to content.
                 Color.clear
                     .frame(maxWidth: .infinity, minHeight: PanelMetrics.resultPlaceholderHeight)
-                    .contributesPanelHeight()
             } else if state == .thinking {
                 VStack(spacing: BeruSpace.xs) {
                     Text("Thinking…")
@@ -27,7 +26,6 @@ struct ResultView: View {
                     minHeight: PanelMetrics.resultPlaceholderHeight,
                     alignment: .center
                 )
-                .contributesPanelHeight()
             } else if case .streaming(let text) = state {
                 streamingText(text)
             } else if case .done(let text) = state {
@@ -36,30 +34,26 @@ struct ResultView: View {
                 Text(message)
                     .font(BeruType.body)
                     .foregroundStyle(BeruColor.textSecondary)
-                    .contributesPanelHeight()
             }
         }
     }
 
+    /// Expands with the text so the panel window can grow. Parent scrolls
+    /// once `PanelController` hits the 75% viewport cap.
     @ViewBuilder
     private func streamingText(_ text: String, isDone: Bool = false) -> some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 0) {
-                if usesMarkdown {
-                    BeruMarkdown(text: text)
-                } else {
-                    Text(isDone ? text : text)
-                        .font(BeruType.resultBody)
-                        .textSelection(.enabled)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
+        VStack(alignment: .leading, spacing: 0) {
+            if usesMarkdown {
+                BeruMarkdown(text: text)
+            } else {
+                Text(isDone ? text : text)
+                    .font(BeruType.resultBody)
+                    .textSelection(.enabled)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .padding(.horizontal, BeruSpace.md)
-            .padding(.vertical, BeruSpace.md)
-            // Reported from inside the scroll view: this is the text's natural
-            // height, which is what the window needs in order to show it all.
-            .contributesPanelHeight()
         }
-        .frame(maxHeight: .infinity)
+        .padding(.horizontal, BeruSpace.md)
+        .padding(.vertical, BeruSpace.md)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }

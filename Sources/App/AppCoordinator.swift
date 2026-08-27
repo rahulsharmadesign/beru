@@ -35,6 +35,9 @@ final class AppCoordinator {
 
     func start() {
         logger.notice("start() called; registering hotkey")
+        engine.onStreamingStarted = { [weak self] in
+            self?.panelController.streamingDidStart()
+        }
         engine.onStreamingEnded = { [weak self] in
             self?.panelController.streamingDidEnd()
         }
@@ -51,6 +54,8 @@ final class AppCoordinator {
             logger.notice("dictate hotkey fired")
             self?.invokeVoiceAsk()
         }
+        let invoke = KeyboardShortcuts.getShortcut(for: .invokeBeru)?.description ?? "nil"
+        logger.notice("invoke shortcut bound = \(invoke, privacy: .public)")
 
         engine.onRequestDictationPermission = { [weak self] in
             self?.showDashboard(route: .permissions)

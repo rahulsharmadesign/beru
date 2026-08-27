@@ -36,7 +36,6 @@ struct RunDetailView: View {
             actionsBar
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(SettingsTheme.window)
         .id(run.id)
     }
 
@@ -225,7 +224,6 @@ struct RunDetailView: View {
         .padding(.horizontal, SettingsChrome.contentPadding)
         .padding(.vertical, BeruSpace.sm)
         .fixedSize(horizontal: false, vertical: true)
-        .background(SettingsTheme.window)
     }
 
     // MARK: - Helpers

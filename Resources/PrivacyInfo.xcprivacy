@@ -6,7 +6,7 @@
     Privacy Manifest for Beru
     
     This file declares the app's privacy practices as required by Apple for
-    macOS 14+ apps. Beru is a local-first application with no analytics,
+    macOS 26+ apps. Beru is a local-first application with no analytics,
     telemetry, or remote data collection. It is not App Sandboxed: Accessibility
     and synthetic keystrokes require that. User data stays on this Mac unless
     the user sends selected text to a configured LLM provider.

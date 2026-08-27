@@ -29,6 +29,7 @@ struct PanelRequest {
 extension PanelEngine {
     func runStream(_ request: PanelRequest) {
         let task = Task { [weak self] in
+            self?.onStreamingStarted?()
             defer {
                 self?.powerActivity.streamEnded()
                 self?.onStreamingEnded?()

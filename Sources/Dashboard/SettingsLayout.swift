@@ -39,7 +39,6 @@ struct SettingsSplitView<Sidebar: View, Detail: View>: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(BeruColor.canvas)
     }
 }
 
@@ -55,20 +54,26 @@ struct SettingsPage<Content: View>: View {
     }
 
     var body: some View {
-        ScrollView {
+        VStack(alignment: .leading, spacing: 0) {
             VStack(alignment: .leading, spacing: BeruMetrics.headerContentSpacing) {
                 SettingsPageHeader(title: title, subtitle: subtitle)
                 SettingsHeaderRule()
-                content
             }
             .padding(.horizontal, BeruMetrics.contentPadding)
             .padding(.top, BeruSpace.lg)
-            .padding(.bottom, BeruSpace.xxl)
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .fixedSize(horizontal: false, vertical: true)
+            ScrollView {
+                content
+                    .padding(.horizontal, BeruMetrics.contentPadding)
+                    .padding(.top, BeruMetrics.headerContentSpacing)
+                    .padding(.bottom, BeruSpace.xxl)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .scrollBounceBehavior(.basedOnSize)
+            .scrollContentBackground(.hidden)
+            .scrollEdgeEffectStyle(.none, for: .vertical)
         }
-        .scrollBounceBehavior(.basedOnSize)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(BeruColor.canvas)
     }
 }
 
@@ -97,7 +102,6 @@ struct SettingsWorkspace<Content: View>: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(BeruColor.canvas)
     }
 }
 
@@ -233,7 +237,6 @@ struct SettingsWorkspaceToolbar<Content: View>: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             SettingsHeaderRule()
         }
-        .background(BeruColor.canvas)
     }
 
     private var toolbarContent: some View {
@@ -267,14 +270,12 @@ struct SettingsListFooter<Content: View>: View {
 extension View {
     func settingsWorkspacePane() -> some View {
         frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            .background(BeruColor.canvas)
     }
 
     func settingsSidebarList() -> some View {
         listStyle(.sidebar)
             .scrollContentBackground(.hidden)
             .contentMargins(.horizontal, BeruMetrics.workspaceListInset, for: .scrollContent)
-            .background(BeruColor.canvas)
     }
 
     /// Inset list-row highlight so selection pills do not touch column edges.

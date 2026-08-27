@@ -1,36 +1,41 @@
 import SwiftUI
 
 extension View {
-    /// Compact action chip. Selection fill is drawn by the sliding pill in
-    /// `PanelView`; chips only handle type color, idle fill, and idle border.
+    /// Compact action chip on the panel glass slab. Selected chips tint;
+    /// idle chips use regular glass. Reduce Transparency falls back to
+    /// opaque capsules so 11pt labels stay readable.
     func glassChip(selected: Bool) -> some View {
         modifier(GlassChipModifier(selected: selected))
     }
 }
 
 private struct GlassChipModifier: ViewModifier {
-    @Environment(\.colorScheme) private var colorScheme
     let selected: Bool
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
     func body(content: Content) -> some View {
-        content
+        let padded = content
             .padding(.horizontal, BeruSpace.xs)
             .padding(.vertical, BeruSpace.xs)
-            .background {
-                Capsule().fill(
-                    selected
-                        ? Color.clear
-                        : colorScheme == .dark ? BeruColor.Dark.surface : BeruColor.Light.surface
-                )
-            }
-            .foregroundStyle(selected ? PrimaryColor.selected.selectedForeground : BeruColor.textPrimary)
-            .overlay {
-                if !selected {
-                    Capsule().strokeBorder(
-                        colorScheme == .dark ? BeruColor.Dark.border : BeruColor.Light.border,
-                        lineWidth: 0.75
-                    )
+
+        if reduceTransparency {
+            padded
+                .background {
+                    Capsule().fill(selected ? BeruColor.accent : BeruColor.surface)
                 }
-            }
+                .foregroundStyle(selected ? BeruColor.onAccent : BeruColor.textPrimary)
+                .overlay {
+                    if !selected {
+                        Capsule().strokeBorder(BeruColor.border, lineWidth: 0.75)
+                    }
+                }
+        } else {
+            padded
+                .foregroundStyle(selected ? BeruColor.onAccent : BeruColor.textPrimary)
+                .glassEffect(
+                    selected ? .regular : .clear,
+                    in: Capsule()
+                )
+        }
     }
 }

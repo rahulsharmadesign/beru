@@ -53,10 +53,10 @@ struct GeneralSettingsTab: View {
 
             SettingsSection(title: "Keyboard", subtitle: "Global shortcuts for opening Beru and dictation.") {
                 SettingsRow(title: "Open Beru", caption: "Select text in another app, then press this shortcut.") {
-                    KeyboardShortcuts.Recorder(for: .invokeBeru)
+                    SettingsShortcutRecorder(name: .invokeBeru)
                 }
                 SettingsRow(title: "Dictate", caption: "Opens Beru in Ask and starts listening. Press again, Escape, or the mic to stop.") {
-                    KeyboardShortcuts.Recorder(for: .dictateToBeru)
+                    SettingsShortcutRecorder(name: .dictateToBeru)
                 }
             }
 
@@ -116,5 +116,72 @@ struct GeneralSettingsTab: View {
         do {
             if enabled { try SMAppService.mainApp.register() } else { try SMAppService.mainApp.unregister() }
         } catch { }
+    }
+}
+
+/// Shortcut field on the Settings glass slab. `KeyboardShortcuts.Recorder` is
+/// an `NSSearchField`; its cancel × inherits a glass bezel that paints a dark
+/// rectangle over the capsule.
+private struct SettingsShortcutRecorder: View {
+    let name: KeyboardShortcuts.Name
+
+    var body: some View {
+        ShortcutRecorderField(name: name)
+            .frame(width: BeruMetrics.fieldWidth, height: BeruMetrics.hitTarget)
+            .background {
+                Capsule()
+                    .fill(BeruColor.input)
+                    .overlay(Capsule().strokeBorder(BeruColor.border, lineWidth: 1))
+            }
+    }
+}
+
+private struct ShortcutRecorderField: NSViewRepresentable {
+    let name: KeyboardShortcuts.Name
+
+    func makeNSView(context: Context) -> KeyboardShortcuts.RecorderCocoa {
+        let field = KeyboardShortcuts.RecorderCocoa(for: name)
+        Self.style(field)
+        return field
+    }
+
+    func updateNSView(_ field: KeyboardShortcuts.RecorderCocoa, context: Context) {
+        field.shortcutName = name
+        Self.style(field)
+    }
+
+    private static func style(_ field: NSSearchField) {
+        field.focusRingType = .none
+        field.isBezeled = false
+        field.isBordered = false
+        field.drawsBackground = false
+        field.wantsLayer = true
+        field.layer?.isOpaque = false
+        field.layer?.backgroundColor = .clear
+        if let cell = field.cell as? NSSearchFieldCell {
+            cell.drawsBackground = false
+            cell.focusRingType = .none
+            cell.searchButtonCell = nil
+            if let cancel = cell.cancelButtonCell {
+                cancel.isBordered = false
+                cancel.bezelStyle = .inline
+                cancel.backgroundColor = .clear
+            }
+        }
+        stripButtonChrome(field)
+        DispatchQueue.main.async { stripButtonChrome(field) }
+    }
+
+    private static func stripButtonChrome(_ view: NSView) {
+        if let button = view as? NSButton {
+            button.isBordered = false
+            button.bezelStyle = .inline
+            button.wantsLayer = true
+            button.layer?.isOpaque = false
+            button.layer?.backgroundColor = .clear
+        }
+        for sub in view.subviews {
+            stripButtonChrome(sub)
+        }
     }
 }

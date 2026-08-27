@@ -39,4 +39,7 @@ enum SettingsChrome {
     static let rowRadius = BeruRadius.md
     static let fieldWidth = BeruMetrics.fieldWidth
     static let labelMaxWidth = BeruMetrics.labelMaxWidth
+    /// Band under the traffic lights before the settings body. Hairline sits
+    /// on its bottom edge and meets the sidebar vertical rule.
+    static let titlebarHeight: CGFloat = 4
 }

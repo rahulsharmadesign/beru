@@ -1,8 +1,10 @@
 import AppKit
 import SwiftUI
 
-/// Opaque rounded card. The window-server shadow is derived from this view's
-/// alpha, so the mask must stay rounded as the panel resizes.
+/// Opaque rounded card used when Reduce Transparency is on. Liquid Glass has
+/// no opacity control; Apple's fallback is a different material, not a dimmer
+/// glass. The window-server shadow is derived from this view's alpha, so the
+/// mask must stay rounded as the panel resizes.
 private final class RoundedPanelView: NSView {
     override var isOpaque: Bool { true }
 
@@ -29,11 +31,11 @@ private final class RoundedPanelView: NSView {
         }
     }
 
-    private func updateMask() {
+    private     func updateMask() {
         wantsLayer = true
         layer?.mask = nil
         layer?.cornerRadius = PanelMetrics.cornerRadius
-        layer?.cornerCurve = .circular
+        layer?.cornerCurve = .continuous
         layer?.masksToBounds = true
     }
 }
@@ -41,21 +43,21 @@ private final class RoundedPanelView: NSView {
 /// A borderless, non-activating panel that floats above the active app without
 /// stealing keyboard focus or the Dock/menu bar highlight from the host application.
 ///
-/// Depth comes from `NSWindow.hasShadow` — the same window-server shadow the
-/// Settings window uses. CALayer shadows inside a transparent panel do not
-/// composite, which is why a custom shadow was invisible on dark hosts.
+/// Default chrome is one `NSGlassEffectView` slab with the SwiftUI host as its
+/// `contentView` — Apple's AppKit path. A slot-plus-subview sandwich painted
+/// over the material and read as a white card. Reduce Transparency swaps the
+/// slab for an opaque `RoundedPanelView` without recreating the host.
+/// Depth comes from `NSWindow.hasShadow`.
+@MainActor
 final class FloatingPanel: NSPanel {
-    /// The solid backdrop the SwiftUI content sits on.
-    let backdropView: NSView
+    private var hostedView: NSView?
+    private var glassView: NSGlassEffectView?
+    private var opaqueView: RoundedPanelView?
+    private var usingOpaqueMaterial = false
+    private var hasInstalledMaterial = false
+    private var materialObserver: NSObjectProtocol?
 
     init(contentRect: NSRect) {
-        let card = RoundedPanelView(frame: contentRect)
-        card.wantsLayer = true
-        card.layer?.cornerRadius = PanelMetrics.cornerRadius
-        card.layer?.cornerCurve = .circular
-        card.autoresizingMask = [.width, .height]
-        self.backdropView = card
-
         super.init(
             contentRect: contentRect,
             styleMask: [.nonactivatingPanel, .borderless],
@@ -63,17 +65,33 @@ final class FloatingPanel: NSPanel {
             defer: false
         )
 
-        self.contentView = card
-
         isFloatingPanel = true
         level = .floating
         collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .ignoresCycle]
         isMovableByWindowBackground = true
-        isOpaque = true
         hasShadow = true
         hidesOnDeactivate = false
         isReleasedWhenClosed = false
+        isOpaque = false
+        backgroundColor = .clear
+        observeMaterial()
         syncAppearance()
+    }
+
+    deinit {
+        if let materialObserver {
+            NSWorkspace.shared.notificationCenter.removeObserver(materialObserver)
+        }
+    }
+
+    /// Seats the SwiftUI host as `NSGlassEffectView.contentView` (or on the
+    /// opaque card). Call once after constructing the host.
+    func attachHost(_ view: NSView) {
+        hostedView = view
+        view.translatesAutoresizingMaskIntoConstraints = true
+        view.autoresizingMask = [.width, .height]
+        hasInstalledMaterial = false
+        installMaterial(in: nil)
     }
 
     /// Keep the AppKit backdrop in lockstep with SwiftUI. Snapshotting
@@ -81,8 +99,70 @@ final class FloatingPanel: NSPanel {
     func syncAppearance(with appearance: NSAppearance = NSApp.effectiveAppearance) {
         self.appearance = appearance
         appearance.performAsCurrentDrawingAppearance { [self] in
-            backgroundColor = BeruColor.canvasNSColor
-            (backdropView as? RoundedPanelView)?.refreshColors()
+            if usingOpaqueMaterial {
+                backgroundColor = BeruColor.canvasNSColor
+                opaqueView?.refreshColors()
+            } else {
+                backgroundColor = .clear
+            }
+        }
+    }
+
+    /// Rebuilds chrome when Reduce Transparency flips. The SwiftUI host stays;
+    /// only the window material around it changes.
+    func installMaterial() {
+        installMaterial(in: nil)
+    }
+
+    private func installMaterial(in rect: NSRect?) {
+        let wantOpaque = AccessibilityPreferences.shared.reduceTransparency
+        if hasInstalledMaterial, wantOpaque == usingOpaqueMaterial { return }
+        hasInstalledMaterial = true
+
+        hostedView?.removeFromSuperview()
+        glassView?.contentView = nil
+        glassView = nil
+        opaqueView = nil
+
+        guard let host = hostedView else { return }
+
+        let bounds = rect ?? contentView?.bounds ?? contentRect(forFrameRect: frame)
+        if wantOpaque {
+            let card = RoundedPanelView(frame: bounds)
+            card.wantsLayer = true
+            card.layer?.cornerRadius = PanelMetrics.cornerRadius
+            card.layer?.cornerCurve = .continuous
+            card.autoresizingMask = [.width, .height]
+            opaqueView = card
+            contentView = card
+            isOpaque = true
+            usingOpaqueMaterial = true
+            host.frame = card.bounds
+            card.addSubview(host)
+        } else {
+            let glass = NSGlassEffectView(frame: bounds)
+            glass.cornerRadius = PanelMetrics.cornerRadius
+            glass.style = .regular
+            glass.clipsToBounds = true
+            glass.autoresizingMask = [.width, .height]
+            glassView = glass
+            contentView = glass
+            isOpaque = false
+            usingOpaqueMaterial = false
+            host.frame = glass.bounds
+            glass.contentView = host
+        }
+        syncAppearance()
+        invalidateShadow()
+    }
+
+    private func observeMaterial() {
+        materialObserver = NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated { self?.installMaterial() }
         }
     }
 

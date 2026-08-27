@@ -40,9 +40,23 @@ a new capsule.
 If a value genuinely needs to be off-grid, add a named token in `Sources/Design`
 with a comment explaining why. Do not inline the number.
 
-# Panel height contract
+# Panel height contract (frozen)
 
-The panel window sizes itself from child height preferences. Any state view in
-`Sources/Panel/` must call `.contributesPanelHeight()`. Do not use
-`maxHeight: .infinity` on an intrinsically sized empty or error state; it fills
-a clipped container and gets sheared at the top and bottom.
+Window height = min(chrome + resultIdeal, **75%** of the screen’s visible
+height). Chrome = close strip + chips + composer (+ 10pt insets/spacings).
+Only the result band grows with text; at the cap it scrolls inside
+`AppState.panelResultScrollHeight` while chrome stays pinned.
+
+Grow immediately; shrink after a short debounce. `moduleInset` /
+`moduleSpacing` stay at 10. `maxViewportFraction` stays at `0.75`.
+
+Do not:
+- drive height from `NSHostingView.intrinsicContentSize` / `sizingOptions`
+- put close / chips / composer inside the result `ScrollView`
+- measure the root inside a flexible infinite max-height frame
+- re-impose a comfort `minHeight` after the first measure
+- animate window resize on tab change
+- hide toolbar context with `if` (use opacity)
+- change `maxViewportFraction` without updating `PanelViewportCapTests` and QA
+
+At the viewport cap, scroll the result — never clip the composer.

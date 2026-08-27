@@ -1,7 +1,7 @@
 # Beru — Product Requirements Document
 
 **Product:** Beru
-**Platform:** macOS 14+ (menu bar app)
+**Platform:** macOS 26+ (menu bar app)
 **Version this document describes:** 1.1.9 (build 15)
 **Bundle ID:** `com.rahul.beru`
 **Status:** Shipped on macOS. Windows and cloud sync are not in this build.

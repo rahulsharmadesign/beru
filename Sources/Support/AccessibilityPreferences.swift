@@ -2,9 +2,9 @@ import AppKit
 import Observation
 
 /// Live view of the system accessibility switches the panel must honor.
-/// NSVisualEffectView adapts to reduce-transparency on its own, but the custom
-/// glass, rim lighting, and spring animations do not — and the user should not
-/// have to relaunch for a change to take effect.
+/// `NSGlassEffectView` has no opacity control, so Reduce Transparency swaps
+/// the panel to an opaque card. Custom overlays and springs still need this
+/// live read — the user should not have to relaunch for a change to take effect.
 @MainActor
 @Observable
 final class AccessibilityPreferences {

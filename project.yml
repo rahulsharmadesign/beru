@@ -2,7 +2,7 @@ name: Beru
 options:
   bundleIdPrefix: com.rahul
   deploymentTarget:
-    macOS: "14.0"
+    macOS: "26.0"
   createIntermediateGroups: true
 
 packages:
@@ -17,7 +17,7 @@ targets:
   Beru:
     type: application
     platform: macOS
-    deploymentTarget: "14.0"
+    deploymentTarget: "26.0"
     sources:
       - path: Sources
       - path: Resources
@@ -92,7 +92,7 @@ targets:
   BeruTests:
     type: bundle.unit-test
     platform: macOS
-    deploymentTarget: "14.0"
+    deploymentTarget: "26.0"
     sources:
       - path: Tests/BeruTests
     settings:

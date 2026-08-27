@@ -15,11 +15,27 @@ the window height fits the content:
 - [ ] Idle, with Accessibility granted (text selected, before running)
 - [ ] Idle, with Accessibility **not** granted (the placeholder card)
 - [ ] Loading / streaming
+- [ ] Long result: window grows up to **75%** of the visible screen; close disc, chips, and composer (Replace / Copy / Pin) stay visible; only the result scrolls
 - [ ] Result with a diff, and result long enough to scroll
 - [ ] Error, with Retry visible
 - [ ] Error from an unknown model, with Retry **and** Connect to model
 - [ ] Provider setup (no model configured)
-- [ ] Switch action tabs repeatedly: only the tab pill animates, not the whole panel
+- [ ] Close disc on the leading edge; gear (no “Settings” label) opens Settings
+- [ ] Close disc and composer sit 10pt in from the window on every side; idle tabs have no gray fill; selected tab is accent
+- [ ] Open the panel and switch Search ↔ Enhance: inset does not collapse then snap; composer never crops
+- [ ] Select text on a webpage and invoke: **Summarize** is selected and already visible in the chip row (no horizontal swipe)
+- [ ] AI Search: ask twice — both Q&As stack; window grows to 75% then scrolls; thread clears when the panel closes
+- [ ] AI Search regenerate rewrites only the latest answer; earlier turns stay
+
+## Liquid Glass
+
+- [ ] Panel over a light document and a dark window: floating HUD glass (refraction, not a frosted fill); host does not show through as holes between modules
+- [ ] Result markdown and diffs stay readable on both hosts
+- [ ] Reduce Transparency on: panel becomes opaque canvas without relaunching
+- [ ] Reduce Transparency off: glass returns
+- [ ] Settings uses the system window material (not a grey card, not a blur of the host); General → About twice with no stacked pages
+- [ ] Window close traffic light has no square fill; shortcut recorder × has no dark bezel
+- [ ] Menu bar extra keeps the original row layout on system chrome; Enhance Clipboard, Dictate, Vault, Settings still work
 
 ## Settings routes
 
@@ -63,7 +79,7 @@ Highlight a message in another app, invoke, then tap **Smart Reply**:
 - [ ] Roman Hinglish comment → all six replies stay in Roman/Latin (not Devanagari or German)
 - [ ] If the model mixes languages across cards, a language notice appears — try Regenerate
 - [ ] No selection: “No text selected”
-- [ ] Grammar still copy-edits; switching tabs only animates the chip pill
+- [ ] Grammar still copy-edits; switching tabs only morphs the chip highlight, not the window
 
 ## Before release only
 

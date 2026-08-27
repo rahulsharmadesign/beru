@@ -4,65 +4,54 @@ import SwiftUI
 struct PanelView: View {
     @Bindable var appState: AppState
     let engine: PanelEngine
-    let onHeightChange: (CGFloat) -> Void
+    var onLayoutHeights: ((PanelLayoutHeights) -> Void)?
     @FocusState var describeFieldFocused: Bool
-    @State var chipFrames: [String: CGRect] = [:]
     @State var accessibilityTrusted = Permissions.isAccessibilityTrusted()
 
-    // Every shared singleton this view reads is @Bindable. Two of these used to
-    // be plain stored properties, which reads the current value but never
-    // subscribes, so editing an action or toggling an accessibility preference
-    // could leave the panel showing stale chips until something else redrew it.
     @Bindable var registry = ActionRegistry.shared
     @Bindable var targetRegistry = TargetRegistry.shared
     @Bindable var a11y = AccessibilityPreferences.shared
     @Bindable var settings = SettingsStore.shared
     @Bindable var appearance = AppearanceObserver.shared
     @Bindable var thread = SessionThread.shared
+    @Namespace var tabGlass
 
-    init(appState: AppState, engine: PanelEngine, onHeightChange: @escaping (CGFloat) -> Void = { _ in }) {
+    init(
+        appState: AppState,
+        engine: PanelEngine,
+        onLayoutHeights: ((PanelLayoutHeights) -> Void)? = nil
+    ) {
         self.appState = appState
         self.engine = engine
-        self.onHeightChange = onHeightChange
+        self.onLayoutHeights = onLayoutHeights
     }
 
     var body: some View {
-        // One composition: toolbar (verbs + quiet context) → result → outcomes → composer.
-        // Chips live inside a chrome module with real inset so they never kiss the
-        // rounded window edge (that was the "broken top" look).
-        //
-        // Observation only invalidates on values read while body runs. The accent
-        // and the active provider are read further down by .tint and the provider
-        // pill, but nothing in this tree reads the system appearance, and the
-        // panel paints AppKit-backed surfaces that must follow it. This read is
-        // the subscription that repaints on a light/dark switch.
+        // Freeze: close + chips + composer pinned. Result grows with text, then
+        // scrolls once the window hits 75% of the visible screen height.
         let _ = appearance.signature
 
-        VStack(spacing: 0) {
-            closeStrip
-                .contributesPanelHeight()
+        VStack(spacing: PanelMetrics.moduleSpacing) {
             VStack(spacing: PanelMetrics.moduleSpacing) {
+                closeStrip
                 toolbar
-                    .glassModule()
                     .fixedSize(horizontal: false, vertical: true)
-                    .layoutPriority(1)
-                    .contributesPanelHeight()
-                resultModule
-                    .layoutPriority(0)
-                composerColumn
-                    .layoutPriority(1)
-                    .contributesPanelHeight()
             }
+            .fixedSize(horizontal: false, vertical: true)
+            .reportsPanelBand(.chromeTop)
+
+            resultSlot
+
+            composerColumn
+                .fixedSize(horizontal: false, vertical: true)
+                .reportsPanelBand(.chromeBottom)
         }
-        .background(BeruColor.canvas)
+        .padding(PanelMetrics.moduleInset)
+        .frame(maxWidth: .infinity, alignment: .top)
         .background(PanelDragRegion())
         .tint(BeruColor.accent)
-        .onPreferenceChange(PanelHeightKey.self) { total in
-            onHeightChange(total + PanelMetrics.moduleChromeHeight)
-        }
-        .frame(minHeight: PanelMetrics.minHeight, maxHeight: .infinity)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .id(appState.panelSessionID)
+        .onPreferenceChange(PanelBandHeightKey.self, perform: publishLayoutHeights)
         .onChange(of: appState.selectedActionID) { _, actionID in
             guard actionID != EnhancementAction.describeID,
                   actionID != EnhancementAction.searchID else { return }
@@ -105,20 +94,64 @@ struct PanelView: View {
         }
     }
 
-    // MARK: - Close strip
+    /// Result band: intrinsic below the cap; fixed-height ScrollView at the cap
+    /// so pinned chrome never leaves the window. Search threads pin to the
+    /// latest turn so follow-ups stay in view as the stack grows.
+    @ViewBuilder
+    var resultSlot: some View {
+        let measured = resultModule.reportsPanelBand(.result)
 
-    /// Outer-frame chrome matching the widget mock: red close sits above the
-    /// inner cards, on the right, not over the chips.
+        if let scrollHeight = appState.panelResultScrollHeight {
+            ScrollViewReader { proxy in
+                ScrollView {
+                    measured
+                }
+                .scrollBounceBehavior(.basedOnSize)
+                .frame(height: scrollHeight)
+                .frame(maxWidth: .infinity)
+                .onChange(of: appState.searchThread.count) { _, _ in
+                    scrollSearchThreadToLatest(proxy)
+                }
+                .onChange(of: appState.resultState(for: EnhancementAction.searchID)) { _, _ in
+                    scrollSearchThreadToLatest(proxy)
+                }
+            }
+        } else {
+            measured
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    func scrollSearchThreadToLatest(_ proxy: ScrollViewProxy) {
+        guard appState.selectedActionID == EnhancementAction.searchID,
+              let last = appState.searchThread.last else { return }
+        DispatchQueue.main.async {
+            withAnimation(a11y.reduceMotion ? nil : .easeOut(duration: 0.15)) {
+                proxy.scrollTo(last.id, anchor: .bottom)
+            }
+        }
+    }
+
+    func publishLayoutHeights(_ bands: [PanelHeightBand: CGFloat]) {
+        let top = bands[.chromeTop] ?? 0
+        let bottom = bands[.chromeBottom] ?? 0
+        let result = bands[.result] ?? 0
+        // Outer padding + the two spacings flanking the result slot.
+        let chrome = PanelMetrics.moduleInset * 2
+            + top
+            + bottom
+            + PanelMetrics.moduleSpacing * 2
+        guard chrome > PanelMetrics.moduleInset || result > 1 else { return }
+        onLayoutHeights?(PanelLayoutHeights(chrome: chrome, result: result))
+    }
+
     var closeStrip: some View {
-        // xxs here + the Settings link's own xs padding = a 12pt visible gap
-        // to the close disc.
         HStack(spacing: BeruSpace.xxs) {
+            PanelCloseDot { engine.cancel() }
             Spacer(minLength: 0)
             PanelUpdateButton()
             PanelSettingsLink { engine.openSettings() }
-            PanelCloseDot { engine.cancel() }
         }
-        .padding(.trailing, BeruSpace.xxs)
         .frame(height: PanelMetrics.closeStripHeight)
         .background(PanelDragRegion())
     }

@@ -35,4 +35,7 @@ enum BeruMetrics {
     static let hitTarget: CGFloat = 28
     /// Compact hit target inside dense list rows.
     static let hitTargetCompact: CGFloat = 22
+    /// iOS 26 / macOS 26 compact toolbar control height. Off the 8pt grid
+    /// because that is the system pill size, not a spacing step.
+    static let tabPillHeight: CGFloat = 36
 }

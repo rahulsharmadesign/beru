@@ -1,11 +1,26 @@
 import SwiftUI
 
+private struct BeruUsesGlassButtonsKey: EnvironmentKey {
+    static let defaultValue = false
+}
+
+extension EnvironmentValues {
+    /// Panel and Settings chrome use system Liquid Glass button styles. Capsule
+    /// pills stay for non-primary actions so the dashboard does not grow a
+    /// second system.
+    var beruUsesGlassButtons: Bool {
+        get { self[BeruUsesGlassButtonsKey.self] }
+        set { self[BeruUsesGlassButtonsKey.self] = newValue }
+    }
+}
+
 /// The button system.
 ///
 /// Beru shipped four button languages at once: capsule pills in Settings,
 /// system `.borderedProminent` in the panel, rounded rectangles in the menu
 /// bar, and hand-rolled circles for send and dictation. Two shapes now cover
-/// every case — this capsule/text button and `BeruIconButton`.
+/// every case — this capsule/text button and `BeruIconButton`. On the panel,
+/// compact primary actions use `.glassProminent`. Copy / Pin stay outline pills.
 struct BeruButton: View {
     enum Variant {
         /// Filled with the accent. One per view, for the primary action.
@@ -38,16 +53,52 @@ struct BeruButton: View {
     let action: () -> Void
 
     @State private var isHovered = false
+    @Environment(\.beruUsesGlassButtons) private var usesGlassButtons
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
     var body: some View {
-        Button(role: role, action: action) {
-            label
+        Group {
+            if usesSystemGlass {
+                glassButton
+            } else {
+                plainButton
+            }
         }
-        .buttonStyle(.plain)
         .disabled(!enabled)
         .fixedSize()
         .opacity(enabled ? 1 : 0.45)
         .onHover { isHovered = $0 }
+    }
+
+    private var usesSystemGlass: Bool {
+        usesGlassButtons && variant == .primary && !reduceTransparency
+    }
+
+    @ViewBuilder
+    private var glassButton: some View {
+        Button(role: role, action: action) { glassLabel }
+            .buttonStyle(.glassProminent)
+            .buttonBorderShape(.capsule)
+            .controlSize(.small)
+    }
+
+    private var plainButton: some View {
+        Button(role: role, action: action) { label }
+            .buttonStyle(.plain)
+    }
+
+    private var glassLabel: some View {
+        HStack(spacing: BeruSpace.xxs) {
+            if let leadingIcon {
+                BeruIcon(name: leadingIcon, size: iconSize)
+            }
+            Text(title)
+                .font(font)
+                .lineLimit(1)
+            if let trailingIcon {
+                BeruIcon(name: trailingIcon, size: iconSize)
+            }
+        }
     }
 
     @ViewBuilder

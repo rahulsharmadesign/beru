@@ -16,20 +16,30 @@ struct DashboardView: View {
         // nothing in this tree reads the system appearance. This read is the
         // subscription that repaints AppKit-backed surfaces on a light/dark switch.
         let _ = appearance.signature
-        HStack(spacing: 0) {
-            sidebar
-                .frame(width: SettingsChrome.sidebarWidth)
-                .frame(maxHeight: .infinity)
+        // Titleband → full-width hairline → sidebar | detail. The stroke sits
+        // under the traffic lights and meets the vertical rule at a T-junction.
+        VStack(spacing: 0) {
+            Color.clear
+                .frame(height: SettingsChrome.titlebarHeight)
+                .frame(maxWidth: .infinity)
             Rectangle()
                 .fill(SettingsTheme.border)
-                .frame(width: 1)
-                .frame(maxHeight: .infinity)
-            detail
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                .frame(height: 1)
+                .frame(maxWidth: .infinity)
+            HStack(spacing: 0) {
+                sidebar
+                    .frame(width: SettingsChrome.sidebarWidth)
+                    .frame(maxHeight: .infinity)
+                Rectangle()
+                    .fill(SettingsTheme.border)
+                    .frame(width: 1)
+                    .frame(maxHeight: .infinity)
+                detail
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .clipped()
-        .background(SettingsTheme.window)
         .tint(BeruColor.accent)
         .font(BeruSans.font(13))
     }
@@ -93,9 +103,9 @@ struct DashboardView: View {
             }
         }
         .padding(.horizontal, SettingsChrome.workspaceListInset)
-        .padding(.vertical, 24)
+        .padding(.top, BeruSpace.md)
+        .padding(.bottom, BeruSpace.lg)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .background(SettingsTheme.sidebar)
     }
 
     private func sidebarButton(_ route: DashboardRoute) -> some View {
@@ -145,8 +155,7 @@ struct DashboardView: View {
         .padding(.vertical, BeruSpace.xs)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background {
-            RoundedRectangle(cornerRadius: SettingsChrome.rowRadius, style: .continuous)
-                .fill(selected ? SettingsTheme.sidebarSelected : Color.clear)
+            GlassSelectedFill(isSelected: selected, radius: SettingsChrome.rowRadius)
         }
         .contentShape(RoundedRectangle(cornerRadius: SettingsChrome.rowRadius, style: .continuous))
     }
@@ -166,7 +175,6 @@ struct DashboardView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(SettingsTheme.window)
     }
 }
 
@@ -216,10 +224,10 @@ private struct SettingsTipCard: View {
             .padding(BeruSpace.sm)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background {
-                RoundedRectangle(cornerRadius: SettingsChrome.rowRadius, style: .continuous)
+                BeruRadius.shape(SettingsChrome.rowRadius)
                     .fill(BeruColor.surface)
                     .overlay {
-                        RoundedRectangle(cornerRadius: SettingsChrome.rowRadius, style: .continuous)
+                        BeruRadius.shape(SettingsChrome.rowRadius)
                             .strokeBorder(SettingsTheme.border, lineWidth: 1)
                     }
             }

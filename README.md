@@ -6,7 +6,7 @@
 
 Select a rough idea, press a hotkey, and Beru turns it into a prompt your LLM will actually follow, aimed at Cursor, Claude, Codex, Gemini, ChatGPT, and the rest.
 
-![macOS 14+](https://img.shields.io/badge/macOS-14%2B-blue)
+![macOS 26+](https://img.shields.io/badge/macOS-26%2B-blue)
 ![Swift 5.10](https://img.shields.io/badge/Swift-5.10-orange)
 ![License: MIT](https://img.shields.io/badge/license-MIT-green)
 
@@ -24,7 +24,7 @@ Pick the target (Cursor, Claude, ChatGPT, …) so the prompt matches how that mo
 
 ## Install
 
-macOS 14+ only.
+macOS 26+ only.
 
 ### Download (recommended)
 

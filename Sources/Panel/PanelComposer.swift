@@ -24,11 +24,16 @@ extension PanelView {
                     .transition(.opacity.combined(with: .move(edge: .bottom)))
             }
             intentField
-                .glassModule(radius: PanelMetrics.composerRadius, focusRing: describeFieldFocused)
+                .glassModule(
+                    radius: PanelMetrics.composerRadius,
+                    focusRing: describeFieldFocused,
+                    bordered: true
+                )
                 .fixedSize(horizontal: false, vertical: true)
                 .zIndex(1)
         }
-        .animation(tabAnimation, value: hasFinishedResult)
+        .animation(nil, value: hasFinishedResult)
+        .animation(nil, value: appState.selectedActionID)
     }
 
     var footer: some View {
@@ -131,7 +136,7 @@ extension PanelView {
         }
         // Search mode swaps the icon, placeholder and the target/provider menu.
         // Scoped here so the composer card's own frame is not part of it.
-        .animation(tabAnimation, value: appState.isQuickSearch)
+        .animation(nil, value: appState.isQuickSearch)
         .padding(.horizontal, PanelMetrics.moduleInset)
         .padding(.vertical, BeruSpace.xs)
         .frame(minHeight: PanelMetrics.composerMinHeight, alignment: .center)
@@ -139,10 +144,7 @@ extension PanelView {
     }
 
     var sendButton: some View {
-        Button {
-            guard canSubmitDescribe else { return }
-            submitDescribe()
-        } label: {
+        Button(action: submitIfReady) {
             ZStack {
                 Circle()
                     .fill(canSubmitDescribe ? BeruColor.accent : BeruColor.disabledFill)
@@ -150,12 +152,17 @@ extension PanelView {
                     .foregroundStyle(canSubmitDescribe ? BeruColor.onAccent : BeruColor.textSecondary)
             }
             .frame(width: BeruMetrics.hitTarget, height: BeruMetrics.hitTarget)
+            .contentShape(Circle())
         }
         .buttonStyle(.plain)
-        .animation(.easeOut(duration: 0.12), value: canSubmitDescribe)
         .help("Run this intent")
         .accessibilityLabel("Run this intent")
         .accessibilityHint("Send the instruction to Beru")
+    }
+
+    func submitIfReady() {
+        guard canSubmitDescribe else { return }
+        submitDescribe()
     }
 
     var composerPlaceholder: String {
