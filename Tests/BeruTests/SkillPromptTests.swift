@@ -25,7 +25,19 @@ final class BuiltInPromptScopeTests: XCTestCase {
 
     func testGrammarPromptStillForbidsRestyling() {
         XCTAssertTrue(Prompts.grammar.contains("Do not restyle"))
-        XCTAssertTrue(Prompts.grammar.contains("Never add, remove, or reorder content"))
+        XCTAssertTrue(Prompts.grammar.contains("Do not add new sentences"))
+        XCTAssertTrue(Prompts.grammar.contains("never deleted without putting the correction"))
+    }
+
+    func testGrammarPromptRequiresFixingEveryError() {
+        // "Never add, remove, or reorder content" plus "if already correct,
+        // return it verbatim" made models skip misspellings rather than risk
+        // changing a word. The must-fix rule has to outrank the verbatim one.
+        XCTAssertTrue(Prompts.grammar.contains("Fix every error"))
+        XCTAssertTrue(Prompts.grammar.contains("never left as-is"))
+        XCTAssertTrue(Prompts.grammar.contains("Return the document verbatim only when"))
+        XCTAssertTrue(Prompts.grammar.contains("grammer"))
+        XCTAssertTrue(Prompts.grammar.contains("grammar response"))
     }
 
     func testEnhancePromptStillAuthorsAPrompt() {

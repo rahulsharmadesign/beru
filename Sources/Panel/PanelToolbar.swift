@@ -15,10 +15,11 @@ extension PanelView {
             contextLine
                 .opacity(showsContextLine ? 1 : 0)
                 .accessibilityHidden(!showsContextLine)
+                // Keep context from animating height; do not nil the chip row.
+                .animation(nil, value: appState.selectedActionID)
+                .animation(nil, value: appState.isQuickSearch)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .animation(nil, value: appState.selectedActionID)
-        .animation(nil, value: appState.isQuickSearch)
     }
 
     var showsContextLine: Bool {
@@ -49,7 +50,6 @@ extension PanelView {
                             .id(action.id)
                     }
                 }
-                .animation(tabMorph, value: appState.selectedActionID)
             }
             .frame(height: BeruMetrics.tabPillHeight)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -75,16 +75,18 @@ extension PanelView {
         }
     }
 
-    /// Selection morph. Ease-in only — interpolating the label font or the
-    /// chip identity is what looked like a text zoom.
+    /// Selection morph. Scoped to the chip so the window does not re-layout.
     var tabMorph: Animation {
         a11y.reduceMotion
             ? .easeOut(duration: 0.12)
-            : .easeIn(duration: 0.28)
+            : .easeOut(duration: 0.32)
     }
 
     func selectTab(_ actionID: String) {
-        appState.selectAction(actionID)
+        guard actionID != appState.selectedActionID else { return }
+        withAnimation(tabMorph) {
+            appState.selectAction(actionID)
+        }
     }
 
     func chip(for action: EnhancementAction) -> some View {
@@ -105,21 +107,22 @@ extension PanelView {
         }
         .buttonStyle(.plain)
         .frame(height: BeruMetrics.tabPillHeight)
+        .animation(tabMorph, value: isSelected)
         .help(action.summary)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
-    /// The selected fill is the accent. Idle chips have no fill — a clear glass
-    /// capsule was painting the gray pill on top of the slab.
-    @ViewBuilder
+    /// One sliding accent pill. Idle chips keep a hairline so the row stays
+    /// readable; the fill is a single matched-geometry source.
     func chipFill(selected: Bool) -> some View {
-        if selected {
+        ZStack {
             Capsule()
-                .fill(BeruColor.accent)
-                .matchedGeometryEffect(id: "tab-selection", in: tabGlass)
-        } else {
-            Capsule()
-                .strokeBorder(BeruColor.border, lineWidth: 0.75)
+                .strokeBorder(selected ? Color.clear : BeruColor.border, lineWidth: 0.75)
+            if selected {
+                Capsule()
+                    .fill(BeruColor.accent)
+                    .matchedGeometryEffect(id: "tab-selection", in: tabGlass)
+            }
         }
     }
 
@@ -179,11 +182,15 @@ extension PanelView {
     }
 
     var contextSummary: String {
-        let app = appState.hostAppName ?? "Mac"
-        let trimmed = appState.capturedText.trimmingCharacters(in: .whitespacesAndNewlines)
-        if trimmed.isEmpty {
-            return "\(app) · No text selected"
-        }
-        return "\(app) · \(trimmed.count) characters"
+        let name = EnhancementAction.resolvedName(
+            actionID: appState.selectedActionID,
+            registryName: registry.action(withID: appState.selectedActionID)?.name
+        )
+        let count = appState.capturedText.trimmingCharacters(in: .whitespacesAndNewlines).count
+        return EnhancementAction.contextSummary(
+            actionName: name,
+            hostAppName: appState.hostAppName,
+            characterCount: count
+        )
     }
 }

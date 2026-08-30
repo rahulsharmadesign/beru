@@ -84,6 +84,36 @@ extension AppCoordinator {
     /// Start listening into the Ask field.
     func beginVoiceAsk() {
         dictationDestination = .instruction
+        let service = DictationService.shared
+        switch DictationService.intentForMicPress(
+            isRecording: service.isRecording,
+            availability: service.availability
+        ) {
+        case .stop:
+            service.stop()
+        case .requestPermissionThenStart:
+            Task { await promptThenStartVoice() }
+        case .start:
+            startVoiceOrReport()
+        case .openSettings:
+            showDashboard(route: .permissions)
+            startVoiceOrReport()
+        }
+    }
+
+    private func promptThenStartVoice() async {
+        await DictationService.shared.requestPermissions()
+        startVoiceOrReport()
+        if DictationService.shared.availability.isReady { return }
+        if DictationService.intentForMicPress(
+            isRecording: false,
+            availability: DictationService.shared.availability
+        ) == .openSettings {
+            showDashboard(route: .permissions)
+        }
+    }
+
+    private func startVoiceOrReport() {
         guard !DictationService.shared.start() else { return }
         if let reason = DictationService.shared.availability.message {
             appState.setResult(.error(reason), for: appState.selectedActionID)
@@ -156,5 +186,16 @@ extension AppCoordinator {
             )
         }
         dashboardWindow?.show(route: route)
+    }
+
+    /// Apply from a vault note: bring Settings back on that note.
+    func revealVaultNote(_ id: String) {
+        if dashboardWindow == nil {
+            dashboardWindow = DashboardWindowController(
+                enhanceText: { [weak self] text in self?.enhanceText(text) },
+                enhanceNote: { [weak self] id in self?.enhanceNote(id: id) }
+            )
+        }
+        dashboardWindow?.revealVaultNote(id)
     }
 }

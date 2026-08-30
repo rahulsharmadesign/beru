@@ -41,11 +41,15 @@ struct EnhancementAction: Identifiable, Codable, Equatable {
     }
 
     /// Title and body for the panel when this action has nothing to work on.
-    static func emptyCaptureCopy(actionID: String, actionName: String) -> (title: String, subtitle: String) {
+    ///
+    /// Verb skills cannot run on an empty capture. The sentence must not tell
+    /// people to type in the composer — that field is a no-op until they
+    /// highlight text or switch to Search.
+    static func emptyCaptureCopy(actionID: String) -> (title: String, subtitle: String) {
         if actionID == searchID {
             return (
                 "Ask a question",
-                "Type below and press Return. You don’t need to select text first."
+                "Type below and press Return."
             )
         }
         if actionID == describeID {
@@ -56,8 +60,57 @@ struct EnhancementAction: Identifiable, Codable, Equatable {
         }
         return (
             "No text selected",
-            "\(actionName) needs text from another app. Highlight some text, then press the Beru shortcut."
+            "Highlight text in another app and press the shortcut, or switch to AI Search to ask."
         )
+    }
+
+    /// Composer field hint. Search and Instruction can run with no selection;
+    /// every other chip cannot, so the empty-capture line must not say “ask”.
+    static func composerPlaceholder(actionID: String, hasCapture: Bool, isQuickSearch: Bool) -> String {
+        if isQuickSearch || actionID == searchID {
+            return "Ask anything — no selection needed"
+        }
+        if actionID == describeID {
+            return "Type what you want Beru to do"
+        }
+        if !hasCapture {
+            return "Highlight text first"
+        }
+        switch actionID {
+        case grammarID:
+            return "Optional: e.g. \u{201C}keep my tone\u{201D}"
+        case enhanceID:
+            return "Optional: e.g. \u{201C}for beginners\u{201D}"
+        case replyID:
+            return "Optional: e.g. \u{201C}mention Friday\u{201D}"
+        case summarizeID, explainID:
+            return "Optional: e.g. \u{201C}in 5 bullets\u{201D}"
+        default:
+            return "Optional instruction for this action…"
+        }
+    }
+
+    /// Chip label for an id. Search and Instruction are not in the registry.
+    static func resolvedName(actionID: String, registryName: String?) -> String {
+        if let registryName, !registryName.isEmpty { return registryName }
+        switch actionID {
+        case searchID: return search.name
+        case describeID: return describe.name
+        case grammarID: return grammar.name
+        case enhanceID: return enhance.name
+        default: return "This action"
+        }
+    }
+
+    /// Caption under the verb chips: which skill is live, and which app it
+    /// came from — so a Cursor landing on Enhance is not read as Grammar.
+    static func contextSummary(actionName: String, hostAppName: String?, characterCount: Int) -> String {
+        let trimmedHost = hostAppName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let host = trimmedHost.isEmpty ? "Mac" : trimmedHost
+        if characterCount == 0 {
+            return "\(actionName) · \(host)"
+        }
+        return "\(actionName) · \(host) · \(characterCount) characters"
     }
 
     static let grammarID = "grammar"

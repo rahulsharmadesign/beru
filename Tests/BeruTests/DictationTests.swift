@@ -128,6 +128,38 @@ final class DictationTests: XCTestCase {
         }
     }
 
+    func testFirstMicPressRequestsPermissionInsteadOfOpeningSettings() {
+        XCTAssertEqual(
+            DictationService.intentForMicPress(isRecording: false, availability: .needsPermission),
+            .requestPermissionThenStart
+        )
+        XCTAssertEqual(
+            DictationService.intentForMicPress(isRecording: false, availability: .ready),
+            .start
+        )
+        XCTAssertEqual(
+            DictationService.intentForMicPress(isRecording: true, availability: .ready),
+            .stop
+        )
+        for denied: DictationService.Availability in
+            [.microphoneDenied, .speechDenied, .onDeviceUnavailable, .noRecognizer] {
+            XCTAssertEqual(
+                DictationService.intentForMicPress(isRecording: false, availability: denied),
+                .openSettings,
+                "\(denied) should send the user to Settings, not a second TCC prompt"
+            )
+        }
+    }
+
+    func testPermissionBadgeUsesGrantedNeededOrUnavailable() {
+        XCTAssertEqual(DictationService.Availability.ready.permissionBadgeTitle, "Granted")
+        XCTAssertEqual(DictationService.Availability.needsPermission.permissionBadgeTitle, "Needed")
+        XCTAssertEqual(DictationService.Availability.microphoneDenied.permissionBadgeTitle, "Needed")
+        XCTAssertEqual(DictationService.Availability.speechDenied.permissionBadgeTitle, "Needed")
+        XCTAssertEqual(DictationService.Availability.onDeviceUnavailable.permissionBadgeTitle, "Unavailable")
+        XCTAssertEqual(DictationService.Availability.noRecognizer.permissionBadgeTitle, "Unavailable")
+    }
+
     // MARK: - Dictate shortcut, scoped to the panel
 
     /// Space is the default hold key and is also an ordinary character in

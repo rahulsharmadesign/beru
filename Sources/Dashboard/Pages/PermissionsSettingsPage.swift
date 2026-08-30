@@ -13,13 +13,18 @@ struct PermissionsSettingsTab: View {
     var body: some View {
         SettingsPage(title: "Permissions", subtitle: DashboardRoute.permissions.pageSubtitle) {
             SettingsSection(title: "Accessibility", subtitle: "Required to read and replace text in other apps.") {
-                SettingsRow(title: "Status", caption: "Required to read and replace selected text in other apps.") {
-                    SettingsValue(text: isTrusted ? "Granted" : "Needed")
-                }
-                SettingsRow(title: "System Settings") {
-                    SettingsPillButton(title: "Open") {
-                        Permissions.openAccessibilitySettings()
-                    }
+                SettingsRow(title: "Status") {
+                    statusControl(
+                        title: isTrusted ? "Granted" : "Needed",
+                        isPositive: isTrusted,
+                        showsGrant: !isTrusted,
+                        grantTitle: "Grant",
+                        onGrant: {
+                            Permissions.requestAccessibilityIfNeeded()
+                            Permissions.openAccessibilitySettings()
+                        },
+                        onOpen: { Permissions.openAccessibilitySettings() }
+                    )
                 }
             }
 
@@ -29,26 +34,44 @@ struct PermissionsSettingsTab: View {
                     caption: dictation.availability.message
                         ?? "Speech is transcribed on this Mac. Beru will not fall back to Apple’s servers."
                 ) {
-                    SettingsValue(text: dictation.availability.isReady ? "Ready" : "Unavailable")
-                }
-                SettingsRow(title: dictation.availability == .needsPermission ? "Microphone" : "System Settings") {
-                    if dictation.availability == .needsPermission {
-                        SettingsPillButton(title: "Allow") {
+                    statusControl(
+                        title: dictation.availability.permissionBadgeTitle,
+                        isPositive: dictation.availability.isReady,
+                        showsGrant: dictation.availability == .needsPermission,
+                        grantTitle: "Grant",
+                        onGrant: {
                             Task { await dictation.requestPermissions() }
-                        }
-                    } else {
-                        SettingsPillButton(title: "Open") {
-                            dictation.availability.openSystemSettings()
-                        }
-                    }
+                        },
+                        onOpen: { dictation.availability.openSystemSettings() }
+                    )
                 }
             }
         }
-        .task {
-            while !Task.isCancelled {
-                isTrusted = Permissions.isAccessibilityTrusted()
-                dictation.refreshAvailability()
-                try? await Task.sleep(for: .seconds(2))
+        .onAppear(perform: refresh)
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+            refresh()
+        }
+    }
+
+    private func refresh() {
+        isTrusted = Permissions.isAccessibilityTrusted()
+        dictation.refreshAvailability()
+    }
+
+    private func statusControl(
+        title: String,
+        isPositive: Bool,
+        showsGrant: Bool,
+        grantTitle: String,
+        onGrant: @escaping () -> Void,
+        onOpen: @escaping () -> Void
+    ) -> some View {
+        HStack(spacing: BeruSpace.xs) {
+            SettingsStatusBadge(title: title, isPositive: isPositive)
+            if showsGrant {
+                SettingsPrimaryButton(title: grantTitle, action: onGrant)
+            } else {
+                SettingsPillButton(title: "Open", action: onOpen)
             }
         }
     }

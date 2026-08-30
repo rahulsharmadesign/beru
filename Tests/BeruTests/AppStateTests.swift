@@ -24,6 +24,7 @@ final class AppStateTests: XCTestCase {
         state.isQuickSearch = true
         state.copiedFeedback = true
         state.pinnedFeedback = true
+        state.replacedFeedback = "Replaced in Mail"
         state.setResult(.done("result"), for: EnhancementAction.enhanceID)
         state.savings[EnhancementAction.enhanceID] = TokenSavings(input: "aaa", output: "b")
         state.diffs[EnhancementAction.enhanceID] = [.equal("x")]
@@ -65,6 +66,7 @@ final class AppStateTests: XCTestCase {
         XCTAssertFalse(state.isQuickSearch)
         XCTAssertFalse(state.copiedFeedback)
         XCTAssertFalse(state.pinnedFeedback)
+        XCTAssertNil(state.replacedFeedback)
     }
 
     func testDismissClearsContentWithoutRebuildingTheView() {
@@ -77,6 +79,7 @@ final class AppStateTests: XCTestCase {
         // Regenerating the session id mid fade-out would rebuild the hierarchy
         // while it is animating out.
         XCTAssertEqual(state.panelSessionID, sessionBefore, "dismiss must not change panelSessionID")
+        XCTAssertNil(state.replacedFeedback)
     }
 
     func testResetIssuesNewSessionAndInvocationIdentity() {
@@ -118,5 +121,67 @@ final class AppStateTests: XCTestCase {
         XCTAssertTrue(state.isQuickSearch)
         state.selectAction(EnhancementAction.enhanceID)
         XCTAssertFalse(state.isQuickSearch)
+    }
+}
+
+final class OutcomeCopyTests: XCTestCase {
+    func testReplaceNamesTheHost() {
+        XCTAssertEqual(
+            OutcomeCopy.replaceToast(hostAppName: "Cursor", isVault: false, isInsert: false),
+            "Replaced in Cursor"
+        )
+    }
+
+    func testInsertUsesInserted() {
+        XCTAssertEqual(
+            OutcomeCopy.replaceToast(hostAppName: "Mail", isVault: false, isInsert: true),
+            "Inserted in Mail"
+        )
+    }
+
+    func testVaultApplyDoesNotUseTheHost() {
+        XCTAssertEqual(
+            OutcomeCopy.replaceToast(hostAppName: "Cursor", isVault: true, isInsert: false),
+            "Applied to note"
+        )
+    }
+
+    func testMissingHostFallsBackToMac() {
+        XCTAssertEqual(
+            OutcomeCopy.replaceToast(hostAppName: nil, isVault: false, isInsert: false),
+            "Replaced in Mac"
+        )
+        XCTAssertEqual(
+            OutcomeCopy.replaceToast(hostAppName: "  ", isVault: false, isInsert: false),
+            "Replaced in Mac"
+        )
+    }
+}
+
+@MainActor
+final class VaultApplyTrailTests: XCTestCase {
+    func testCompleteReplaceRevealsTheVaultNoteAfterDismiss() async {
+        let state = AppState()
+        state.vaultNoteID = "note-xyz"
+        var dismissed = false
+        var revealed: String?
+        let engine = PanelEngine(appState: state) { dismissed = true }
+        engine.onRevealVaultNote = { revealed = $0 }
+        engine.replace(text: "applied body")
+        engine.replaceToastTask?.cancel()
+        await engine.completeReplace()
+        XCTAssertTrue(dismissed)
+        XCTAssertEqual(revealed, "note-xyz")
+        XCTAssertNil(engine.pendingReplaceVaultNoteID)
+    }
+
+    func testHostReplaceDoesNotStashAVaultNoteID() {
+        let state = AppState()
+        state.vaultNoteID = nil
+        let engine = PanelEngine(appState: state) {}
+        engine.replace(text: "host body")
+        XCTAssertNil(engine.pendingReplaceVaultNoteID)
+        XCTAssertFalse(engine.pendingReplaceIsVault)
+        engine.resetForNewInvocation()
     }
 }

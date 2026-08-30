@@ -5,25 +5,62 @@ import Foundation
 
 extension PanelEngine {
     func replace(text: String) {
+        guard appState.replacedFeedback == nil else { return }
         // Grab everything the record needs before dismiss clears it.
         let target = appState.capturedElement
         let vaultNoteID = appState.vaultNoteID
+        let toast = OutcomeCopy.replaceToast(
+            hostAppName: appState.hostAppName,
+            isVault: vaultNoteID != nil,
+            isInsert: appState.selectedActionID == EnhancementAction.replyID
+        )
         recordDecision(.replaced, text: text)
-        onDismiss()
         if let vaultNoteID {
             VaultStore.shared.applyResult(text, toNoteID: vaultNoteID)
-            return
         }
-        Task {
-            // Let the panel finish resigning key status so the host app is
-            // the keystroke recipient again; otherwise a simulated Cmd-V can
-            // land on our own (still-ordered-in) panel.
-            try? await Task.sleep(for: .milliseconds(250))
-            await TextReplace.replaceSelection(with: text, target: target)
+        pendingReplaceText = text
+        pendingReplaceTarget = target
+        pendingReplaceIsVault = vaultNoteID != nil
+        pendingReplaceVaultNoteID = vaultNoteID
+        appState.replacedFeedback = toast
+        replaceToastTask?.cancel()
+        replaceToastTask = Task { [weak self] in
+            do {
+                try await Task.sleep(for: .seconds(2))
+            } catch {
+                return
+            }
+            await self?.completeReplace()
         }
     }
 
+    /// Dismiss, then paste once the panel is gone so Cmd-V cannot hit the composer.
+    func completeReplace() async {
+        let text = pendingReplaceText
+        let target = pendingReplaceTarget
+        let isVault = pendingReplaceIsVault
+        let vaultID = pendingReplaceVaultNoteID
+        pendingReplaceText = nil
+        pendingReplaceTarget = nil
+        pendingReplaceIsVault = false
+        pendingReplaceVaultNoteID = nil
+        replaceToastTask = nil
+        appState.replacedFeedback = nil
+        guard text != nil || isVault else { return }
+        onDismiss()
+        if isVault {
+            if let vaultID { onRevealVaultNote?(vaultID) }
+            return
+        }
+        guard let text else { return }
+        // hide() fades 180ms then orderOut. Cmd-V before that lands on the
+        // panel's field editor. Wait until the window is gone, then paste.
+        try? await Task.sleep(for: .milliseconds(350))
+        await TextReplace.replaceSelection(with: text, target: target)
+    }
+
     func copy(text: String) {
+        guard appState.replacedFeedback == nil else { return }
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(text, forType: .string)
         recordDecision(.copied, text: text)
@@ -37,6 +74,7 @@ extension PanelEngine {
 
     /// Saves the finished result into the vault pin board without dismissing.
     func pin(text: String) {
+        guard appState.replacedFeedback == nil else { return }
         let title = String(text.prefix(72))
             .replacingOccurrences(of: "\n", with: " ")
         VaultStore.shared.pinResult(
@@ -53,6 +91,11 @@ extension PanelEngine {
     }
 
     func cancel() {
+        if appState.replacedFeedback != nil {
+            replaceToastTask?.cancel()
+            Task { await completeReplace() }
+            return
+        }
         var resultText: String?
         if case .done(let text) = appState.resultState(for: appState.selectedActionID) {
             resultText = text
@@ -98,5 +141,15 @@ extension PanelEngine {
                 hadResult: text != nil
             )
         }
+    }
+}
+
+/// Footer confirmation after Replace / Insert / Apply.
+enum OutcomeCopy {
+    static func replaceToast(hostAppName: String?, isVault: Bool, isInsert: Bool) -> String {
+        if isVault { return "Applied to note" }
+        let trimmed = hostAppName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let host = trimmed.isEmpty ? "Mac" : trimmed
+        return isInsert ? "Inserted in \(host)" : "Replaced in \(host)"
     }
 }

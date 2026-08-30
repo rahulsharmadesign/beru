@@ -124,20 +124,20 @@ struct BeruEmptyState<Actions: View>: View {
     }
 
     var body: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: BeruSpace.sm) {
             BeruIcon(name: icon, size: 32, strokeWidth: 1.5)
-                .foregroundStyle(SettingsTheme.textSecondary)
+                .foregroundStyle(BeruColor.textSecondary)
             Text(title)
-                .font(BeruSans.section)
-                .foregroundStyle(SettingsTheme.textPrimary)
+                .font(BeruType.section)
+                .foregroundStyle(BeruColor.textPrimary)
             Text(message)
-                .font(BeruSans.rowCaption)
-                .foregroundStyle(SettingsTheme.textSecondary)
+                .font(BeruType.footnote)
+                .foregroundStyle(BeruColor.textSecondary)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
             actions
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding()
+        .padding(BeruSpace.md)
     }
 }

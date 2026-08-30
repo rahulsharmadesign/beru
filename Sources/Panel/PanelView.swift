@@ -37,17 +37,20 @@ struct PanelView: View {
                 toolbar
                     .fixedSize(horizontal: false, vertical: true)
             }
-            .fixedSize(horizontal: false, vertical: true)
             .reportsPanelBand(.chromeTop)
+            .fixedSize(horizontal: false, vertical: true)
+            .layoutPriority(1)
 
             resultSlot
 
             composerColumn
-                .fixedSize(horizontal: false, vertical: true)
                 .reportsPanelBand(.chromeBottom)
+                .fixedSize(horizontal: false, vertical: true)
+                .layoutPriority(1)
         }
         .padding(PanelMetrics.moduleInset)
         .frame(maxWidth: .infinity, alignment: .top)
+        .ignoresSafeArea()
         .background(PanelDragRegion())
         .tint(BeruColor.accent)
         .id(appState.panelSessionID)
@@ -95,8 +98,9 @@ struct PanelView: View {
     }
 
     /// Result band: intrinsic below the cap; fixed-height ScrollView at the cap
-    /// so pinned chrome never leaves the window. Search threads pin to the
-    /// latest turn so follow-ups stay in view as the stack grows.
+    /// so pinned chrome never leaves the window. `reportsPanelBand` measures the
+    /// unconstrained card so a short seed window cannot lock the height.
+    /// Search threads pin to the latest turn so follow-ups stay in view.
     @ViewBuilder
     var resultSlot: some View {
         let measured = resultModule.reportsPanelBand(.result)
@@ -118,7 +122,6 @@ struct PanelView: View {
             }
         } else {
             measured
-                .fixedSize(horizontal: false, vertical: true)
         }
     }
 
@@ -133,16 +136,12 @@ struct PanelView: View {
     }
 
     func publishLayoutHeights(_ bands: [PanelHeightBand: CGFloat]) {
-        let top = bands[.chromeTop] ?? 0
-        let bottom = bands[.chromeBottom] ?? 0
-        let result = bands[.result] ?? 0
-        // Outer padding + the two spacings flanking the result slot.
-        let chrome = PanelMetrics.moduleInset * 2
-            + top
-            + bottom
-            + PanelMetrics.moduleSpacing * 2
-        guard chrome > PanelMetrics.moduleInset || result > 1 else { return }
-        onLayoutHeights?(PanelLayoutHeights(chrome: chrome, result: result))
+        guard let layout = PanelLayoutHeights.fromBands(
+            top: bands[.chromeTop] ?? 0,
+            bottom: bands[.chromeBottom] ?? 0,
+            result: bands[.result] ?? 0
+        ) else { return }
+        onLayoutHeights?(layout)
     }
 
     var closeStrip: some View {

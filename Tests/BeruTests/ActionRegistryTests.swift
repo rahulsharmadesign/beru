@@ -119,12 +119,67 @@ final class ActionRegistryTests: XCTestCase {
         XCTAssertFalse(EnhancementAction.showsInlineDiff(for: EnhancementAction.searchID))
         XCTAssertTrue(EnhancementAction.allowsEmptyCapture(EnhancementAction.searchID))
         XCTAssertFalse(EnhancementAction.allowsEmptyCapture(EnhancementAction.grammarID))
-        let grammar = EnhancementAction.emptyCaptureCopy(actionID: EnhancementAction.grammarID, actionName: "Grammar")
+        let grammar = EnhancementAction.emptyCaptureCopy(actionID: EnhancementAction.grammarID)
         XCTAssertEqual(grammar.title, "No text selected")
-        XCTAssertTrue(grammar.subtitle.contains("Highlight some text"))
-        let search = EnhancementAction.emptyCaptureCopy(actionID: EnhancementAction.searchID, actionName: "AI Search")
+        XCTAssertTrue(grammar.subtitle.contains("Highlight text"))
+        XCTAssertTrue(grammar.subtitle.contains("AI Search"))
+        XCTAssertFalse(grammar.subtitle.localizedCaseInsensitiveContains("ask instead"))
+        let search = EnhancementAction.emptyCaptureCopy(actionID: EnhancementAction.searchID)
         XCTAssertEqual(search.title, "Ask a question")
-        XCTAssertTrue(search.subtitle.contains("don’t need to select"))
+        XCTAssertTrue(search.subtitle.contains("Type below"))
+
+        XCTAssertEqual(
+            EnhancementAction.composerPlaceholder(
+                actionID: EnhancementAction.grammarID, hasCapture: false, isQuickSearch: false
+            ),
+            "Highlight text first"
+        )
+        XCTAssertEqual(
+            EnhancementAction.composerPlaceholder(
+                actionID: EnhancementAction.searchID, hasCapture: false, isQuickSearch: false
+            ),
+            "Ask anything — no selection needed"
+        )
+        XCTAssertEqual(
+            EnhancementAction.composerPlaceholder(
+                actionID: EnhancementAction.describeID, hasCapture: false, isQuickSearch: false
+            ),
+            "Type what you want Beru to do"
+        )
+        XCTAssertTrue(
+            EnhancementAction.composerPlaceholder(
+                actionID: EnhancementAction.grammarID, hasCapture: true, isQuickSearch: false
+            ).contains("keep my tone")
+        )
+
+        XCTAssertEqual(
+            EnhancementAction.resolvedName(actionID: EnhancementAction.searchID, registryName: nil),
+            "AI Search"
+        )
+        XCTAssertEqual(
+            EnhancementAction.resolvedName(actionID: EnhancementAction.enhanceID, registryName: nil),
+            "Enhance Prompt"
+        )
+        XCTAssertEqual(
+            EnhancementAction.resolvedName(actionID: "custom-1", registryName: "For my VP"),
+            "For my VP"
+        )
+        XCTAssertEqual(
+            EnhancementAction.contextSummary(actionName: "Enhance Prompt", hostAppName: "Cursor", characterCount: 0),
+            "Enhance Prompt · Cursor"
+        )
+        XCTAssertEqual(
+            EnhancementAction.contextSummary(actionName: "Grammar", hostAppName: "Cursor", characterCount: 240),
+            "Grammar · Cursor · 240 characters"
+        )
+        XCTAssertEqual(
+            EnhancementAction.contextSummary(actionName: "AI Search", hostAppName: nil, characterCount: 0),
+            "AI Search · Mac"
+        )
+        XCTAssertFalse(
+            EnhancementAction.contextSummary(actionName: "Grammar", hostAppName: "Mail", characterCount: 0)
+                .contains("No text selected")
+        )
     }
 
     @MainActor

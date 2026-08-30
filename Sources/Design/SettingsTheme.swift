@@ -36,6 +36,10 @@ enum SettingsChrome {
     static let contentPadding = BeruMetrics.contentPadding
     static let headerContentSpacing = BeruSpace.md
     static let workspaceListInset = BeruSpace.md
+    static let workspaceChromeInset = BeruMetrics.workspaceChromeInset
+    static let workspaceChromePadding = BeruMetrics.workspaceChromePadding
+    static let workspaceChromeMinHeight = BeruMetrics.workspaceChromeMinHeight
+    static let workspaceInspectorPadding = BeruMetrics.workspaceInspectorPadding
     static let rowRadius = BeruRadius.md
     static let fieldWidth = BeruMetrics.fieldWidth
     static let labelMaxWidth = BeruMetrics.labelMaxWidth

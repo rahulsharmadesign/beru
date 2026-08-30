@@ -1,14 +1,9 @@
+import AppKit
 import SwiftUI
 
-// Reusable dashboard controls. These are design-system components, not
-// dashboard screens, which is why they live here rather than next to the pages
-// that happen to use them.
-
-// The five button types below are names for `BeruButton` variants, not separate
-// implementations. Each used to hand-roll its own capsule, hover state, padding
-// and disabled opacity, which is how the app ended up with four button
-// languages that drifted apart. Keeping the names means the roughly eighty call
-// sites read the same while there is one implementation.
+// Reusable dashboard controls. Settings screens use system macOS widgets
+// (bordered buttons, rounded-border fields, switch, checkbox, menu picker,
+// NSSearchField). The panel keeps Beru capsules.
 
 struct SettingsPillButton: View {
     let title: String
@@ -19,15 +14,13 @@ struct SettingsPillButton: View {
     let action: () -> Void
 
     var body: some View {
-        BeruButton(
-            title: title,
-            variant: .pill,
-            leadingIcon: leadingIcon,
-            trailingIcon: trailingIcon,
-            enabled: enabled,
-            role: role,
-            action: action
-        )
+        Button(role: role, action: action) {
+            settingsButtonLabel(title: title, leadingIcon: leadingIcon, trailingIcon: trailingIcon)
+        }
+        .buttonStyle(.bordered)
+        .controlSize(.regular)
+        .disabled(!enabled)
+        .fixedSize()
     }
 }
 
@@ -38,13 +31,14 @@ struct SettingsPrimaryButton: View {
     let action: () -> Void
 
     var body: some View {
-        BeruButton(
-            title: title,
-            variant: .primary,
-            leadingIcon: icon,
-            enabled: enabled,
-            action: action
-        )
+        Button(action: action) {
+            settingsButtonLabel(title: title, leadingIcon: icon, trailingIcon: nil)
+        }
+        .buttonStyle(.borderedProminent)
+        .controlSize(.regular)
+        .disabled(!enabled)
+        .fixedSize()
+        .tint(BeruColor.accent)
     }
 }
 
@@ -54,50 +48,46 @@ struct SettingsTogglePill: View {
     @Binding var isOn: Bool
 
     var body: some View {
-        BeruButton(
-            title: title,
-            variant: .pill,
-            leadingIcon: icon,
-            isActive: isOn
-        ) {
-            isOn.toggle()
+        Toggle(isOn: $isOn) {
+            settingsButtonLabel(title: title, leadingIcon: icon, trailingIcon: nil)
         }
+        .toggleStyle(.checkbox)
+        .controlSize(.regular)
+        .fixedSize()
     }
 }
 
 struct SettingsIconButton: View {
     let icon: String
     var size: CGFloat = 16
-    /// Tap-target frame. Smaller for icon buttons living inside a compact
-    /// row (e.g. a card in a narrow list) rather than a toolbar/footer.
     var frameSize: CGFloat = BeruMetrics.hitTarget
     var enabled: Bool = true
-    /// Hover tooltip and VoiceOver name. Required so an icon-only control
-    /// never ships without a description of what it does.
     let help: String
     let action: () -> Void
 
     var body: some View {
-        BeruIconButton(
-            icon: icon,
-            size: size,
-            frameSize: frameSize,
-            enabled: enabled,
-            help: help,
-            action: action
-        )
+        Button(action: action) {
+            BeruIcon(name: icon, size: size)
+                .frame(width: frameSize, height: frameSize)
+        }
+        .buttonStyle(.borderless)
+        .disabled(!enabled)
+        .help(help)
+        .accessibilityLabel(help)
+        .fixedSize()
     }
 }
 
-/// Small text-only button for actions packed into a tight row (e.g. a card
-/// footer), where a full `SettingsPillButton` would be too heavy.
 struct SettingsInlineButton: View {
     let title: String
     var role: ButtonRole?
     let action: () -> Void
 
     var body: some View {
-        BeruButton(title: title, variant: .inline, role: role, action: action)
+        Button(title, role: role, action: action)
+            .buttonStyle(.borderless)
+            .controlSize(.small)
+            .fixedSize()
     }
 }
 
@@ -110,6 +100,23 @@ struct SettingsValue: View {
             .font(mono ? BeruType.mono : BeruType.control)
             .foregroundStyle(BeruColor.textSecondary)
             .multilineTextAlignment(.trailing)
+            .textSelection(.enabled)
+    }
+}
+
+/// Granted / Needed (or Unavailable) on a settings row. Color is the status.
+struct SettingsStatusBadge: View {
+    let title: String
+    var isPositive: Bool = false
+
+    var body: some View {
+        Text(title)
+            .font(BeruType.captionMedium)
+            .foregroundStyle(isPositive ? BeruColor.positive : BeruColor.textSecondary)
+            .padding(.horizontal, BeruSpace.xs)
+            .padding(.vertical, BeruSpace.xxs)
+            .background(BeruColor.badge, in: BeruRadius.shape(BeruRadius.sm))
+            .accessibilityLabel(title)
     }
 }
 
@@ -121,18 +128,11 @@ struct SettingsField: View {
 
     var body: some View {
         TextField(placeholder, text: $text)
-            .textFieldStyle(.plain)
+            .textFieldStyle(.roundedBorder)
             .font(BeruType.control)
-            .foregroundStyle(BeruColor.textPrimary)
             .multilineTextAlignment(alignment)
             .frame(width: width)
-            .padding(.horizontal, BeruSpace.md)
-            .padding(.vertical, BeruSpace.xs)
-            .background {
-                Capsule()
-                    .fill(BeruColor.input)
-                    .overlay(Capsule().strokeBorder(BeruColor.border, lineWidth: 1))
-            }
+            .controlSize(.regular)
     }
 }
 
@@ -151,27 +151,19 @@ struct SettingsSecretField: View {
                     SecureField(placeholder, text: $text)
                 }
             }
-            .textFieldStyle(.plain)
+            .textFieldStyle(.roundedBorder)
             .font(BeruType.mono)
-            .foregroundStyle(BeruColor.textSecondary)
-            BeruIconButton(
-                icon: visible ? "visibility_off" : "visibility",
-                size: 15,
-                frameSize: BeruMetrics.hitTargetCompact,
-                tint: BeruColor.textSecondary,
-                help: visible ? "Hide secret" : "Show secret"
-            ) {
+            .controlSize(.regular)
+            Button {
                 visible.toggle()
+            } label: {
+                BeruIcon(name: visible ? "visibility_off" : "visibility", size: 15)
             }
+            .buttonStyle(.borderless)
+            .help(visible ? "Hide secret" : "Show secret")
+            .accessibilityLabel(visible ? "Hide secret" : "Show secret")
         }
         .frame(width: width)
-        .padding(.horizontal, BeruSpace.md)
-        .padding(.vertical, BeruSpace.xs)
-        .background {
-            Capsule()
-                .fill(BeruColor.input)
-                .overlay(Capsule().strokeBorder(BeruColor.border, lineWidth: 1))
-        }
     }
 }
 
@@ -180,24 +172,13 @@ struct SettingsSwitch: View {
     var accessibilityLabel: String = "Toggle"
 
     var body: some View {
-        Button {
-            isOn.toggle()
-        } label: {
-            ZStack(alignment: isOn ? .trailing : .leading) {
-                Capsule()
-                    .fill(isOn ? BeruColor.accent : BeruColor.border)
-                    .frame(width: 42, height: 24)
-                Circle()
-                    .fill(BeruColor.onAccent)
-                    .frame(width: 18, height: 18)
-                    .shadow(color: .black.opacity(0.3), radius: 1.5, y: 1)
-                    .padding(BeruSpace.hair)
-            }
-        }
-        .buttonStyle(.plain)
-        .animation(.easeOut(duration: 0.15), value: isOn)
-        .accessibilityLabel(accessibilityLabel)
-        .accessibilityValue(isOn ? "On" : "Off")
+        Toggle(accessibilityLabel, isOn: $isOn)
+            .toggleStyle(.switch)
+            .controlSize(.small)
+            .labelsHidden()
+            .accessibilityLabel(accessibilityLabel)
+            .accessibilityValue(isOn ? "On" : "Off")
+            .tint(BeruColor.accent)
     }
 }
 
@@ -206,26 +187,46 @@ struct SettingsSearchField: View {
     var placeholder: String = "Search settings..."
 
     var body: some View {
-        HStack(spacing: BeruSpace.xs) {
-            BeruIcon(name: "search", size: 16)
-                .foregroundStyle(BeruColor.textSecondary)
-            TextField(placeholder, text: $text)
-                .textFieldStyle(.plain)
-                .font(BeruType.search)
-                .foregroundStyle(BeruColor.textPrimary)
-                .lineLimit(1)
-                .frame(minWidth: 0, maxWidth: .infinity)
-                .layoutPriority(1)
+        SettingsSearchFieldRep(text: $text, placeholder: placeholder)
+            .frame(minHeight: BeruSpace.lg)
+            .accessibilityLabel(placeholder)
+    }
+}
+
+private struct SettingsSearchFieldRep: NSViewRepresentable {
+    @Binding var text: String
+    var placeholder: String
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(text: $text)
+    }
+
+    func makeNSView(context: Context) -> NSSearchField {
+        let field = NSSearchField()
+        field.placeholderString = placeholder
+        field.delegate = context.coordinator
+        field.sendsSearchStringImmediately = true
+        field.sendsWholeSearchString = false
+        field.stringValue = text
+        return field
+    }
+
+    func updateNSView(_ field: NSSearchField, context: Context) {
+        context.coordinator.text = $text
+        field.placeholderString = placeholder
+        if field.stringValue != text {
+            field.stringValue = text
         }
-        .padding(.horizontal, BeruSpace.md)
-        .padding(.vertical, BeruSpace.sm)
-        .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
-        .background {
-            Capsule()
-                .strokeBorder(BeruColor.border, lineWidth: 1)
+    }
+
+    final class Coordinator: NSObject, NSSearchFieldDelegate {
+        var text: Binding<String>
+        init(text: Binding<String>) { self.text = text }
+
+        func controlTextDidChange(_ obj: Notification) {
+            guard let field = obj.object as? NSSearchField else { return }
+            text.wrappedValue = field.stringValue
         }
-        .fixedSize(horizontal: false, vertical: true)
-        .accessibilityLabel(placeholder)
     }
 }
 
@@ -235,24 +236,40 @@ struct SettingsMenuPill<Selection: Hashable, Content: View>: View {
     @ViewBuilder var content: Content
 
     var body: some View {
-        Menu {
-            content
-        } label: {
-            HStack(spacing: BeruSpace.xs) {
-                Text(label)
-                    .font(BeruType.control)
-                BeruIcon(name: "expand_more", size: 14)
-            }
-            .foregroundStyle(BeruColor.textPrimary)
-            .lineLimit(1)
-            .padding(.horizontal, BeruSpace.md)
-            .padding(.vertical, BeruSpace.xs)
-            .background {
-                Capsule()
-                    .strokeBorder(BeruColor.border, lineWidth: 1)
-            }
+        Menu(label) { content }
+            .menuStyle(.automatic)
+            .controlSize(.regular)
+            .fixedSize()
+            .accessibilityLabel(label)
+            .accessibilityValue(String(describing: selection))
+    }
+}
+
+/// Action menu (Folder, More) for workspace toolbars. Not a picker.
+struct SettingsOverflowMenu<Content: View>: View {
+    let title: String
+    @ViewBuilder var content: Content
+
+    var body: some View {
+        Menu(title) { content }
+            .menuStyle(.automatic)
+            .controlSize(.regular)
+            .fixedSize()
+            .accessibilityLabel(title)
+    }
+}
+
+@ViewBuilder
+private func settingsButtonLabel(title: String, leadingIcon: String?, trailingIcon: String?) -> some View {
+    HStack(spacing: BeruSpace.xxs) {
+        if let leadingIcon {
+            BeruIcon(name: leadingIcon, size: 14)
         }
-        .menuStyle(.borderlessButton)
-        .fixedSize()
+        Text(title)
+            .font(BeruType.control)
+            .lineLimit(1)
+        if let trailingIcon {
+            BeruIcon(name: trailingIcon, size: 14)
+        }
     }
 }

@@ -105,12 +105,11 @@ Reopening the app from Dock / Finder / Spotlight opens the dashboard. A second l
 Install → launch → Get Started
   1. Welcome
   2. Allow Accessibility  → Open System Settings if needed
-  3. Microphone (optional)
-  4. Start Beru           → panel opens on AI Search
+  3. Start Beru           → panel opens on AI Search
 ```
 
 - Get Started is gated on `hasCompletedGetStarted`. Until that is true, the invoke hotkey finishes onboarding instead of capturing.
-- Accessibility is required for capture and replace. Microphone / Speech are optional and only for dictation.
+- Accessibility is required for capture and replace. Microphone / Speech are optional and only for dictation; the system prompt appears the first time the user presses the mic or ⌃⌥⌘L, not during Get Started.
 - Closing Get Started while Accessibility is already trusted also counts as complete.
 - After first run, the user still needs a **provider** (Ollama running with a model, or a cloud key) before Enhance/Grammar can succeed.
 
@@ -222,13 +221,20 @@ Hover copy is the `summary` on each action (e.g. Grammar: “Fix spelling, gramm
 
 **⌘1–9** selects chips in the visible order.
 
+Caption under the chips names the live skill and the host, so a Cursor invoke that landed on Enhance Prompt is not read as Grammar:
+
+- No capture: `{skill} · {host}` (host falls back to “Mac”)
+- With capture: `{skill} · {host} · N characters`
+
+The line always occupies height (opacity only) so Search ↔ skill does not resize the toolbar.
+
 ### 9.3 Result states
 
 | State | What the user sees |
 |---|---|
 | Idle, Accessibility off | “Allow Accessibility” + Open System Settings. Panel must still size to the card (no top/bottom clip) |
 | Idle, no provider | “Choose your AI model” / connect CTAs |
-| Idle, no selection (verbs) | “No text selected” |
+| Idle, no selection (verbs) | “No text selected” — highlight in another app, or switch to AI Search |
 | Loading | Placeholder height, not an infinite fill |
 | Thinking | “Thinking…” (reasoning models; reasoning never enters the document) |
 | Streaming | Visible text grows; rationale markup is not shown live |
@@ -237,7 +243,7 @@ Hover copy is the `summary` on each action (e.g. Grammar: “Fix spelling, gramm
 
 ### 9.4 Composer
 
-- Intent field placeholders: “Ask anything — no selection needed”, “Nothing selected — ask instead”, and per-skill hints (“Optional: e.g. ‘keep my tone’”)
+- Intent field placeholders: “Ask anything — no selection needed” (Search), “Highlight text first” (verb, no selection), “Type what you want Beru to do” (Instruction), and per-skill hints (“Optional: e.g. ‘keep my tone’”)
 - **Return** submits the intent if the field has text; otherwise Replace / Insert
 - **⌘Return** Replace / Insert / Apply
 - **⌘C** Copy result (when a result exists)
@@ -252,7 +258,7 @@ Hover copy is the `summary` on each action (e.g. Grammar: “Fix spelling, gramm
 ### 9.5 Footer (done only)
 
 - Token savings estimate: `−N tok` / `+N tok` / `±0 tok`
-- **Replace** (or **Insert** on Smart Reply, or **Apply** when the source was a vault note)
+- **Replace** (or **Insert** on Smart Reply, or **Apply** when the source was a vault note) — transient “Replaced in [app]” / “Inserted in [app]” / “Applied to note” for 2 seconds, then the panel dismisses and the paste runs. Escape during the toast dismisses immediately and still writes.
 - **Copy** — transient “Copied”. Smart Reply copies the selected card only
 - **Pin** — saves a pin in the vault; transient “Pinned”
 
@@ -311,8 +317,8 @@ A provider is **configured** when: Ollama has URL + both model ids; Anthropic ha
 
 ### 10.3 Permissions
 
-- Accessibility: Granted / Needed + Open System Settings
-- Dictation: Ready / Unavailable + Allow or Open, with the reason from the speech stack
+- Accessibility: **Granted** / **Needed** badge. **Grant** (primary) when needed — system prompt plus System Settings. **Open** when granted. Status refreshes when Beru becomes active again (return from System Settings), not on a timer.
+- Dictation: **Granted** / **Needed** / **Unavailable**. **Grant** on first ask (system prompt). **Open** otherwise, with the reason from the speech stack.
 
 ### 10.4 Data
 
@@ -327,10 +333,12 @@ A provider is **configured** when: Ollama has URL + both model ids; Anthropic ha
 Local markdown. Default folder `~/Library/Application Support/Beru/vault/` (0700 / files 0600). Optional user folder (iCloud, Dropbox) — folder permissions are the cloud provider’s; files Beru writes stay 0600.
 
 - Empty vault seeds a Welcome note
-- List + search + New Note + folder Choose / Reset
-- Edit / Preview
-- Enhance this note → panel; Apply writes back
-- Pins: from panel Pin, or “Pin link”; Enhance / Open / Copy / Delete
+- List + search; **Notes | Pins** segmented control; Folder menu for Choose / local reset / export / import; **+/−** on the list
+- Last selected note, pin, and pane are restored when you return
+- Edit / Preview; delete asks first
+- Enhance this note → panel; **Apply** writes back and reopens Vault on that note
+- **Pin note** switches to Pins with that pin selected
+- Pins: from panel Pin, Pin note, or Pin link (http/https only); Enhance / Open / Copy / Delete; Open note when the pin came from a note
 
 ### 10.6 Runs
 
@@ -339,6 +347,7 @@ Only meaningful when recording is on. When off, show the recording-off empty sta
 - Filters: search, action, host app, Accepted only
 - Grouped by day
 - Detail: input/output, diff when applicable, rationale
+- Actions: **Enhance again** (result, or input if none), **Pin**, **Save as note** (opens that note in Vault), Copy result, Copy your text
 
 Outcomes folded from events: Replaced, Copied, Dismissed, Cancelled, Failed, No text selected, Left open.
 
@@ -347,12 +356,12 @@ Outcomes folded from events: Replaced, Copied, Dismissed, Cancelled, Failed, No 
 - Built-in Grammar and Enhance: prompts are the live shipped text (not a stale saved copy)
 - Seeded customs: Smart Reply, Summarize, Explain — editable
 - User customs: name, Lucide icon, prompt; drag reorder when search is empty
-- Add / delete / export / import; Insert Tone Preset
+- New Action via the list **+**; More for export / import; delete with confirm; Insert Tone Preset
 - AI Search and Instruction are **not** listed here
 
 ### 10.8 Targets
 
-Where Enhance is going. Built-in: **Generic** (no extra fragment), **Cursor**, **ChatGPT**, **Claude**, **Kimi**. Built-ins can be edited and Reset to Default. Users add custom targets.
+Where Enhance is going. Built-in: **Generic** (no extra fragment), **Cursor**, **ChatGPT**, **Claude**, **Kimi**. Built-ins can be edited and Reset to Default. Users add custom targets (list **+**; More for export / import / delete with confirm).
 
 Applied **only** on built-in Enhance Prompt. Generic contributes nothing.
 

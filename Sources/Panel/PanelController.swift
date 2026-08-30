@@ -8,11 +8,13 @@ import SwiftUI
 ///
 /// Height contract (frozen):
 /// - SwiftUI reports chrome + result ideal heights via band preferences.
+/// - Incomplete chrome bands are ignored; undersized chrome keeps the last real
+///   measure so a tab swap cannot clip the close strip or composer.
 /// - Window height = min(chrome + result, 75% of visible screen).
 /// - Below the cap: result is intrinsic. At the cap: result scrolls inside
 ///   `appState.panelResultScrollHeight`; close / chips / composer stay pinned.
 /// - Grow immediately; shrink after a short debounce. Never drive height from
-///   `NSHostingView.intrinsicContentSize`.
+///   `NSHostingView.intrinsicContentSize` (`sizingOptions` stays empty).
 @MainActor
 final class PanelController {
     private var panel: FloatingPanel?
@@ -33,6 +35,7 @@ final class PanelController {
     private var isApplyingHeight = false
     private var lastAppliedHeight: CGFloat = 0
     private var lastChrome: CGFloat = 0
+    private var lastResult: CGFloat = 0
 
     private var a11y: AccessibilityPreferences { AccessibilityPreferences.shared }
 
@@ -42,6 +45,7 @@ final class PanelController {
         isStreaming = false
         lastAppliedHeight = 0
         lastChrome = 0
+        lastResult = 0
         appState.panelResultScrollHeight = nil
         entranceSettledAt = CFAbsoluteTimeGetCurrent() + 0.55
 
@@ -141,12 +145,17 @@ final class PanelController {
 
     /// Chrome + result ideal heights from SwiftUI band preferences.
     func setLayoutHeights(_ layout: PanelLayoutHeights) {
-        guard layout.chrome > 1 || layout.result > 1 else { return }
-        lastChrome = max(layout.chrome, lastChrome)
+        guard let applied = PanelLayoutHeights.resolved(
+            layout: layout,
+            lastChrome: lastChrome,
+            lastResult: lastResult
+        ) else { return }
+        lastChrome = applied.lastChrome
+        lastResult = applied.lastResult
 
         let cap = maxPanelHeight()
-        let chrome = layout.chrome > 1 ? layout.chrome : lastChrome
-        let ideal = chrome + layout.result
+        let chrome = applied.chrome
+        let ideal = chrome + applied.result
         let capped = ideal > cap + 0.5
 
         let target: CGFloat
@@ -169,19 +178,27 @@ final class PanelController {
         let growing = target > (panel?.frame.height ?? 0) + 0.5
         if growing {
             pendingResize?.cancel()
-            applyContentHeight(target)
+            applyContentHeight(target, animated: false)
             return
         }
 
         if isStreaming { return }
-        if CFAbsoluteTimeGetCurrent() < entranceSettledAt { return }
 
         pendingResize?.cancel()
+        let delay: TimeInterval
+        if CFAbsoluteTimeGetCurrent() < entranceSettledAt {
+            // Preference callbacks during the entrance window used to `return`
+            // without scheduling, so a seed-height panel never shrank once
+            // SwiftUI went quiet.
+            delay = max(0.12, entranceSettledAt - CFAbsoluteTimeGetCurrent() + 0.02)
+        } else {
+            delay = 0.12
+        }
         let work = DispatchWorkItem { [weak self] in
-            self?.applyContentHeight(target)
+            self?.applyContentHeight(target, animated: true)
         }
         pendingResize = work
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.12, execute: work)
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: work)
     }
 
     func streamingDidStart() {
@@ -210,7 +227,7 @@ final class PanelController {
         return min(PanelMetrics.maxHeight, max(PanelMetrics.seedHeight, cap))
     }
 
-    private func applyContentHeight(_ height: CGFloat) {
+    private func applyContentHeight(_ height: CGFloat, animated: Bool = false) {
         guard let panel, panel.isVisible, !isApplyingHeight else { return }
         let targetWidgetHeight = min(height.rounded(), maxPanelHeight())
         let targetWindowHeight = PanelMetrics.windowHeight(for: targetWidgetHeight)
@@ -233,11 +250,25 @@ final class PanelController {
 
         isApplyingHeight = true
         isProgrammaticMove = true
-        panel.setFrame(frame, display: true)
-        isProgrammaticMove = false
-        isApplyingHeight = false
+        if animated, !a11y.reduceMotion {
+            NSAnimationContext.runAnimationGroup { context in
+                context.duration = 0.22
+                context.timingFunction = CAMediaTimingFunction(controlPoints: 0.16, 1.0, 0.3, 1.0)
+                panel.animator().setFrame(frame, display: true)
+            } completionHandler: { [weak self] in
+                MainActor.assumeIsolated {
+                    self?.isProgrammaticMove = false
+                    self?.panel?.invalidateShadow()
+                }
+            }
+            isApplyingHeight = false
+        } else {
+            panel.setFrame(frame, display: true)
+            isProgrammaticMove = false
+            isApplyingHeight = false
+            panel.invalidateShadow()
+        }
         lastAppliedHeight = targetWidgetHeight
-        panel.invalidateShadow()
     }
 
     private func makePanel(engine: PanelEngine) -> FloatingPanel {
@@ -263,6 +294,15 @@ final class PanelController {
                 self?.setLayoutHeights(layout)
             }
         )
+        // Same as the dashboard: an empty set. The default includes
+        // intrinsicContentSize, which sizes the host to SwiftUI's ideal, then
+        // layout() forces the window's bounds — the mismatch centers overflow
+        // and shears the 10pt inset on tab switch.
+        hosting.sizingOptions = []
+        hosting.setContentHuggingPriority(.defaultLow, for: .vertical)
+        hosting.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        hosting.setContentCompressionResistancePriority(.defaultLow, for: .vertical)
+        hosting.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         hosting.sceneBridgingOptions = []
         hosting.safeAreaRegions = []
         hosting.wantsLayer = true

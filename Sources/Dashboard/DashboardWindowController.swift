@@ -13,6 +13,8 @@ final class DashboardModel {
     let enhanceText: (String) -> Void
     /// Opens the panel on a vault note and writes Replace back into that note.
     let enhanceNote: (String) -> Void
+    /// When set, Vault selects this note on the next appear.
+    var pendingVaultNoteID: String?
 
     init(
         route: DashboardRoute = .general,
@@ -22,6 +24,11 @@ final class DashboardModel {
         self.route = route
         self.enhanceText = enhanceText
         self.enhanceNote = enhanceNote
+    }
+
+    func openVaultNote(_ id: String) {
+        pendingVaultNoteID = id
+        route = .vault
     }
 }
 
@@ -186,6 +193,12 @@ final class DashboardWindowController: NSWindowController, NSWindowDelegate {
         NSApp.setActivationPolicy(.regular)
         NSApp.activate(ignoringOtherApps: true)
         window?.makeKeyAndOrderFront(nil)
+    }
+
+    /// Apply from a vault note: select that note and bring Vault forward.
+    func revealVaultNote(_ id: String) {
+        model.openVaultNote(id)
+        show(route: .vault)
     }
 
     /// Drop back to accessory so closing the dashboard removes the Dock icon

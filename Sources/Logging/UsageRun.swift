@@ -80,4 +80,33 @@ struct UsageRun: Identifiable, Sendable, Equatable {
         }
         return String(firstLine)
     }
+
+    /// Text to send back to the panel. Prefer the result; fall back to the input.
+    var enhanceAgainText: String? {
+        let output = outputText?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if !output.isEmpty { return output }
+        let input = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
+        return input.isEmpty ? nil : input
+    }
+
+    /// Result body for Pin / Save as note. Nil when the run produced nothing.
+    var resultForVault: String? {
+        let output = outputText?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return output.isEmpty ? nil : output
+    }
+
+    /// Title for a vault note created from this run.
+    var suggestedVaultTitle: String {
+        guard let body = resultForVault else {
+            return actionName ?? "Untitled"
+        }
+        let line = body.split(whereSeparator: \.isNewline).first?
+            .trimmingCharacters(in: .whitespaces) ?? ""
+        let cleaned = line.hasPrefix("#")
+            ? line.drop(while: { $0 == "#" || $0 == " " })
+            : Substring(line)
+        let title = String(cleaned.prefix(80))
+        if title.isEmpty { return actionName ?? "Untitled" }
+        return title
+    }
 }

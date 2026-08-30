@@ -9,15 +9,20 @@ import SwiftUI
 /// algorithm.
 struct RunDetailView: View {
     let run: UsageRun
+    var dashboard: DashboardModel
 
     @State private var showChanges = true
     @State private var copied = false
+    @State private var pinned = false
 
     var body: some View {
-        VStack(spacing: 0) {
+        WorkspaceInspector {
+            WorkspaceChromeBar {
+                header
+            }
+        } main: {
             ScrollView {
-                VStack(alignment: .leading, spacing: DashboardMetrics.md) {
-                    header
+                VStack(alignment: .leading, spacing: BeruSpace.md) {
                     textBlock(title: "Your text", text: run.inputText)
                     resultBlock
                     if let rationale = run.rationale {
@@ -25,54 +30,43 @@ struct RunDetailView: View {
                     }
                     factsBar
                 }
-                .padding(SettingsChrome.contentPadding)
+                .padding(BeruMetrics.workspaceInspectorPadding)
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .frame(minWidth: 0, minHeight: 0)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .layoutPriority(1)
-
-            SettingsHeaderRule()
+        } footer: {
             actionsBar
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .id(run.id)
     }
 
     // MARK: - Header
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .firstTextBaseline, spacing: 8) {
+        HStack(alignment: .firstTextBaseline, spacing: BeruSpace.sm) {
+            VStack(alignment: .leading, spacing: BeruSpace.xxs) {
                 Text(run.actionName ?? run.actionID ?? "Run")
-                    .font(BeruSans.section)
-                    .foregroundStyle(SettingsTheme.textPrimary)
+                    .font(BeruType.section)
                     .lineLimit(1)
                 if let app = run.hostAppName {
                     Text(app)
-                        .font(BeruSans.footnote)
-                        .foregroundStyle(SettingsTheme.textSecondary)
+                        .font(BeruType.footnote)
+                        .foregroundStyle(BeruColor.textSecondary)
                         .lineLimit(1)
-                        .padding(.horizontal, BeruSpace.xs)
-                        .padding(.vertical, BeruSpace.hair)
-                        .background(SettingsTheme.badgeBg, in: Capsule())
-                        .fixedSize()
                 }
-                Spacer(minLength: 8)
-                Text(run.startedAt.formatted(date: .abbreviated, time: .shortened))
-                    .font(BeruSans.footnote)
-                    .foregroundStyle(SettingsTheme.textSecondary)
-                    .lineLimit(1)
-                    .fixedSize()
             }
-            .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+            Text(run.startedAt.formatted(date: .abbreviated, time: .shortened))
+                .font(BeruType.footnote)
+                .foregroundStyle(BeruColor.textSecondary)
+                .lineLimit(1)
+                .fixedSize()
         }
     }
 
     // MARK: - Text blocks
 
     private func textBlock(title: String, text: String) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: BeruSpace.xs) {
             sectionLabel(title)
             Text(text.isEmpty ? "—" : text)
                 .textSelection(.enabled)
@@ -87,8 +81,8 @@ struct RunDetailView: View {
     private var resultBlock: some View {
         if let output = run.outputText {
             let ops = diffOps(original: run.inputText, revised: output)
-            VStack(alignment: .leading, spacing: 8) {
-                HStack(spacing: 8) {
+            VStack(alignment: .leading, spacing: BeruSpace.xs) {
+                HStack(spacing: BeruSpace.xs) {
                     sectionLabel("Result")
                     Spacer()
                     if ops != nil {
@@ -112,7 +106,7 @@ struct RunDetailView: View {
                 }
             }
         } else if case .failed(let message) = run.outcome {
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: BeruSpace.xs) {
                 sectionLabel("What happened")
                 Text(message ?? "The generation failed.")
                     .font(BeruSans.rowCaption)
@@ -157,7 +151,7 @@ struct RunDetailView: View {
         LazyVGrid(
             columns: [GridItem(.adaptive(minimum: 92), alignment: .leading)],
             alignment: .leading,
-            spacing: 12
+            spacing: BeruSpace.sm
         ) {
             fact("Model", run.model ?? "—")
             fact("Target", targetName)
@@ -200,7 +194,37 @@ struct RunDetailView: View {
     // MARK: - Actions
 
     private var actionsBar: some View {
-        HStack(spacing: 8) {
+        WorkspaceChromeBar {
+            SettingsPrimaryButton(title: "Enhance again", enabled: run.enhanceAgainText != nil) {
+                guard let text = run.enhanceAgainText else { return }
+                dashboard.enhanceText(text)
+            }
+
+            SettingsPillButton(title: pinned ? "Pinned" : "Pin") {
+                guard let body = run.resultForVault else { return }
+                _ = VaultStore.shared.pinResult(
+                    title: run.suggestedVaultTitle,
+                    body: body,
+                    actionID: run.actionID
+                )
+                pinned = true
+                Task {
+                    try? await Task.sleep(for: .milliseconds(900))
+                    pinned = false
+                }
+            }
+            .disabled(run.resultForVault == nil)
+
+            SettingsPillButton(title: "Save as note") {
+                guard let body = run.resultForVault else { return }
+                let note = VaultStore.shared.createNote(
+                    title: run.suggestedVaultTitle,
+                    body: body
+                )
+                dashboard.openVaultNote(note.id)
+            }
+            .disabled(run.resultForVault == nil)
+
             SettingsPillButton(title: copied ? "Copied" : "Copy result") {
                 guard let output = run.outputText else { return }
                 NSPasteboard.general.clearContents()
@@ -221,9 +245,6 @@ struct RunDetailView: View {
 
             Spacer(minLength: 0)
         }
-        .padding(.horizontal, SettingsChrome.contentPadding)
-        .padding(.vertical, BeruSpace.sm)
-        .fixedSize(horizontal: false, vertical: true)
     }
 
     // MARK: - Helpers

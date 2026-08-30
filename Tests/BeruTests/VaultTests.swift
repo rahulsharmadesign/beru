@@ -105,6 +105,77 @@ final class VaultTests: XCTestCase {
         XCTAssertEqual(store.note(id: note.id)?.title, "Shipped")
     }
 
+    func testNormalizedURLAcceptsHTTPAndHTTPSOnly() {
+        XCTAssertEqual(VaultLink.normalizedURL(from: "https://example.com")?.absoluteString, "https://example.com")
+        XCTAssertEqual(VaultLink.normalizedURL(from: "example.com")?.host, "example.com")
+        XCTAssertEqual(VaultLink.normalizedURL(from: "http://example.com")?.scheme, "http")
+        XCTAssertNil(VaultLink.normalizedURL(from: "javascript:alert(1)"))
+        XCTAssertNil(VaultLink.normalizedURL(from: "file:///etc/passwd"))
+        XCTAssertNil(VaultLink.normalizedURL(from: "ftp://example.com"))
+        XCTAssertNil(VaultLink.normalizedURL(from: "   "))
+    }
+
+    @MainActor
+    func testCloudSyncedFolderDetectsICloudAndDropbox() {
+        XCTAssertTrue(
+            VaultStore.isCloudSyncedFolder(
+                URL(fileURLWithPath: "/Users/a/Library/Mobile Documents/com~apple~CloudDocs/Beru")
+            )
+        )
+        XCTAssertTrue(
+            VaultStore.isCloudSyncedFolder(URL(fileURLWithPath: "/Users/a/Dropbox/Beru"))
+        )
+        XCTAssertFalse(
+            VaultStore.isCloudSyncedFolder(URL(fileURLWithPath: "/Users/a/Documents/Beru"))
+        )
+    }
+
+    func testSelectionMemoryRestoresOnlyWhenTheNoteStillExists() {
+        let suite = "beru.vault.selection.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        let kept = VaultNote(id: "note-kept", title: "Kept", body: "hi")
+        VaultSelectionMemory.persist("note-kept", defaults: defaults)
+        XCTAssertEqual(
+            VaultSelectionMemory.restoredID(from: [kept], defaults: defaults),
+            "note-kept"
+        )
+        XCTAssertNil(VaultSelectionMemory.restoredID(from: [], defaults: defaults))
+    }
+
+    func testPaneAndPinMemoryRestore() {
+        let suite = "beru.vault.pane.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        XCTAssertEqual(VaultSelectionMemory.restoredPane(defaults: defaults), .notes)
+        VaultSelectionMemory.persistPane(.pins, defaults: defaults)
+        XCTAssertEqual(VaultSelectionMemory.restoredPane(defaults: defaults), .pins)
+
+        let pin = VaultPin(id: "pin-kept", kind: .link, title: "Docs", url: "https://example.com")
+        VaultSelectionMemory.persistPin("pin-kept", defaults: defaults)
+        XCTAssertEqual(
+            VaultSelectionMemory.restoredPinID(from: [pin], defaults: defaults),
+            "pin-kept"
+        )
+        XCTAssertNil(VaultSelectionMemory.restoredPinID(from: [], defaults: defaults))
+    }
+
+    @MainActor
+    func testAddLinkPinRejectsNonHTTPSchemes() {
+        let suite = "beru.vault.tests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        let store = VaultStore(defaults: defaults, rootURL: tempRoot)
+        XCTAssertNil(store.addLinkPin(title: "Nope", url: "javascript:alert(1)"))
+        XCTAssertTrue(store.pins.isEmpty)
+        XCTAssertNotNil(store.addLinkPin(title: "Docs", url: "example.com"))
+        XCTAssertEqual(store.pins.count, 1)
+        XCTAssertEqual(store.pins.first?.url, "https://example.com")
+    }
+
     /// Security: an id read from imported frontmatter becomes a filename, so it
     /// must never be able to escape the notes directory. A crafted archive could
     /// otherwise write an arbitrary file anywhere the user can write (zip-slip).

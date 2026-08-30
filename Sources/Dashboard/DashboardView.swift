@@ -67,44 +67,51 @@ struct DashboardView: View {
 
     private var sidebar: some View {
         VStack(alignment: .leading, spacing: 0) {
-            SettingsSearchField(text: $query)
-                .padding(.bottom, SettingsChrome.headerContentSpacing)
-            if filteredMenu.isEmpty && filteredFooter.isEmpty {
-                sidebarNoMatches
-                Spacer(minLength: 0)
-            } else {
-                ScrollView {
-                    VStack(spacing: 2) {
-                        ForEach(settingsMenu) { route in
-                            sidebarButton(route)
-                        }
-                        if !settingsMenu.isEmpty && !workspaceMenu.isEmpty {
-                            sidebarGroupDivider
-                        }
-                        ForEach(workspaceMenu) { route in
-                            sidebarButton(route)
+            VStack(alignment: .leading, spacing: 0) {
+                SettingsSearchField(text: $query)
+                    .padding(.bottom, SettingsChrome.headerContentSpacing)
+                if filteredMenu.isEmpty && filteredFooter.isEmpty {
+                    sidebarNoMatches
+                    Spacer(minLength: 0)
+                } else {
+                    ScrollView {
+                        VStack(spacing: 2) {
+                            ForEach(settingsMenu) { route in
+                                sidebarButton(route)
+                            }
+                            if !settingsMenu.isEmpty && !workspaceMenu.isEmpty {
+                                sidebarGroupDivider
+                            }
+                            ForEach(workspaceMenu) { route in
+                                sidebarButton(route)
+                            }
                         }
                     }
-                }
-                .scrollBounceBehavior(.basedOnSize)
-                Spacer(minLength: 0)
-                if searchIsEmpty || !filteredFooter.isEmpty {
-                    sidebarGroupDivider
+                    .scrollBounceBehavior(.basedOnSize)
+                    Spacer(minLength: 0)
                     if searchIsEmpty {
                         SettingsTipCard {
                             model.route = .models
                         }
-                        .padding(.bottom, 8)
-                    }
-                    ForEach(filteredFooter) { route in
-                        sidebarButton(route)
+                        .padding(.bottom, BeruSpace.xs)
                     }
                 }
             }
+            .padding(.horizontal, SettingsChrome.workspaceListInset)
+            .padding(.top, BeruSpace.md)
+            if searchIsEmpty || !filteredFooter.isEmpty {
+                VStack(spacing: 0) {
+                    SettingsHeaderRule()
+                    VStack(spacing: 2) {
+                        ForEach(filteredFooter) { route in
+                            sidebarButton(route)
+                        }
+                    }
+                    .padding(.horizontal, SettingsChrome.workspaceListInset)
+                    .frame(maxWidth: .infinity, minHeight: BeruMetrics.workspaceChromeMinHeight)
+                }
+            }
         }
-        .padding(.horizontal, SettingsChrome.workspaceListInset)
-        .padding(.top, BeruSpace.md)
-        .padding(.bottom, BeruSpace.lg)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
     }
 
@@ -137,7 +144,8 @@ struct DashboardView: View {
     private func sidebarRow(_ route: DashboardRoute) -> some View {
         let selected = model.route == route
         return HStack(spacing: BeruSpace.sm) {
-            BeruIcon(name: route.lucideIcon, size: 18)
+            Image(systemName: route.systemImage)
+                .font(BeruType.body)
                 .foregroundStyle(SettingsTheme.textSecondary)
                 .frame(width: 18, height: 18)
             Text(route.title)
@@ -168,7 +176,7 @@ struct DashboardView: View {
             case .permissions: PermissionsSettingsTab()
             case .data: HistorySettingsTab()
             case .vault: VaultView(model: model)
-            case .runs: RunsView()
+            case .runs: RunsView(dashboard: model)
             case .actions: ActionsView()
             case .targets: TargetsView()
             case .about: AboutSettingsTab()
@@ -214,12 +222,7 @@ private struct SettingsTipCard: View {
                     .font(BeruSans.footnote)
                     .foregroundStyle(SettingsTheme.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
-                BeruButton(
-                    title: "View models",
-                    variant: .primary,
-                    size: .compact,
-                    action: onViewModels
-                )
+                SettingsPrimaryButton(title: "View models", action: onViewModels)
             }
             .padding(BeruSpace.sm)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -242,10 +245,8 @@ private struct SidebarUpdateChip: View {
     @Bindable private var updates = AppUpdateService.shared
 
     var body: some View {
-        BeruButton(
+        SettingsPrimaryButton(
             title: updates.buttonTitle,
-            variant: .primary,
-            size: .compact,
             enabled: !updates.isBusy
         ) {
             updates.install()

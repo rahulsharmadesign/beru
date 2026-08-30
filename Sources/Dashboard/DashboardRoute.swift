@@ -50,7 +50,8 @@ enum DashboardRoute: String, Identifiable, CaseIterable, Hashable {
         }
     }
 
-    /// Lucide icon name (kebab-case).
+    /// Lucide icon name (kebab-case). Used in the panel; settings sidebar
+    /// uses `systemImage`.
     var lucideIcon: String {
         switch self {
         case .general: return "settings"
@@ -62,6 +63,21 @@ enum DashboardRoute: String, Identifiable, CaseIterable, Hashable {
         case .actions: return "sparkles"
         case .targets: return "target"
         case .about: return "info"
+        }
+    }
+
+    /// SF Symbol for the settings sidebar.
+    var systemImage: String {
+        switch self {
+        case .general: return "gearshape"
+        case .models: return "cpu"
+        case .permissions: return "lock.fill"
+        case .data: return "internaldrive"
+        case .vault: return "archivebox"
+        case .runs: return "clock"
+        case .actions: return "sparkles"
+        case .targets: return "target"
+        case .about: return "info.circle"
         }
     }
 

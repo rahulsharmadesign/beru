@@ -16,6 +16,7 @@ extension View {
     func dashboardEditorCanvas() -> some View {
         self
             .scrollContentBackground(.hidden)
+            .scrollIndicators(.never)
             .background(Color.clear)
     }
 }

@@ -77,7 +77,7 @@ extension PanelView {
                 ResultView(state: state, usesMarkdown: usesSearchMarkdown)
             }
         }
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: .infinity, minHeight: PanelMetrics.resultIdleMinHeight)
         // Do not `.id` the tab or animate this swap: that scaled the result
         // copy and, with the window animator, sheared the close strip and composer.
         .animation(nil, value: appState.selectedActionID)
@@ -145,10 +145,7 @@ extension PanelView {
     }
 
     var regularIdlePlaceholder: some View {
-        let actionID = appState.selectedActionID
-        let name = registry.action(withID: actionID)?.name
-            ?? (actionID == EnhancementAction.searchID ? "AI Search" : "This action")
-        let copy = EnhancementAction.emptyCaptureCopy(actionID: actionID, actionName: name)
+        let copy = EnhancementAction.emptyCaptureCopy(actionID: appState.selectedActionID)
         return VStack(spacing: BeruSpace.xxs) {
             Text(copy.title)
                 .font(BeruType.bodyMedium)

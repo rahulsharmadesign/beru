@@ -89,15 +89,13 @@ struct SettingsWorkspace<Content: View>: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: BeruMetrics.headerContentSpacing) {
-            VStack(alignment: .leading, spacing: BeruMetrics.headerContentSpacing) {
-                SettingsPageHeader(title: title, subtitle: subtitle)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                SettingsHeaderRule()
-            }
-            .padding(.horizontal, BeruMetrics.contentPadding)
-            .padding(.top, BeruSpace.lg)
-            .fixedSize(horizontal: false, vertical: true)
+        VStack(alignment: .leading, spacing: 0) {
+            SettingsPageHeader(title: title, subtitle: subtitle)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, BeruMetrics.workspaceChromeInset)
+                .padding(.top, BeruSpace.lg)
+                .padding(.bottom, BeruMetrics.headerContentSpacing)
+            SettingsHeaderRule()
             content
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
@@ -231,10 +229,10 @@ struct SettingsWorkspaceToolbar<Content: View>: View {
                     toolbarContent
                 }
             }
-            .padding(.horizontal, BeruMetrics.contentPadding)
-            .padding(.bottom, BeruSpace.sm)
+            .padding(.horizontal, BeruMetrics.workspaceChromeInset)
+            .padding(.vertical, BeruMetrics.workspaceChromePadding)
+            .frame(maxWidth: .infinity, minHeight: BeruMetrics.workspaceChromeMinHeight, alignment: .leading)
             .fixedSize(horizontal: false, vertical: true)
-            .frame(maxWidth: .infinity, alignment: .leading)
             SettingsHeaderRule()
         }
     }
@@ -258,8 +256,9 @@ struct SettingsListFooter<Content: View>: View {
             }
             .buttonStyle(.plain)
             .foregroundStyle(BeruColor.textPrimary)
-            .padding(.horizontal, BeruMetrics.contentPadding)
-            .padding(.vertical, BeruSpace.xs)
+            .padding(.horizontal, BeruMetrics.workspaceChromeInset)
+            .padding(.vertical, BeruMetrics.workspaceChromePadding)
+            .frame(maxWidth: .infinity, minHeight: BeruMetrics.workspaceChromeMinHeight, alignment: .leading)
             .fixedSize(horizontal: false, vertical: true)
             .background(DashboardChrome.sidebarSurface)
         }

@@ -19,6 +19,17 @@ enum BeruMetrics {
     static let workspaceListWidth: CGFloat = 280
     static let workspaceListInset = BeruSpace.md
 
+    /// Horizontal inset for workspace title, toolbar, list rows, inspector
+    /// bars, and list footers. Settings *form* pages keep `contentPadding`.
+    static let workspaceChromeInset = BeruSpace.md
+    /// Vertical padding inside those chrome bars. Same on the list footer and
+    /// the inspector footer so their hairlines meet across the split.
+    static let workspaceChromePadding = BeruSpace.xs
+    /// Shared height for toolbar, list footer, and inspector bars.
+    static let workspaceChromeMinHeight = BeruSpace.xxl
+    /// Padding inside the inspector body (editor, form, pin preview).
+    static let workspaceInspectorPadding = BeruSpace.md
+
     static let contentPadding = BeruSpace.xl
     static let headerContentSpacing = BeruSpace.md
 

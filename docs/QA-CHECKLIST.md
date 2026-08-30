@@ -23,9 +23,18 @@ the window height fits the content:
 - [ ] Close disc on the leading edge; gear (no “Settings” label) opens Settings
 - [ ] Close disc and composer sit 10pt in from the window on every side; idle tabs have no gray fill; selected tab is accent
 - [ ] Open the panel and switch Search ↔ Enhance: inset does not collapse then snap; composer never crops
+- [ ] In Cursor with a selection: context line reads “Enhance Prompt · Cursor · N characters”; switching to Grammar updates the skill name; no selection after switching: “Grammar · Cursor” (not “No text selected” on that line)
+- [ ] Replace: footer shows “Replaced in [app]” for ~2s, then the panel closes and the host text updates; a second click during the toast does nothing; Escape during the toast still writes
 - [ ] Select text on a webpage and invoke: **Summarize** is selected and already visible in the chip row (no horizontal swipe)
 - [ ] AI Search: ask twice — both Q&As stack; window grows to 75% then scrolls; thread clears when the panel closes
 - [ ] AI Search regenerate rewrites only the latest answer; earlier turns stay
+
+## Get Started
+
+Reset by clearing `hasCompletedGetStarted` (or a fresh install):
+
+- [ ] Three steps only: Welcome → Allow Accessibility → Start Beru. No microphone page
+- [ ] After Start Beru, first mic click (or ⌃⌥⌘L) shows the system Microphone prompt; Allow starts listening. Settings → Permissions is not opened first
 
 ## Liquid Glass
 
@@ -42,10 +51,38 @@ the window height fits the content:
 Open Settings and visit every sidebar route twice, in this order:
 
 - [ ] General, Models, Actions, Targets, Vault, Runs, Data, Permissions, About
+- [ ] Permissions: Accessibility and Dictation show Granted/Needed badges; Needed shows a primary Grant; Open after a grant. Toggle Accessibility in System Settings, click back — badge updates without waiting
 - [ ] No "Beru wants to use your confidential information" prompt at any point
 - [ ] No beachball or lag when landing on Models
 - [ ] Resize the window narrow: rows reflow without jumping or clipping
 - [ ] Light mode and dark mode
+- [ ] General → Open Beru / Dictate: both recorders are the same width as Name, right edges and × buttons line up
+
+## Runs and Vault
+
+Recording must be on (Data → Record usage):
+
+- [ ] Open a finished run: **Enhance again** opens the panel on the result; **Pin** adds a vault pin; **Save as note** jumps to Vault with that note selected
+- [ ] A failed run with no result: Enhance again uses the original text; Pin and Save as note stay disabled
+- [ ] Enhance a vault note, Apply: toast “Applied to note”, panel closes, Settings opens on Vault with that note selected and the new body
+
+## Workspace pages
+
+Vault, Actions, Targets, Runs should read as macOS Settings (source list + inspector), not a custom app:
+
+- [ ] Each list is a system source list: click, arrow keys, and selection use the system highlight (not a solid accent pill with inverted text)
+- [ ] Hairlines are full-bleed: title rule, toolbar rule, split, inspector bars. About sits in the same 48pt footer as list +/−; selected About uses the same row highlight as General / Models
+- [ ] Toolbar is always **search first**, then filters / Notes–Pins / More. Workspace inset is 16pt (not 32pt form padding)
+- [ ] Actions / Targets / Vault: **+/−** at the bottom of the list. More/Folder for import and export
+- [ ] Drag to reorder actions when search is empty (no grip handle)
+- [ ] Inspector is grouped settings rows (Name, Icon, Kind, Prompt) — no hero icon header
+- [ ] Conventions / Prompt editor wells use the system text-field fill (same as Name/Icon), not a navy canvas patch. Conventions, Prompt, and Vault notes have no leftover black scrollbar strip
+- [ ] Runs group by day with native section headers; recording-off and empty states still explain themselves
+- [ ] Delete a custom action, a custom target, and a note: confirmation, then gone. Built-ins have no Delete
+- [ ] Leave Vault on a note, go to Actions, come back: the same note is selected
+- [ ] Vault toolbar: **Notes | Pins**. Notes is list + editor (no third column). Pins is list + inspector
+- [ ] Pin note: jumps to Pins with that pin selected. Open note on a snippet pin returns to Notes
+- [ ] Pin link: `example.com` and `https://example.com` work; `javascript:` and `file:` stay disabled / rejected
 
 ## Models
 
@@ -78,7 +115,7 @@ Highlight a message in another app, invoke, then tap **Smart Reply**:
 - [ ] Hotkey with a comment selected in Chrome/Safari opens **Smart Reply** automatically
 - [ ] Roman Hinglish comment → all six replies stay in Roman/Latin (not Devanagari or German)
 - [ ] If the model mixes languages across cards, a language notice appears — try Regenerate
-- [ ] No selection: “No text selected”
+- [ ] No selection on Grammar: “No text selected”; composer says “Highlight text first”, not “ask instead”
 - [ ] Grammar still copy-edits; switching tabs only morphs the chip highlight, not the window
 
 ## Before release only

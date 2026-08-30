@@ -100,7 +100,6 @@ final class OnboardingWindowController: NSWindowController, NSWindowDelegate {
 private enum GetStartedStep: Int, CaseIterable {
     case welcome
     case accessibility
-    case microphone
     case startBeru
 }
 
@@ -109,7 +108,6 @@ struct GetStartedView: View {
 
     @State private var step: GetStartedStep = .welcome
     @State private var isTrusted = Permissions.isAccessibilityTrusted()
-    @Bindable private var dictation = DictationService.shared
     /// Was a plain stored property, which reads the current value but never
     /// subscribes, so a preference changed mid-onboarding went unnoticed.
     @Bindable private var a11y = AccessibilityPreferences.shared
@@ -130,7 +128,6 @@ struct GetStartedView: View {
                 switch step {
                 case .welcome: welcome
                 case .accessibility: accessibility
-                case .microphone: microphone
                 case .startBeru: startBeru
                 }
             }
@@ -149,7 +146,6 @@ struct GetStartedView: View {
         .task {
             while !Task.isCancelled {
                 isTrusted = Permissions.isAccessibilityTrusted()
-                dictation.refreshAvailability()
                 try? await Task.sleep(for: .seconds(1))
             }
         }
@@ -194,22 +190,6 @@ struct GetStartedView: View {
                     OnboardContinueButton("Open System Settings", prominent: false) {
                         Permissions.requestAccessibilityIfNeeded()
                         Permissions.openAccessibilitySettings()
-                    }
-                }
-                OnboardContinueButton("Continue") { step = .microphone }
-            }
-        }
-    }
-
-    private var microphone: some View {
-        stepLayout(
-            title: "Microphone (optional)",
-            body: "Use your voice instead of typing. Your speech is transcribed right on your Mac and never sent to Apple."
-        ) {
-            VStack(spacing: 12) {
-                if dictation.availability == .needsPermission {
-                    OnboardContinueButton("Allow Microphone", prominent: false) {
-                        Task { await dictation.requestPermissions() }
                     }
                 }
                 OnboardContinueButton("Continue") { step = .startBeru }

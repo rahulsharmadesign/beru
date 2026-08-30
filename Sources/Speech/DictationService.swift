@@ -183,7 +183,8 @@ final class DictationService {
     func requestPermissions() async {
         // Accessory processes often never surface TCC dialogs. Become a regular
         // app first so the prompt and System Settings can come to the front.
-        if NSApp.activationPolicy() != .regular {
+        let shouldRestoreAccessory = NSApp.activationPolicy() == .accessory
+        if shouldRestoreAccessory {
             NSApp.setActivationPolicy(.regular)
         }
         NSApp.activate(ignoringOtherApps: true)
@@ -201,6 +202,17 @@ final class DictationService {
             }
         }
         refreshAvailability()
+        if shouldRestoreAccessory {
+            restoreAccessoryIfDashboardClosed()
+        }
+    }
+
+    /// Dock icon only while a real window (Settings) needs to stay in the app switcher.
+    private func restoreAccessoryIfDashboardClosed() {
+        let dashboardOpen = NSApp.windows.contains { $0.isVisible && $0.title == "Beru" }
+        if !dashboardOpen {
+            NSApp.setActivationPolicy(.accessory)
+        }
     }
 
     // MARK: - Recording

@@ -17,11 +17,9 @@ final class PanelEngine {
     /// Notified when a stream begins, so the panel only grows until it ends.
     var onStreamingStarted: (() -> Void)?
 
-    /// Set by the coordinator to open the dashboard's Permissions screen.
-    ///
-    /// The panel cannot ask for microphone access itself: it is a
-    /// non-activating window in an accessory process, so the system dialog may
-    /// never come to the front. The request has to be made from a real window.
+    /// Set by the coordinator to open the dashboard's Permissions screen when
+    /// dictation is denied or unavailable. First-use TCC is requested from the
+    /// mic itself after activating the app, so the system dialog can appear.
     var onRequestDictationPermission: (() -> Void)?
 
     func requestDictationPermission() {
@@ -42,6 +40,9 @@ final class PanelEngine {
         onOpenSettings?()
     }
 
+    /// After Apply on a vault note, reopen Vault on that note.
+    var onRevealVaultNote: ((String) -> Void)?
+
     let powerActivity = PowerActivity()
     var lastDescribeInstruction: String?
     /// Regeneration count per action within the current invocation.
@@ -53,6 +54,13 @@ final class PanelEngine {
     var generationCounter = 0
     /// The generation whose writes are still wanted, per action.
     var liveGeneration: [String: Int] = [:]
+    /// Replace toast then paste. Cancelled if a new invocation starts before
+    /// the write runs. Escape during the toast finishes the write immediately.
+    var replaceToastTask: Task<Void, Never>?
+    var pendingReplaceText: String?
+    var pendingReplaceTarget: AXUIElement?
+    var pendingReplaceIsVault = false
+    var pendingReplaceVaultNoteID: String?
 
     /// Called when a new panel session begins, so attempt numbering restarts.
     func resetForNewInvocation() {
@@ -62,6 +70,12 @@ final class PanelEngine {
         // matches no entry, so it can no longer publish.
         liveGeneration.removeAll()
         lastDescribeInstruction = nil
+        replaceToastTask?.cancel()
+        replaceToastTask = nil
+        pendingReplaceText = nil
+        pendingReplaceTarget = nil
+        pendingReplaceIsVault = false
+        pendingReplaceVaultNoteID = nil
     }
 
     func beginGeneration(for actionID: String) -> Int {

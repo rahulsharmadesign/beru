@@ -21,33 +21,16 @@ struct GeneralSettingsTab: View {
 
             SettingsSection(title: "Accent", subtitle: "Primary color for selected controls and actions.") {
                 SettingsRow(title: "Primary color", caption: "Selected controls, focus, and primary actions.") {
-                    LazyVGrid(
-                        columns: Array(
-                            repeating: GridItem(.fixed(22), spacing: BeruSpace.xs),
-                            count: 6
-                        ),
-                        spacing: BeruSpace.xs
-                    ) {
+                    Picker("", selection: $settings.primaryColorID) {
                         ForEach(PrimaryColor.allCases) { option in
-                            Button {
-                                settings.primaryColorID = option.rawValue
-                            } label: {
-                                ZStack {
-                                    Circle().fill(option.color)
-                                    if settings.primaryColorID == option.rawValue {
-                                        BeruIcon(name: "check", size: 10)
-                                            .foregroundStyle(option.selectedForeground)
-                                    }
-                                }
-                                .frame(width: 18, height: 18)
-                                .frame(width: 32, height: 32)
-                                .contentShape(Rectangle())
-                            }
-                            .buttonStyle(.plain)
-                            .accessibilityLabel(option.title)
+                            Text(option.title).tag(option.rawValue)
                         }
                     }
-                    .frame(width: 156, alignment: .trailing)
+                    .labelsHidden()
+                    .accessibilityLabel("Primary color")
+                    .pickerStyle(.menu)
+                    .fixedSize()
+                    .tint(BeruColor.accent)
                 }
             }
 
@@ -119,69 +102,52 @@ struct GeneralSettingsTab: View {
     }
 }
 
-/// Shortcut field on the Settings glass slab. `KeyboardShortcuts.Recorder` is
-/// an `NSSearchField`; its cancel × inherits a glass bezel that paints a dark
-/// rectangle over the capsule.
+/// Native shortcut recorder. `KeyboardShortcuts.RecorderCocoa` is an
+/// `NSSearchField`; leave its system bezel in place. The host reports a
+/// fixed intrinsic size so `SettingsRow`'s `.fixedSize` does not shrink
+/// each recorder to its shortcut string (P vs L).
 private struct SettingsShortcutRecorder: View {
     let name: KeyboardShortcuts.Name
 
     var body: some View {
         ShortcutRecorderField(name: name)
             .frame(width: BeruMetrics.fieldWidth, height: BeruMetrics.hitTarget)
-            .background {
-                Capsule()
-                    .fill(BeruColor.input)
-                    .overlay(Capsule().strokeBorder(BeruColor.border, lineWidth: 1))
-            }
     }
 }
 
 private struct ShortcutRecorderField: NSViewRepresentable {
     let name: KeyboardShortcuts.Name
 
-    func makeNSView(context: Context) -> KeyboardShortcuts.RecorderCocoa {
-        let field = KeyboardShortcuts.RecorderCocoa(for: name)
-        Self.style(field)
-        return field
+    func makeNSView(context: Context) -> ShortcutRecorderHost {
+        ShortcutRecorderHost(name: name)
     }
 
-    func updateNSView(_ field: KeyboardShortcuts.RecorderCocoa, context: Context) {
-        field.shortcutName = name
-        Self.style(field)
+    func updateNSView(_ host: ShortcutRecorderHost, context: Context) {
+        host.recorder.shortcutName = name
+    }
+}
+
+private final class ShortcutRecorderHost: NSView {
+    let recorder: KeyboardShortcuts.RecorderCocoa
+
+    init(name: KeyboardShortcuts.Name) {
+        recorder = KeyboardShortcuts.RecorderCocoa(for: name)
+        super.init(frame: .zero)
+        recorder.focusRingType = .default
+        recorder.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(recorder)
+        NSLayoutConstraint.activate([
+            recorder.leadingAnchor.constraint(equalTo: leadingAnchor),
+            recorder.trailingAnchor.constraint(equalTo: trailingAnchor),
+            recorder.topAnchor.constraint(equalTo: topAnchor),
+            recorder.bottomAnchor.constraint(equalTo: bottomAnchor)
+        ])
     }
 
-    private static func style(_ field: NSSearchField) {
-        field.focusRingType = .none
-        field.isBezeled = false
-        field.isBordered = false
-        field.drawsBackground = false
-        field.wantsLayer = true
-        field.layer?.isOpaque = false
-        field.layer?.backgroundColor = .clear
-        if let cell = field.cell as? NSSearchFieldCell {
-            cell.drawsBackground = false
-            cell.focusRingType = .none
-            cell.searchButtonCell = nil
-            if let cancel = cell.cancelButtonCell {
-                cancel.isBordered = false
-                cancel.bezelStyle = .inline
-                cancel.backgroundColor = .clear
-            }
-        }
-        stripButtonChrome(field)
-        DispatchQueue.main.async { stripButtonChrome(field) }
-    }
+    @available(*, unavailable)
+    required init?(coder: NSCoder) { nil }
 
-    private static func stripButtonChrome(_ view: NSView) {
-        if let button = view as? NSButton {
-            button.isBordered = false
-            button.bezelStyle = .inline
-            button.wantsLayer = true
-            button.layer?.isOpaque = false
-            button.layer?.backgroundColor = .clear
-        }
-        for sub in view.subviews {
-            stripButtonChrome(sub)
-        }
+    override var intrinsicContentSize: NSSize {
+        NSSize(width: BeruMetrics.fieldWidth, height: BeruMetrics.hitTarget)
     }
 }

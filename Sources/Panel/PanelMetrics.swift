@@ -42,6 +42,13 @@ enum PanelMetrics {
     /// Layout only — never inflate to "fix" crop.
     static let moduleInset: CGFloat = 10
     static let moduleSpacing: CGFloat = 10
+    /// Smallest chrome that still contains close + composer + the outer inset
+    /// and the two spacings around the result. Incomplete band reports land
+    /// around 40pt (insets + spacings, GeometryReaders not yet in the tree).
+    /// Floor must stay below real chrome or the window sticks at seed height.
+    static var minimumChromeHeight: CGFloat {
+        moduleInset * 2 + closeStripHeight + composerMinHeight + moduleSpacing * 2
+    }
     /// All four inner cards share this outer radius.
     static var moduleRadius: CGFloat { 10 }
     static var moduleShape: RoundedRectangle {

@@ -56,6 +56,28 @@ struct PanelSettingsLink: View {
     }
 }
 
+/// AppKit click target around a capsule so window-drag does not swallow
+/// Replace / Copy / Pin — the same reason the mic is an `NSView`.
+struct PanelHitCapsule<Label: View>: View {
+    var help: String
+    var accessibilityLabel: String? = nil
+    var action: () -> Void
+    @ViewBuilder var label: () -> Label
+
+    var body: some View {
+        ZStack {
+            DictationPressView(onToggle: action)
+            label()
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+        }
+        .fixedSize()
+        .help(help)
+        .accessibilityLabel(accessibilityLabel ?? help)
+        .accessibilityAddTraits(.isButton)
+    }
+}
+
 /// AppKit click target so the panel's window-drag hit test leaves footer icons
 /// alone — the same reason the mic is an `NSView` instead of a SwiftUI `Button`.
 struct PanelIconHitButton: View {

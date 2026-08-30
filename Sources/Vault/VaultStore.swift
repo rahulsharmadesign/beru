@@ -77,7 +77,21 @@ final class VaultStore {
         defaults.set(standardized.path, forKey: Self.rootPathKey)
         ensureLayout()
         reload()
-        statusMessage = "Vault folder updated"
+        if Self.isCloudSyncedFolder(standardized) {
+            statusMessage = "This folder syncs via iCloud or Dropbox. Files stay 0600 on this Mac."
+        } else {
+            statusMessage = "Vault folder updated"
+        }
+    }
+
+    /// iCloud Drive and Dropbox paths. Beru still writes 0600 files; the
+    /// provider's folder permissions are what actually sync.
+    static func isCloudSyncedFolder(_ url: URL) -> Bool {
+        let path = url.path
+        return path.contains("Library/Mobile Documents")
+            || path.contains("com~apple~CloudDocs")
+            || path.contains("iCloud Drive")
+            || path.localizedCaseInsensitiveContains("Dropbox")
     }
 
     func resetToDefaultRoot() {
@@ -157,13 +171,16 @@ final class VaultStore {
     // MARK: - Pins
 
     @discardableResult
-    func addLinkPin(title: String, url: String) -> VaultPin {
-        let trimmedURL = url.trimmingCharacters(in: .whitespacesAndNewlines)
+    func addLinkPin(title: String, url: String) -> VaultPin? {
+        guard let normalized = VaultLink.normalizedURL(from: url) else {
+            statusMessage = "Only http and https links can be pinned"
+            return nil
+        }
         let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
         let pin = VaultPin(
             kind: .link,
-            title: trimmedTitle.isEmpty ? trimmedURL : trimmedTitle,
-            url: trimmedURL
+            title: trimmedTitle.isEmpty ? normalized.absoluteString : trimmedTitle,
+            url: normalized.absoluteString
         )
         pins.insert(pin, at: 0)
         persistPins()

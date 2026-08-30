@@ -25,7 +25,9 @@ enum BeruColor {
 
     static var canvas: Color { Color(nsColor: canvasNSColor) }
     static var surface: Color { canvas }
-    static var input: Color { canvas }
+    /// System text-field well. Settings sits on window material; filling
+    /// editors with `canvas` painted a navy patch next to native Name/Icon fields.
+    static var input: Color { Color(nsColor: .textBackgroundColor) }
 
     // MARK: - Lines
 

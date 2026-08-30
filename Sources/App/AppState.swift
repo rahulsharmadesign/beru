@@ -71,6 +71,8 @@ final class AppState {
     private(set) var invocationID = UUID()
     var showDiff: Bool = true
     var copiedFeedback: Bool = false
+    /// Footer confirmation after Replace / Insert / Apply. Nil when idle.
+    var replacedFeedback: String? = nil
     var truncationNotice: Bool = false
     /// Diff ops per completed action, computed once off-main when that stream
     /// completes. Keyed like `results` and cleared with them; a missing entry
@@ -188,6 +190,7 @@ final class AppState {
         describeInstruction = ""
         copiedFeedback = false
         pinnedFeedback = false
+        replacedFeedback = nil
         truncationNotice = false
         vaultNoteID = nil
         isQuickSearch = false
@@ -218,6 +221,7 @@ final class AppState {
         truncationNotice = false
         vaultNoteID = nil
         pinnedFeedback = false
+        replacedFeedback = nil
         diffs.removeAll()
         rationales.removeAll()
         contextApplications.removeAll()

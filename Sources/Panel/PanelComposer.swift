@@ -20,7 +20,7 @@ extension PanelView {
                 footer
                     .glassModule()
                     .fixedSize(horizontal: false, vertical: true)
-                    .zIndex(0)
+                    .zIndex(2)
                     .transition(.opacity.combined(with: .move(edge: .bottom)))
             }
             intentField
@@ -52,6 +52,15 @@ extension PanelView {
             }
             Spacer()
 
+            if let replaced = appState.replacedFeedback {
+                Text(replaced)
+                    .font(BeruType.footnote)
+                    .foregroundStyle(BeruColor.textSecondary)
+                    .lineLimit(1)
+                    .transition(.opacity)
+                    .accessibilityAddTraits(.updatesFrequently)
+            }
+
             if appState.copiedFeedback {
                 Text("Copied")
                     .font(BeruType.footnote)
@@ -66,17 +75,27 @@ extension PanelView {
                     .transition(.opacity)
             }
 
-            BeruButton(
-                title: primaryFooterTitle,
-                variant: .primary,
-                size: .compact
-            ) { performReplace() }
-                .help(primaryFooterHelp)
+            PanelHitCapsule(help: primaryFooterHelp, accessibilityLabel: primaryFooterTitle) {
+                performReplace()
+            } label: {
+                BeruButton(
+                    title: primaryFooterTitle,
+                    variant: .primary,
+                    size: .compact
+                ) {}
+            }
 
-            BeruButton(title: "Copy", size: .compact) { performCopy() }
+            PanelHitCapsule(help: "Copy to clipboard", accessibilityLabel: "Copy") {
+                performCopy()
+            } label: {
+                BeruButton(title: "Copy", size: .compact) {}
+            }
 
-            BeruButton(title: "Pin", size: .compact) { performPin() }
-                .help("Save this result in the vault")
+            PanelHitCapsule(help: "Save this result in the vault", accessibilityLabel: "Pin") {
+                performPin()
+            } label: {
+                BeruButton(title: "Pin", size: .compact) {}
+            }
         }
         .padding(.horizontal, PanelMetrics.moduleInset)
         .padding(.top, BeruSpace.xxs)
@@ -166,26 +185,12 @@ extension PanelView {
     }
 
     var composerPlaceholder: String {
-        if appState.isQuickSearch || appState.selectedActionID == EnhancementAction.searchID {
-            return "Ask anything — no selection needed"
-        }
-        if appState.capturedText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            return "Nothing selected — ask instead"
-        }
-        // A concrete example beats "instruction for this action", which read
-        // as required. Custom actions keep the generic line.
-        switch appState.selectedActionID {
-        case EnhancementAction.grammarID:
-            return "Optional: e.g. \u{201C}keep my tone\u{201D}"
-        case EnhancementAction.enhanceID:
-            return "Optional: e.g. \u{201C}for beginners\u{201D}"
-        case EnhancementAction.replyID:
-            return "Optional: e.g. \u{201C}mention Friday\u{201D}"
-        case EnhancementAction.summarizeID, EnhancementAction.explainID:
-            return "Optional: e.g. \u{201C}in 5 bullets\u{201D}"
-        default:
-            return "Optional instruction for this action…"
-        }
+        let hasCapture = !appState.capturedText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        return EnhancementAction.composerPlaceholder(
+            actionID: appState.selectedActionID,
+            hasCapture: hasCapture,
+            isQuickSearch: appState.isQuickSearch
+        )
     }
 
     var canSubmitDescribe: Bool {

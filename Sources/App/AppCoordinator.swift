@@ -69,6 +69,9 @@ final class AppCoordinator {
         engine.onOpenSettings = { [weak self] in
             self?.showDashboard(route: .general)
         }
+        engine.onRevealVaultNote = { [weak self] id in
+            self?.revealVaultNote(id)
+        }
         DictationService.shared.onText = { [weak self] text in
             self?.applyDictated(text)
         }

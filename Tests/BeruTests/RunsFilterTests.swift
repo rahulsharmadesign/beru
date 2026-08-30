@@ -112,4 +112,25 @@ final class RunsFilterTests: XCTestCase {
         let kept = filter(runs, query: "flaky", acceptedOnly: true, action: "enhance", app: "Cursor")
         XCTAssertEqual(kept.count, 1)
     }
+
+    func testEnhanceAgainPrefersTheResultThenTheInput() {
+        XCTAssertEqual(run(input: "draft", output: "polished").enhanceAgainText, "polished")
+        XCTAssertEqual(run(input: "draft", output: nil).enhanceAgainText, "draft")
+        XCTAssertEqual(run(input: "draft", output: "  ").enhanceAgainText, "draft")
+        XCTAssertNil(run(input: "", output: nil).enhanceAgainText)
+    }
+
+    func testResultForVaultIgnoresEmptyOutput() {
+        XCTAssertEqual(run(output: "done").resultForVault, "done")
+        XCTAssertNil(run(output: nil).resultForVault)
+        XCTAssertNil(run(output: "\n").resultForVault)
+    }
+
+    func testSuggestedVaultTitleStripsAHeading() {
+        XCTAssertEqual(
+            run(action: "enhance", output: "# Ship it\n\nBody").suggestedVaultTitle,
+            "Ship it"
+        )
+        XCTAssertEqual(run(action: "Grammar", output: nil).suggestedVaultTitle, "Grammar")
+    }
 }

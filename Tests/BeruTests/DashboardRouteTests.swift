@@ -28,6 +28,7 @@ final class DashboardRouteTests: XCTestCase {
                 "\(route.rawValue) has no subtitle — the header renders it now"
             )
             XCTAssertFalse(route.lucideIcon.isEmpty, "\(route.rawValue) has no icon")
+            XCTAssertFalse(route.systemImage.isEmpty, "\(route.rawValue) has no sidebar symbol")
         }
     }
 
@@ -64,6 +65,15 @@ final class DashboardRouteTests: XCTestCase {
         XCTAssertTrue(DashboardRoute.about.matches("tip"))
         XCTAssertTrue(DashboardRoute.about.matches("version"))
         XCTAssertTrue(DashboardRoute.about.matches("update"))
+    }
+
+    @MainActor
+    func testOpenVaultNoteJumpsToVaultAndSelectsTheNote() {
+        let model = DashboardModel()
+        model.route = .runs
+        model.openVaultNote("note-42")
+        XCTAssertEqual(model.route, .vault)
+        XCTAssertEqual(model.pendingVaultNoteID, "note-42")
     }
 
     func testRouteIDMatchesRawValueSoSelectionSurvivesEncoding() {

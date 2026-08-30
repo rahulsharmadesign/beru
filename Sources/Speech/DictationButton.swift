@@ -30,18 +30,34 @@ struct DictationButton: View {
     }
 
     private func toggle() {
-        if dictation.isRecording {
+        switch DictationService.intentForMicPress(
+            isRecording: dictation.isRecording,
+            availability: dictation.availability
+        ) {
+        case .stop:
             dictation.stop()
-            return
-        }
-        // The panel is non-activating. Ask from Settings so the TCC dialog
-        // can actually appear, instead of looking like a dead mic.
-        if dictation.availability == .needsPermission {
+        case .requestPermissionThenStart:
+            Task { await promptThenStart() }
+        case .start:
+            if !dictation.start() {
+                onNeedsPermission()
+            }
+        case .openSettings:
             onNeedsPermission()
-            Task { await dictation.requestPermissions() }
+        }
+    }
+
+    /// Activate, show the system prompt, then listen if both grants land.
+    private func promptThenStart() async {
+        await dictation.requestPermissions()
+        if dictation.availability.isReady {
+            _ = dictation.start()
             return
         }
-        if !dictation.start(), !dictation.availability.isReady {
+        if DictationService.intentForMicPress(
+            isRecording: false,
+            availability: dictation.availability
+        ) == .openSettings {
             onNeedsPermission()
         }
     }

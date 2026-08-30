@@ -65,7 +65,7 @@ To publish a DMG, push a version tag (`v1.1.0`). GitHub Actions builds it. Local
 2. Open **Settings** from the menu bar and choose a provider.
 3. Select some text and press the hotkey.
 
-Optional: **Microphone** and **Speech Recognition**, only if you want voice dictation. Speech is recognized on this Mac.
+Optional: **Microphone** and **Speech Recognition**, asked the first time you press the mic (or ⌃⌥⌘L). Speech is recognized on this Mac.
 
 ## Providers
 

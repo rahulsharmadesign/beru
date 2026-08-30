@@ -6,7 +6,7 @@ struct ActionsView: View {
     @State private var selection: String?
     @State private var operationError: String?
     @State private var query = ""
-    @State private var draggingID: String?
+    @State private var pendingDeleteID: String?
 
     private var selected: EnhancementAction? {
         registry.action(withID: selection ?? "")
@@ -40,203 +40,189 @@ struct ActionsView: View {
         } message: {
             Text(operationError ?? "Please try again.")
         }
+        .confirmationDialog(
+            "Delete this action?",
+            isPresented: deleteConfirmPresented,
+            titleVisibility: .visible
+        ) {
+            Button("Delete", role: .destructive) {
+                deletePending()
+            }
+        } message: {
+            Text("This custom action is removed from the panel.")
+        }
     }
 
     private var filterBar: some View {
         SettingsWorkspaceToolbar {
             SettingsSearchField(text: $query, placeholder: "Search actions")
                 .frame(maxWidth: 260)
+            SettingsOverflowMenu(title: "More") {
+                Button("Export custom actions…") { exportActions() }
+                Button("Import custom actions…") { importActions() }
+            }
         }
     }
 
     private var list: some View {
-        VStack(spacing: 0) {
-            Group {
-                if filteredActions.isEmpty {
-                    VStack(spacing: 8) {
-                        BeruIcon(name: "list-filter", size: 24)
-                            .foregroundStyle(SettingsTheme.textSecondary)
-                        Text("No matches")
-                            .font(BeruSans.rowTitle)
-                            .foregroundStyle(SettingsTheme.textPrimary)
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .padding(.horizontal, SettingsChrome.contentPadding)
-                } else {
-                    ScrollView {
-                        VStack(spacing: 2) {
-                            ForEach(filteredActions) { action in
-                                actionRow(action)
-                                    .onTapGesture { selection = action.id }
-                                    .onDrag {
-                                        guard query.isEmpty else { return NSItemProvider() }
-                                        draggingID = action.id
-                                        return NSItemProvider(object: action.id as NSString)
-                                    }
-                                    .onDrop(
-                                        of: [.text],
-                                        delegate: ActionRowDropDelegate(
-                                            itemID: action.id,
-                                            draggingID: $draggingID,
-                                            enabled: query.isEmpty,
-                                            registry: registry
-                                        )
-                                    )
-                            }
+        WorkspaceSourceList(
+            selection: $selection,
+            isEmpty: filteredActions.isEmpty,
+            emptyIcon: "search",
+            emptyTitle: "No matches",
+            emptyMessage: "Try a different search term."
+        ) {
+            ForEach(filteredActions) { action in
+                WorkspaceListRow(
+                    title: action.name,
+                    subtitle: action.summary,
+                    icon: action.icon
+                )
+                .tag(action.id)
+                .workspaceSourceRow()
+                .contextMenu {
+                    if !action.isBuiltIn {
+                        Button("Delete", role: .destructive) {
+                            pendingDeleteID = action.id
                         }
                     }
-                    .scrollContentBackground(.hidden)
-                    .padding(.top, SettingsChrome.workspaceListInset)
-                    .padding(.horizontal, SettingsChrome.contentPadding)
-                    .frame(maxHeight: .infinity)
-                    .help(query.isEmpty ? "Drag to reorder chips in the panel" : "Clear search to reorder")
                 }
             }
-
+            .onMove(perform: moveActions)
+        } footer: {
             SettingsListFooter {
                 SettingsIconButton(icon: "plus", help: "Add action") {
-                    registry.addCustom(
-                        name: "New action",
-                        icon: "message-square",
-                        systemPrompt: Prompts.toneRewrite(
-                            description: "<describe the tone or audience here>"
-                        )
-                    )
-                    selection = registry.customActions.last?.id
+                    addCustomAction()
                 }
                 SettingsIconButton(
                     icon: "minus",
                     enabled: selected?.isBuiltIn == false,
                     help: "Delete custom action"
                 ) {
-                    guard let id = selection,
-                          let action = registry.action(withID: id),
-                          !action.isBuiltIn else { return }
-                    registry.removeCustom(id: id)
-                    selection = registry.allActions.first?.id
-                }
-                SettingsIconButton(icon: "upload", help: "Export custom actions") {
-                    exportActions()
-                }
-                SettingsIconButton(icon: "download", help: "Import custom actions") {
-                    importActions()
+                    pendingDeleteID = selection
                 }
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(DashboardChrome.sidebarSurface)
-    }
-
-    private func actionRow(_ action: EnhancementAction) -> some View {
-        let isSelected = selection == action.id
-        let canReorder = query.isEmpty
-        let handleColor = isSelected ? SettingsTheme.onActive : SettingsTheme.textPrimary
-        return HStack(spacing: 8) {
-            Image(systemName: "line.3.horizontal")
-                .font(BeruType.bodyMedium)
-                .foregroundStyle(handleColor.opacity(canReorder ? 0.9 : 0.35))
-                .frame(width: 16, height: 18)
-                .accessibilityLabel("Reorder")
-            BeruIcon(name: action.icon, size: 16)
-                .foregroundStyle(isSelected ? SettingsTheme.onActive : SettingsTheme.textSecondary)
-                .frame(width: 18, height: 18)
-            VStack(alignment: .leading, spacing: BeruSpace.hair) {
-                Text(action.name)
-                    .font(BeruSans.rowTitle)
-                    .foregroundStyle(isSelected ? SettingsTheme.onActive : SettingsTheme.textPrimary)
-                    .lineLimit(1)
-                Text(action.summary)
-                    .font(BeruSans.footnote)
-                    .foregroundStyle(isSelected ? SettingsTheme.onActive.opacity(0.72) : SettingsTheme.textSecondary)
-                    .lineLimit(2)
-            }
-            Spacer(minLength: 0)
-        }
-        .padding(.horizontal, BeruSpace.sm)
-        .padding(.vertical, BeruSpace.xs)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background {
-            RoundedRectangle(cornerRadius: SettingsChrome.rowRadius, style: .continuous)
-                .fill(isSelected ? SettingsTheme.active : Color.clear)
-        }
-        .contentShape(RoundedRectangle(cornerRadius: SettingsChrome.rowRadius, style: .continuous))
-        .clipShape(RoundedRectangle(cornerRadius: SettingsChrome.rowRadius, style: .continuous))
+        .help(query.isEmpty ? "Drag to reorder chips in the panel" : "Clear search to reorder")
     }
 
     @ViewBuilder
     private var editor: some View {
         if let action = selected {
             ScrollView {
-                VStack(alignment: .leading, spacing: 24) {
-                    if action.isBuiltIn {
-                        SettingsSection(
-                            title: "Action",
-                            subtitle: "Built-in prompts stay shipped so the chip matches the label."
-                        ) {
-                            SettingsRow(title: "Name") {
-                                SettingsValue(text: action.name)
-                            }
-                            SettingsRow(title: "Role") {
-                                SettingsValue(text: action.role == .grammar ? "Grammar" : "Enhance")
-                            }
-                        }
-
-                        SettingsSection(title: "Prompt", subtitle: "System prompt sent to the model.") {
-                            Text(EnhancementAction.resolvedSystemPrompt(for: action))
-                                .font(BeruSans.mono)
-                                .foregroundStyle(SettingsTheme.textPrimary)
-                                .textSelection(.enabled)
-                                .fixedSize(horizontal: false, vertical: true)
-                                .frame(maxWidth: .infinity, minHeight: 180, alignment: .topLeading)
-                                .settingsEditorSurface()
-                        }
-                    } else {
-                        SettingsSection(title: "Action", subtitle: "Name and icon shown on the panel chip.") {
-                            SettingsRow(title: "Name") {
-                                SettingsField(
-                                    placeholder: "Name",
-                                    text: customNameBinding(for: action)
-                                )
-                            }
-                            SettingsRow(title: "Icon") {
-                                SettingsField(
-                                    placeholder: "Lucide icon",
-                                    text: customIconBinding(for: action)
-                                )
-                            }
-                        }
-
-                        SettingsSection(title: "Prompt", subtitle: "Shown as a verb chip in the panel.") {
-                            TextEditor(text: customPromptBinding(for: action))
-                                .font(BeruSans.mono)
-                                .foregroundStyle(SettingsTheme.textPrimary)
-                                .scrollContentBackground(.hidden)
-                                .frame(minWidth: 0, minHeight: 220)
-                                .frame(maxWidth: .infinity)
-                                .dashboardEditorCanvas()
-                                .settingsEditorSurface()
-                            SettingsPillButton(title: "Insert Tone Preset") {
-                                var updated = action
-                                updated.systemPrompt = Prompts.toneRewrite(
-                                    description: "<describe the tone or audience here>"
-                                )
-                                registry.updateCustom(updated)
-                            }
-                        }
-                    }
+                VStack(alignment: .leading, spacing: BeruSpace.lg) {
+                    actionEditorSections(action)
                 }
-                .padding(SettingsChrome.contentPadding)
+                .padding(BeruMetrics.workspaceInspectorPadding)
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
             .settingsWorkspacePane()
         } else {
             BeruEmptyState(
                 icon: "sparkles",
-                title: "No Action Selected",
+                title: "No action selected",
                 message: "Choose an action from the list, or add one."
-            )
+            ) {
+                SettingsPrimaryButton(title: "New Action", icon: "plus") {
+                    addCustomAction()
+                }
+            }
             .settingsWorkspacePane()
         }
+    }
+
+    @ViewBuilder
+    private func actionEditorSections(_ action: EnhancementAction) -> some View {
+        if action.isBuiltIn {
+            SettingsSection(
+                title: "Action",
+                subtitle: "Built-in prompts stay shipped so the chip matches the label."
+            ) {
+                SettingsRow(title: "Kind") {
+                    SettingsValue(text: "Built-in")
+                }
+                SettingsRow(title: "Name") {
+                    SettingsValue(text: action.name)
+                }
+                SettingsRow(title: "Role") {
+                    SettingsValue(text: action.role == .grammar ? "Grammar" : "Enhance")
+                }
+            }
+
+            SettingsSection(title: "Prompt", subtitle: "System prompt sent to the model.") {
+                Text(EnhancementAction.resolvedSystemPrompt(for: action))
+                    .font(BeruType.mono)
+                    .foregroundStyle(BeruColor.textPrimary)
+                    .textSelection(.enabled)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, minHeight: 180, alignment: .topLeading)
+                    .settingsEditorSurface()
+            }
+        } else {
+            SettingsSection(title: "Action", subtitle: "Name and icon shown on the panel chip.") {
+                SettingsRow(title: "Kind") {
+                    SettingsValue(text: "Custom")
+                }
+                SettingsRow(title: "Name") {
+                    SettingsField(
+                        placeholder: "Name",
+                        text: customNameBinding(for: action)
+                    )
+                }
+                SettingsRow(title: "Icon") {
+                    SettingsField(
+                        placeholder: "Lucide icon",
+                        text: customIconBinding(for: action)
+                    )
+                }
+            }
+
+            SettingsSection(title: "Prompt", subtitle: "Shown as a verb chip in the panel.") {
+                TextEditor(text: customPromptBinding(for: action))
+                    .font(BeruType.mono)
+                    .foregroundStyle(BeruColor.textPrimary)
+                    .scrollContentBackground(.hidden)
+                    .frame(minWidth: 0, minHeight: 220)
+                    .frame(maxWidth: .infinity)
+                    .dashboardEditorCanvas()
+                    .settingsEditorSurface()
+                SettingsPillButton(title: "Insert Tone Preset") {
+                    var updated = action
+                    updated.systemPrompt = Prompts.toneRewrite(
+                        description: "<describe the tone or audience here>"
+                    )
+                    registry.updateCustom(updated)
+                }
+            }
+        }
+    }
+
+    private func moveActions(from offsets: IndexSet, to destination: Int) {
+        guard query.isEmpty else { return }
+        registry.move(fromOffsets: offsets, toOffset: destination)
+    }
+
+    private func addCustomAction() {
+        registry.addCustom(
+            name: "New action",
+            icon: "message-square",
+            systemPrompt: Prompts.toneRewrite(
+                description: "<describe the tone or audience here>"
+            )
+        )
+        selection = registry.customActions.last?.id
+    }
+
+    private func deletePending() {
+        guard let id = pendingDeleteID,
+              let action = registry.action(withID: id),
+              !action.isBuiltIn else {
+            pendingDeleteID = nil
+            return
+        }
+        registry.removeCustom(id: id)
+        selection = registry.allActions.first?.id
+        pendingDeleteID = nil
     }
 
     private func customNameBinding(for action: EnhancementAction) -> Binding<String> {
@@ -311,34 +297,11 @@ struct ActionsView: View {
             set: { if !$0 { operationError = nil } }
         )
     }
-}
 
-/// Reads live action order from the registry on every `dropEntered` call
-/// so indices are never stale after a swap.
-private struct ActionRowDropDelegate: DropDelegate {
-    let itemID: String
-    @Binding var draggingID: String?
-    let enabled: Bool
-    let registry: ActionRegistry
-
-    func dropUpdated(info: DropInfo) -> DropProposal? {
-        DropProposal(operation: enabled ? .move : .cancel)
-    }
-
-    func performDrop(info: DropInfo) -> Bool {
-        draggingID = nil
-        return enabled
-    }
-
-    func dropEntered(info: DropInfo) {
-        guard enabled,
-              let draggingID,
-              draggingID != itemID else { return }
-        let liveIDs = registry.allActions.map(\.id)
-        guard let from = liveIDs.firstIndex(of: draggingID),
-              let to = liveIDs.firstIndex(of: itemID) else { return }
-        withAnimation(.easeInOut(duration: 0.2)) {
-            registry.move(fromOffsets: IndexSet(integer: from), toOffset: from < to ? to + 1 : to)
-        }
+    private var deleteConfirmPresented: Binding<Bool> {
+        Binding(
+            get: { pendingDeleteID != nil },
+            set: { if !$0 { pendingDeleteID = nil } }
+        )
     }
 }
