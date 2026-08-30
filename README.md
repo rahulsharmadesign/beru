@@ -16,13 +16,15 @@ Beru lives in the menu bar. It does not take over the app you are writing in. On
 
 1. Select the rough thought, notes, or half-written prompt, in Notes, Cursor, a browser, anywhere.
 2. Press **⌃⌥⌘P** (you can change this).
-3. **Enhance** rewrites it as a clear prompt, using that tool’s guides and Markdown conventions. **⌘↩ Replace** writes it back. **Copy** takes it to the clipboard. A bare Return never overwrites the host selection.
+3. Pick a chip. **Enhance Prompt** rewrites it as a clear prompt for that tool. **⌘↩ Replace** writes it back. **Copy** takes it to the clipboard.
 
 Too lazy to type? Press **⌃⌥⌘L**. Beru opens, listens on this Mac, and writes down what you say. Speak the rough idea; Enhance still turns it into a prompt. Press the shortcut again, or the mic, to stop. Audio is transcribed on-device and never leaves the machine.
 
 Pick the target (Cursor, Claude, ChatGPT, …) so the prompt matches how that model wants to be asked. Add Codex, Gemini, or your own in Settings → Targets.
 
-With no selection, the panel opens on **AI Search**. Ask a follow-up and answers stack in that session until you close the panel.
+With no selection, the panel opens on **AI Search**. Type a one-off ask into the composer and an **Instruction** chip appears for that run. Ask a follow-up on Search and answers stack until you close the panel.
+
+The result footer is **⌘↩ Replace** (or **Insert** on Smart Reply), **Copy**, and **Pin**. A bare Return never overwrites the host selection. Enhance a vault note and **Apply** writes back into that note.
 
 ## Install
 
@@ -84,16 +86,72 @@ Microphone and Speech Recognition are optional. The system prompt appears the fi
 | **Anthropic** | Claude quality | API key from [console.anthropic.com](https://console.anthropic.com) |
 | **Custom** | OpenAI, OpenRouter, LM Studio, anything `/v1` | Base URL, model id, key if the host wants one |
 
-## What it can do
+## Panel chips
 
-- **Enhance** — Turn a rough idea into a prompt for Cursor, Claude, Codex, Gemini, ChatGPT, and other LLM tools.
-- **Grammar** — Fix spelling and grammar. Keep your meaning and tone.
-- **Smart Reply** — Six tones for a comment, mention, or DM. Insert or Copy one card.
-- **Workplace voice** — Draft a reply as a manager, VP, or CEO. Save those voices as custom actions.
-- **Summarize / Explain** — Compress the selection, or make it clear.
-- **AI Search** — Ask without a selection. Follow-ups stack until you close the panel.
-- **Custom actions** — Your own verb chips and prompts, in Settings → Actions.
-- **Voice dictation** — Press **⌃⌥⌘L** (or the mic) and speak the rough idea instead of typing. Beru transcribes on this Mac; nothing is sent to Apple or a Beru server. Press again to stop.
+Always on the left: **AI Search**. Then **Enhance Prompt** and **Grammar**. New installs also get **Smart Reply**, **Summarize**, and **Explain**. Your own chips from Settings → Actions sit in the same row. **Instruction** appears only while a one-off ask is in the composer.
+
+| Chip | What it does |
+|---|---|
+| **AI Search** | Ask without rewriting the selection. Follow-ups stack until the panel closes. Regenerating rewrites only the latest answer. |
+| **Enhance Prompt** | Turn a rough idea into a prompt aimed at the current target (Cursor, Claude, ChatGPT, …). |
+| **Grammar** | Copy-edit. Meaning and tone stay. Shown as a word diff when enough of the original survived. |
+| **Smart Reply** | Six tones (Formal, Casual, Funny, Professional, Witty, Sharp). Pick a card, then Insert or Copy that body only. Matches the script of the incoming message. |
+| **Summarize** | Compress the selection. |
+| **Explain** | Make the selection clear. |
+| **Instruction** | Run whatever you typed in the composer against the current selection or question. Not a saved action. |
+| **Custom** | Any verb you add under Settings → Actions — a workplace voice, a house style, a one-line rewrite. Built-in Enhance Prompt and Grammar cannot be overridden by a saved prompt that would make the chip a lie. |
+
+**Remember recent turns** (on by default): Enhance Prompt, Instruction, and Search can see your last few requests in the same app. The panel shows **Using N prior turns**; click it to forget. Grammar and Smart Reply never see that history. Turns live in memory only.
+
+## Menu bar
+
+Click the Beru extra:
+
+- **Enhance Clipboard** — runs the default action on clipboard text; empty clipboard opens Search.
+- **Dictate** — opens Search and starts listening (**⌃⌥⌘L**).
+- **Vault** — opens Settings on Vault.
+- Provider switch — only configured providers.
+- **Settings** — the dashboard below.
+
+## Settings
+
+Open from the panel gear or the menu bar. Sidebar, top to bottom:
+
+### General
+
+Name (greetings on this Mac only), accent color, **Open Beru** and **Dictate** shortcuts, launch at login, default action, **Explain what changed**, and **Remember recent turns**.
+
+### Models
+
+Active provider (Ollama, Anthropic, or a custom `/v1` host such as Groq), base URL, API key, Enhance and Grammar model ids, and **Test connection**. Pull a local model here; the download continues if you leave the page.
+
+### Permissions
+
+Accessibility (required for capture and Replace) and Dictation (on-device speech). Granted / Needed badges; Grant opens System Settings. No Keychain prompt just from visiting this page.
+
+### Data
+
+Token savings from accepted results. **Record usage** is off until you turn it on — then input and results stay in `~/Library/Application Support/Beru/`. Retention, Reveal in Finder, export JSONL/CSV, clear history. API keys are never recorded.
+
+### Vault
+
+Local markdown notes and pins. Notes is a list plus editor; Pins is a list plus inspector. Pin a result or a link (`example.com` is fine; `javascript:` and `file:` are not). **Enhance this note** opens the panel; **Apply** writes the result back into that note. Export/import a zip. Point the folder at iCloud or Dropbox if you want the files to sync — Beru does not host them.
+
+### Runs
+
+Every recorded invocation (only if Data → Record usage is on), grouped by day. Open a run to see the diff and rationale. **Enhance again**, **Pin**, or **Save as note**.
+
+### Actions
+
+Verb chips in the panel. Search, reorder (drag when search is empty), +/− at the bottom of the list. Built-ins keep their prompt; custom actions have Name, Icon, Kind, and Prompt. Import and export from More.
+
+### Targets
+
+Where an enhanced prompt is going. Cursor, ChatGPT, Claude, and Kimi ship as starters; add Codex, Gemini, or your own. Each target has conventions so Enhance Prompt speaks that dialect.
+
+### About
+
+Version and build, MIT license, privacy note, GitHub, issues, tip jar, and in-app update when a newer DMG is on GitHub. Local `install.sh` builds do not offer to replace themselves with a release.
 
 ## What’s next
 
