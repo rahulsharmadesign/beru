@@ -24,7 +24,7 @@ Pick the target (Cursor, Claude, ChatGPT, …) so the prompt matches how that mo
 
 With no selection, the panel opens on **AI Search**. Type a one-off ask into the composer and an **Instruction** chip appears for that run. Ask a follow-up on Search and answers stack until you close the panel.
 
-The result footer is **⌘↩ Replace** (or **Insert** on Smart Reply), **Copy**, and **Pin**. A bare Return never overwrites the host selection. Enhance a vault note and **Apply** writes back into that note.
+On Search the result footer is **Copy** and **Pin** — no Replace, no token chip. Smart Reply keeps **Insert** but also hides the token chip (an answer, not a tighter prompt). On Enhance Prompt, Grammar, Summarize, Explain, and Instruction it is **⌘↩ Replace**, **Copy**, **Pin**, and the token chip. A bare Return never overwrites the host selection. Enhance a vault note and **Apply** writes back into that note.
 
 ## Install
 
@@ -92,7 +92,7 @@ Always on the left: **AI Search**. Then **Enhance Prompt** and **Grammar**. New 
 
 | Chip | What it does |
 |---|---|
-| **AI Search** | Ask without rewriting the selection. Follow-ups stack until the panel closes. Regenerating rewrites only the latest answer. |
+| **AI Search** | Ask without rewriting the selection. Follow-ups stack until the panel closes. Regenerating rewrites only the latest answer. Footer is Copy and Pin — no Replace, no token chip. |
 | **Enhance Prompt** | Turn a rough idea into a prompt aimed at the current target (Cursor, Claude, ChatGPT, …). |
 | **Grammar** | Copy-edit. Meaning and tone stay. Shown as a word diff when enough of the original survived. |
 | **Smart Reply** | Six tones (Formal, Casual, Funny, Professional, Witty, Sharp). Pick a card, then Insert or Copy that body only. Matches the script of the incoming message. |

@@ -28,6 +28,7 @@ the window height fits the content:
 - [ ] Select text on a webpage and invoke: **Summarize** is selected and already visible in the chip row (no horizontal swipe)
 - [ ] AI Search: ask twice — both Q&As stack; window grows to 75% then scrolls; thread clears when the panel closes
 - [ ] AI Search regenerate rewrites only the latest answer; earlier turns stay
+- [ ] AI Search result footer is **Copy** and **Pin** only — no Replace, no token chip; composer does not crop; switching to Enhance Prompt brings Replace and the token chip back without jumping height
 
 ## Get Started
 

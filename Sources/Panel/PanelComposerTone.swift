@@ -1,13 +1,25 @@
 import AppKit
 import SwiftUI
 
-// Smart Reply composer: tone pill, Insert label, and the NSMenu that picks
-// among the six already-generated variants without re-running the model.
+// Footer policy for the composer: which chips write back into the host,
+// which show the token pill, Smart Reply's tone menu, and Insert vs Replace.
 
 extension PanelView {
     var isSmartReply: Bool {
         appState.selectedActionID == EnhancementAction.replyID
     }
+
+    /// Search is ask-and-take-away: Copy / Pin only. Rewrite chips keep
+    /// Replace (or Insert / Apply) and the token pill.
+    var isSearchTab: Bool {
+        appState.selectedActionID == EnhancementAction.searchID || appState.isQuickSearch
+    }
+
+    var showsHostWriteAction: Bool { !isSearchTab }
+
+    /// Savings is "this rewrite is cheaper to paste into an AI". Search and
+    /// Smart Reply return an answer, not a tighter prompt.
+    var showsTokenSavings: Bool { !isSearchTab && !isSmartReply }
 
     var primaryFooterTitle: String {
         if appState.vaultNoteID != nil { return "Apply" }

@@ -70,6 +70,16 @@ final class PanelKeyBindingTests: XCTestCase {
         XCTAssertEqual(intent, .replace)
     }
 
+    func testCommandReturnDoesNothingWhenReplaceIsDisabled() {
+        let intent = PanelKeyBinding.resolveReturn(
+            modifiers: .command,
+            canSubmit: false,
+            hasAcceptableResult: true,
+            allowsReplace: false
+        )
+        XCTAssertEqual(intent, .pass, "Search has no Replace; ⌘↩ must not write into the host.")
+    }
+
     func testCommandReturnDoesNothingWithoutAResult() {
         let intent = PanelKeyBinding.resolveReturn(
             modifiers: .command,

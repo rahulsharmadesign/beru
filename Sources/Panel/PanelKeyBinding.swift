@@ -48,14 +48,16 @@ enum PanelKeyBinding {
     ///   - modifiers: modifier state at the time of the press.
     ///   - canSubmit: whether the composer holds a non-empty instruction.
     ///   - hasAcceptableResult: whether a result exists that replace could apply.
+    ///   - allowsReplace: Search has no Replace; ⌘↩ must not write into the host.
     static func resolveReturn(
         modifiers: PanelKeyModifiers,
         canSubmit: Bool,
-        hasAcceptableResult: Bool
+        hasAcceptableResult: Bool,
+        allowsReplace: Bool = true
     ) -> PanelKeyIntent {
         if modifiers.command {
             // Explicit destructive intent. Still requires something to apply.
-            return hasAcceptableResult ? .replace : .pass
+            return allowsReplace && hasAcceptableResult ? .replace : .pass
         }
         if canSubmit {
             return .submit

@@ -13,7 +13,7 @@ extension PanelView {
     }
 
     /// Outcome strip sits behind the composer and only appears once a result
-    /// is in — token pill plus Replace / Copy / Pin, no dismiss control.
+    /// is in. Search: Copy / Pin. Other chips: token pill plus Replace / Copy / Pin.
     var composerColumn: some View {
         VStack(spacing: hasFinishedResult ? -PanelMetrics.composerOverlap : 0) {
             if hasFinishedResult {
@@ -38,7 +38,7 @@ extension PanelView {
 
     var footer: some View {
         HStack(spacing: BeruSpace.xs) {
-            if let savings = appState.savings[appState.selectedActionID] {
+            if showsTokenSavings, let savings = appState.savings[appState.selectedActionID] {
                 SavingsPill(savings: savings)
                     .transition(.opacity)
             }
@@ -75,20 +75,26 @@ extension PanelView {
                     .transition(.opacity)
             }
 
-            PanelHitCapsule(help: primaryFooterHelp, accessibilityLabel: primaryFooterTitle) {
-                performReplace()
-            } label: {
-                BeruButton(
-                    title: primaryFooterTitle,
-                    variant: .primary,
-                    size: .compact
-                ) {}
+            if showsHostWriteAction {
+                PanelHitCapsule(help: primaryFooterHelp, accessibilityLabel: primaryFooterTitle) {
+                    performReplace()
+                } label: {
+                    BeruButton(
+                        title: primaryFooterTitle,
+                        variant: .primary,
+                        size: .compact
+                    ) {}
+                }
             }
 
             PanelHitCapsule(help: "Copy to clipboard", accessibilityLabel: "Copy") {
                 performCopy()
             } label: {
-                BeruButton(title: "Copy", size: .compact) {}
+                BeruButton(
+                    title: "Copy",
+                    variant: showsHostWriteAction ? .pill : .primary,
+                    size: .compact
+                ) {}
             }
 
             PanelHitCapsule(help: "Save this result in the vault", accessibilityLabel: "Pin") {

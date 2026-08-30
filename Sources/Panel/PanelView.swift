@@ -67,7 +67,8 @@ struct PanelView: View {
                 PanelKeyBinding.resolveReturn(
                     modifiers: PanelKeyModifiers(press: press),
                     canSubmit: canSubmitDescribe,
-                    hasAcceptableResult: appState.acceptedText() != nil
+                    hasAcceptableResult: appState.acceptedText() != nil,
+                    allowsReplace: showsHostWriteAction
                 )
             )
         }
