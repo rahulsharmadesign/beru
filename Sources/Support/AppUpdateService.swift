@@ -202,34 +202,18 @@ final class AppUpdateService {
     }
 
     private func launchInstaller(dmgURL: URL) throws {
-        let dest = Bundle.main.bundleURL.path
-        let pid = ProcessInfo.processInfo.processIdentifier
-        let scriptURL = FileManager.default.temporaryDirectory
-            .appendingPathComponent("beru-apply-update.sh")
-        let script = """
-        #!/bin/bash
-        set -euo pipefail
-        PID="\(pid)"
-        DMG="\(dmgURL.path)"
-        DEST="\(dest)"
-        while kill -0 "$PID" 2>/dev/null; do sleep 0.2; done
-        sleep 0.5
-        MOUNT=$(hdiutil attach -nobrowse -readonly "$DMG" | grep -o '/Volumes/[^ ]*' | tail -1)
-        SRC=$(find "$MOUNT" -maxdepth 2 -name 'Beru.app' -print -quit)
-        if [[ -z "$SRC" || ! -d "$SRC" ]]; then
-          hdiutil detach "$MOUNT" -quiet || true
-          exit 1
-        fi
-        rm -rf "$DEST"
-        cp -R "$SRC" "$DEST"
-        xattr -cr "$DEST" || true
-        hdiutil detach "$MOUNT" -quiet || true
-        rm -f "$DMG"
-        open "$DEST"
-        rm -f "$0"
-        """
-        try script.write(to: scriptURL, atomically: true, encoding: .utf8)
-        try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: scriptURL.path)
+        let payload = AppUpdateInstaller.Payload(
+            dmgPath: dmgURL.path,
+            destinationPath: Bundle.main.bundleURL.path,
+            bundleIdentifier: Bundle.main.bundleIdentifier ?? "com.rahul.beru",
+            processIdentifier: ProcessInfo.processInfo.processIdentifier,
+            expectedLeafName: AppSigning.leafCertificateCommonName
+        )
+
+        let scriptURL = try AppUpdateInstaller.writeScript(
+            AppUpdateInstaller.script(for: payload)
+        )
+
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/bin/bash")
         process.arguments = [scriptURL.path]

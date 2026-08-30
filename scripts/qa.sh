@@ -145,6 +145,13 @@ run_static_guards() {
         "$(offgrid_spacing_count)" \
         "off-grid spacing literals (grid: 0 2 4 8 12 16 24 32 48)"
 
+    # The spacing guard above only reads `spacing:` and `padding(`, so raw
+    # `.frame(width:)` / `.frame(height:)` numbers were invisible to it. Tracked
+    # separately because the current count is not yet zero; it may only fall.
+    guard offgrid_frames \
+        "$(offgrid_frame_count)" \
+        "off-grid .frame literals outside Design"
+
     # Panel sizing contract: the window measures itself from child height
     # preferences, so a state that fills its parent without contributing a
     # height gets clipped against the toolbar and composer.
@@ -174,10 +181,54 @@ run_static_guards() {
         "$(long_files 400 | wc -l | tr -d ' ')" \
         "Swift files over 400 lines"
 
+    # Panel height contract (frozen). The rules in
+    # .cursor/rules/beru-design-tokens.mdc were prose-only, so nothing stopped
+    # a regression. Each guard below is one line of that "Do not" list.
+
+    # Height comes from child preferences, never from the hosting view. Only a
+    # non-empty sizingOptions is a violation; `sizingOptions = []` is the fix,
+    # and PanelCloseChrome's own NSView override is unrelated to window height.
+    guard panel_intrinsic_sizing \
+        "$(count_matches 'sizingOptions = \[\.' Sources/Panel)" \
+        "NSHostingView auto-sizing in Sources/Panel"
+
+    # Only the result band scrolls; chrome stays pinned.
+    guard panel_chrome_min_height \
+        "$(count_matches 'minHeight: [0-9]' Sources/Panel)" \
+        "re-imposed comfort minHeight in Sources/Panel"
+
+    # Apple forbids stacking glass on glass. One slab, overlay modules on top.
+    guard glass_on_glass \
+        "$(count_matches 'glassEffect' Sources --exclude-dir=Design --exclude=GlassStyles.swift)" \
+        "glassEffect outside Design/GlassStyles"
+
+    # Destructive replace must stay behind an explicit modifier. PanelKeyBinding
+    # is the only place allowed to decide it.
+    guard panel_inline_key_handling \
+        "$(count_matches 'press\.modifiers\.contains' Sources/Panel \
+            --exclude=PanelKeyBinding.swift)" \
+        "inline modifier checks in Sources/Panel (use PanelKeyBinding)"
+
+    # Status banners must expire. Direct assignment leaves them on screen.
+    guard unmanaged_status_writes \
+        "$(count_matches 'statusMessage = ' Sources --exclude=VaultStore.swift)" \
+        "direct statusMessage writes outside VaultStore"
+
     if [ -n "$LOOSENED" ]; then
         warn "baseline is now loose for:${LOOSENED}"
         warn "run ./scripts/qa.sh --update-baseline to lock in the improvement"
     fi
+}
+
+# Hard-coded .frame(width:)/.frame(height:) numbers off the 4pt grid. Named
+# tokens in Sources/Design are the sanctioned home for a genuine exception.
+offgrid_frame_count() {
+    grep -rhoE 'frame\((width|height): [0-9]+' \
+        Sources --include='*.swift' --exclude-dir=Design 2>/dev/null \
+        | grep -oE '[0-9]+$' \
+        | awk 'BEGIN { split("0 2 4 8 12 16 24 32 48", g, " "); for (i in g) ok[g[i]] = 1 }
+               !($1 in ok) { n++ }
+               END { print n + 0 }'
 }
 
 # Spacing literals that are not on the 4pt grid with 8pt rhythm.

@@ -6,7 +6,6 @@ struct PanelView: View {
     let engine: PanelEngine
     var onLayoutHeights: ((PanelLayoutHeights) -> Void)?
     @FocusState var describeFieldFocused: Bool
-    @State var accessibilityTrusted = Permissions.isAccessibilityTrusted()
 
     @Bindable var registry = ActionRegistry.shared
     @Bindable var targetRegistry = TargetRegistry.shared
@@ -61,40 +60,50 @@ struct PanelView: View {
             engine.startIfNeeded(actionID: actionID)
         }
         .onKeyPress(.escape) {
-            engine.cancel()
-            return .handled
-        }
-        .task {
-            while !Task.isCancelled {
-                accessibilityTrusted = Permissions.isAccessibilityTrusted()
-                try? await Task.sleep(for: .seconds(1))
-            }
+            perform(PanelKeyBinding.resolveEscape())
         }
         .onKeyPress(keys: [.return], phases: .down) { press in
-            if press.modifiers.contains(.command) {
-                performReplace()
-                return .handled
-            }
-            if canSubmitDescribe {
-                submitDescribe()
-                return .handled
-            }
+            perform(
+                PanelKeyBinding.resolveReturn(
+                    modifiers: PanelKeyModifiers(press: press),
+                    canSubmit: canSubmitDescribe,
+                    hasAcceptableResult: appState.acceptedText() != nil
+                )
+            )
+        }
+        .onKeyPress(characters: CharacterSet(charactersIn: "c123456789"), phases: .down) { press in
+            guard let character = press.characters.first else { return .ignored }
+            return perform(
+                PanelKeyBinding.resolveCharacter(
+                    character,
+                    modifiers: PanelKeyModifiers(press: press),
+                    tabCount: panelTabs.count
+                )
+            )
+        }
+    }
+
+    /// Applies a resolved intent. Returns the `onKeyPress` disposition so an
+    /// unclaimed key still reaches the focused control.
+    @discardableResult
+    func perform(_ intent: PanelKeyIntent) -> KeyPress.Result {
+        switch intent {
+        case .replace:
             performReplace()
-            return .handled
-        }
-        .onKeyPress(keys: ["c"], phases: .down) { press in
-            guard press.modifiers.contains(.command) else { return .ignored }
+        case .submit:
+            submitDescribe()
+        case .copy:
             performCopy()
-            return .handled
-        }
-        .onKeyPress(characters: CharacterSet(charactersIn: "123456789"), phases: .down) { press in
-            guard press.modifiers.contains(.command),
-                  let digit = press.characters.first?.wholeNumberValue else { return .ignored }
+        case .cancel:
+            engine.cancel()
+        case .selectTab(let index):
             let tabs = panelTabs
-            guard digit >= 1, digit <= tabs.count else { return .ignored }
-            selectTab(tabs[digit - 1].id)
-            return .handled
+            guard index >= 1, index <= tabs.count else { return .ignored }
+            selectTab(tabs[index - 1].id)
+        case .pass:
+            return .ignored
         }
+        return .handled
     }
 
     /// Result band: intrinsic below the cap; fixed-height ScrollView at the cap

@@ -29,6 +29,10 @@ struct PanelRequest {
 extension PanelEngine {
     func runStream(_ request: PanelRequest) {
         let task = Task { [weak self] in
+            // Paired with `streamEnded()` in the defer below. Without this the
+            // assertion was never taken, so App Nap could throttle the very
+            // stream the release call was written to protect.
+            self?.powerActivity.streamBegan()
             self?.onStreamingStarted?()
             defer {
                 self?.powerActivity.streamEnded()

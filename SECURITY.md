@@ -51,3 +51,22 @@ Selected text is framed as content, not as instructions to execute. That is a mi
 ### Unsigned downloads
 
 Release DMGs are ad-hoc signed on purpose — no Apple Developer Program. macOS Gatekeeper will block the first launch. Recipients allow it with `xattr -cr /Applications/Beru.app`, or Control-click → Open. Treat a downloaded binary like any other unsigned tool: only install from a source you trust.
+
+### In-app updates
+
+The About pane can download and install a new build. That code path replaces the running application bundle unattended, so it is the most dangerous component in the product and is treated as such.
+
+What it does:
+
+- **Source is pinned.** Only the project's own GitHub Releases host is accepted (`AppUpdateFeed.isTrustedDownload`). A feed pointing elsewhere is refused before anything is downloaded.
+- **The payload is verified before the installed app is touched.** The mounted bundle must pass `codesign --verify --deep --strict`, its `CFBundleIdentifier` must match the running app, and — when the running app has a leaf certificate — the download's signing authority must match it. A build that fails any of these is discarded and the installed app is left alone.
+- **The old bundle is moved aside, never deleted first.** An earlier version ran `rm -rf` on the installed app and then copied the replacement in. A failure between those two steps left the user with no application. The swap now stages the new bundle beside the destination, verifies the staged copy, moves the old one to a backup path, and swaps. Any error restores the backup.
+- **The swap script is not at a predictable path.** It is written into a freshly created `0700` directory with a random name. A fixed path in the shared temporary directory could be pre-created or symlinked by another process running as the user, which would have had this script's privileges.
+- **The wait for exit is bounded.** The script waits for the app's pid to disappear, but gives up after ~30s rather than looping forever if the pid is recycled.
+
+What it does **not** protect against:
+
+- **A compromised GitHub account or release.** Signature pinning ties the update to the same signing identity as the running app, but an ad-hoc signed build has no meaningful identity to pin. If you did not build Beru yourself, the update is only as trustworthy as the release it came from.
+- **A local attacker who already runs code as you.** They do not need the updater; they can modify the app bundle directly. The hardening above narrows the updater as an *escalation* path, not as a defence against an already-compromised account.
+
+If you would rather not use in-app updates at all, download DMGs manually and ignore the About pane's update button.
