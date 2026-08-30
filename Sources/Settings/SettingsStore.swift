@@ -188,21 +188,55 @@ final class SettingsStore {
 
     /// Whether a provider has everything it needs to answer a request, so the
     /// UI can show which options are actually usable.
+    /// Whether a provider has enough settings to attempt a request.
+    ///
+    /// Non-empty was too weak a test: a base URL of `" "` or `hello` passed, so
+    /// onboarding could complete and the first run would fail with a confusing
+    /// transport error. URLs must now actually parse as http(s) with a host.
     func isConfigured(_ kind: ProviderKind) -> Bool {
         switch kind {
         case .ollama:
-            return !ollamaBaseURL.isEmpty && !ollamaEnhanceModel.isEmpty && !ollamaGrammarModel.isEmpty
+            return Self.isUsableBaseURL(ollamaBaseURL)
+                && Self.isUsableModel(ollamaEnhanceModel)
+                && Self.isUsableModel(ollamaGrammarModel)
         case .anthropic:
-            return !(anthropicAPIKey ?? "").isEmpty
+            return Self.isUsableKey(anthropicAPIKey)
         case .custom:
             // Remote hosts (Groq, OpenAI, …) need a key; loopback servers often don't.
-            let hasURL = !customBaseURL.isEmpty
-            let hasModel = !customEnhanceModel.isEmpty && !customGrammarModel.isEmpty
-            let loopback = customBaseURL.lowercased().contains("localhost")
-                || customBaseURL.contains("127.0.0.1")
-            let hasKey = !(customAPIKey ?? "").isEmpty
-            return hasURL && hasModel && (loopback || hasKey)
+            guard Self.isUsableBaseURL(customBaseURL),
+                  Self.isUsableModel(customEnhanceModel),
+                  Self.isUsableModel(customGrammarModel) else { return false }
+            return Self.isLoopback(customBaseURL) || Self.isUsableKey(customAPIKey)
         }
+    }
+
+    /// Parses as an http(s) URL with a host.
+    static func isUsableBaseURL(_ raw: String) -> Bool {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty,
+              let components = URLComponents(string: trimmed),
+              let scheme = components.scheme?.lowercased(),
+              scheme == "http" || scheme == "https",
+              let host = components.host,
+              !host.isEmpty else { return false }
+        return true
+    }
+
+    static func isUsableModel(_ raw: String) -> Bool {
+        !raw.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    /// Rejects whitespace-only keys, which read as configured but never work.
+    static func isUsableKey(_ raw: String?) -> Bool {
+        guard let raw else { return false }
+        return !raw.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    static func isLoopback(_ raw: String) -> Bool {
+        guard let host = URLComponents(
+            string: raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        )?.host?.lowercased() else { return false }
+        return host == "localhost" || host == "127.0.0.1" || host == "::1" || host == "0.0.0.0"
     }
 
     /// Providers other than the active one that are configured and could serve

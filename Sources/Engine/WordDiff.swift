@@ -58,9 +58,36 @@ enum WordDiff {
         return merge(ops)
     }
 
+    /// Largest DP table the diff will allocate, in cells. At 4 bytes per `Int32`
+    /// this caps the table at ~16 MB.
+    ///
+    /// The prefix/suffix trim above means realistic edits never approach this:
+    /// a grammar pass on a long document diffs only the changed middle. But a
+    /// wholesale rewrite trims nothing, and two 20k-word texts would otherwise
+    /// ask for 1.6 GB. Past the cap the diff degrades to a single
+    /// replace-everything op, which is also the most honest rendering of "these
+    /// two texts have nothing in common".
+    static let maxTableCells = 4_000_000
+
+    static func exceedsDiffBudget(_ n: Int, _ m: Int) -> Bool {
+        // Every step reports overflow rather than trapping: `n + 1` alone would
+        // crash on `Int.max`, and a budget check that can crash is worse than no
+        // budget check.
+        let rows = n.addingReportingOverflow(1)
+        let columns = m.addingReportingOverflow(1)
+        guard !rows.overflow, !columns.overflow else { return true }
+
+        let cells = rows.partialValue.multipliedReportingOverflow(by: columns.partialValue)
+        return cells.overflow || cells.partialValue > maxTableCells
+    }
+
     private static func lcsDiff(_ a: [String], _ b: [String]) -> [DiffOp] {
         if a.isEmpty { return b.isEmpty ? [] : [.insertion(b.joined())] }
         if b.isEmpty { return [.deletion(a.joined())] }
+
+        guard !exceedsDiffBudget(a.count, b.count) else {
+            return [.deletion(a.joined()), .insertion(b.joined())]
+        }
 
         // Compare integer ids in the hot loop instead of strings.
         var ids: [String: Int32] = [:]

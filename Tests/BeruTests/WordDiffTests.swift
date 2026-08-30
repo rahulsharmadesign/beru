@@ -71,4 +71,57 @@ final class WordDiffTests: XCTestCase {
         XCTAssertEqual(reconstructedOriginal, original)
         XCTAssertEqual(reconstructedRevised, revised)
     }
+
+    // MARK: - Memory budget
+
+    func testDiffBudgetRejectsPathologicalSizes() {
+        // Two 20k-word texts with nothing in common would ask for ~1.6 GB.
+        XCTAssertTrue(WordDiff.exceedsDiffBudget(20_000, 20_000))
+    }
+
+    func testDiffBudgetAllowsRealisticSizes() {
+        // A long document whose changed middle region is still substantial.
+        XCTAssertFalse(WordDiff.exceedsDiffBudget(1_500, 1_500))
+    }
+
+    func testDiffBudgetIsOverflowSafe() {
+        XCTAssertTrue(WordDiff.exceedsDiffBudget(Int.max, Int.max))
+    }
+
+    func testOversizedDiffDegradesToReplaceRatherThanAllocating() {
+        // Nothing shared, so the prefix/suffix trim cannot help.
+        let original = (0..<3_000).map { "alpha\($0)" }.joined(separator: " ")
+        let revised = (0..<3_000).map { "omega\($0)" }.joined(separator: " ")
+
+        let ops = WordDiff.diff(original: original, revised: revised)
+
+        // Must terminate and stay small rather than building a 9M-cell table.
+        XCTAssertFalse(ops.isEmpty)
+        let hasDeletion = ops.contains { if case .deletion = $0 { return true } else { return false } }
+        let hasInsertion = ops.contains { if case .insertion = $0 { return true } else { return false } }
+        XCTAssertTrue(hasDeletion)
+        XCTAssertTrue(hasInsertion)
+    }
+
+    func testOversizedDiffStillRoundTrips() {
+        let original = (0..<3_000).map { "alpha\($0)" }.joined(separator: " ")
+        let revised = (0..<3_000).map { "omega\($0)" }.joined(separator: " ")
+
+        let ops = WordDiff.diff(original: original, revised: revised)
+        var rebuiltOriginal = ""
+        var rebuiltRevised = ""
+        for op in ops {
+            switch op {
+            case .equal(let text):
+                rebuiltOriginal += text
+                rebuiltRevised += text
+            case .deletion(let text):
+                rebuiltOriginal += text
+            case .insertion(let text):
+                rebuiltRevised += text
+            }
+        }
+        XCTAssertEqual(rebuiltOriginal, original)
+        XCTAssertEqual(rebuiltRevised, revised)
+    }
 }

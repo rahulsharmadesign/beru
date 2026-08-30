@@ -28,8 +28,29 @@ final class VaultStore {
     private(set) var pins: [VaultPin] = []
     private(set) var statusMessage: String?
 
+    /// Cleared on a timer so the banner behaves like the "flash" its name
+    /// promises. Every status write funnels through here; assigning the property
+    /// directly leaves a message on screen forever, which is what used to happen
+    /// at all ten call sites.
+    @ObservationIgnored private var statusClearTask: Task<Void, Never>?
+
+    static let statusFlashDuration: Duration = .seconds(4)
+
     func flashStatus(_ message: String) {
         statusMessage = message
+        statusClearTask?.cancel()
+        statusClearTask = Task { [weak self] in
+            try? await Task.sleep(for: Self.statusFlashDuration)
+            guard !Task.isCancelled else { return }
+            self?.statusMessage = nil
+        }
+    }
+
+    /// Dismisses immediately, for an explicit user action.
+    func clearStatus() {
+        statusClearTask?.cancel()
+        statusClearTask = nil
+        statusMessage = nil
     }
 
     /// Application Support default: `~/Library/Application Support/Beru/vault`.
@@ -78,9 +99,9 @@ final class VaultStore {
         ensureLayout()
         reload()
         if Self.isCloudSyncedFolder(standardized) {
-            statusMessage = "This folder syncs via iCloud or Dropbox. Files stay 0600 on this Mac."
+            flashStatus("This folder syncs via iCloud or Dropbox. Files stay 0600 on this Mac.")
         } else {
-            statusMessage = "Vault folder updated"
+            flashStatus("Vault folder updated")
         }
     }
 
@@ -99,7 +120,7 @@ final class VaultStore {
         rootURL = Self.defaultRootURL
         ensureLayout()
         reload()
-        statusMessage = "Using local Application Support vault"
+        flashStatus("Using local Application Support vault")
     }
 
     func chooseRootFolder() {
@@ -137,8 +158,13 @@ final class VaultStore {
         guard let index = notes.firstIndex(where: { $0.id == note.id }) else { return }
         var updated = note
         updated.updatedAt = .now
-        notes[index] = updated
-        notes.sort { $0.updatedAt > $1.updatedAt }
+
+        // Notes are held newest-first. An edit always makes this note the
+        // newest, so its correct position is index 0 — a full re-sort on every
+        // keystroke was doing O(n log n) work to reach a known answer.
+        notes.remove(at: index)
+        notes.insert(updated, at: 0)
+
         schedulePersist(updated)
     }
 
@@ -165,7 +191,7 @@ final class VaultStore {
         }
         updateNote(note)
         persistNoteImmediately(note)
-        statusMessage = "Note updated"
+        flashStatus("Note updated")
     }
 
     // MARK: - Pins
@@ -173,7 +199,7 @@ final class VaultStore {
     @discardableResult
     func addLinkPin(title: String, url: String) -> VaultPin? {
         guard let normalized = VaultLink.normalizedURL(from: url) else {
-            statusMessage = "Only http and https links can be pinned"
+            flashStatus("Only http and https links can be pinned")
             return nil
         }
         let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -208,7 +234,7 @@ final class VaultStore {
         )
         pins.insert(pin, at: 0)
         persistPins()
-        statusMessage = "Pinned"
+        flashStatus("Pinned")
         return pin
     }
 
@@ -228,9 +254,9 @@ final class VaultStore {
         guard panel.runModal() == .OK, let url = panel.url else { return }
         do {
             try VaultArchive.export(root: rootURL, to: url)
-            statusMessage = "Exported vault"
+            flashStatus("Exported vault")
         } catch {
-            statusMessage = "Export failed: \(error.localizedDescription)"
+            flashStatus("Export failed: \(error.localizedDescription)")
             logger.error("vault export failed: \(error.localizedDescription, privacy: .public)")
         }
     }
@@ -245,9 +271,9 @@ final class VaultStore {
         do {
             let summary = try VaultArchive.importZip(from: url, into: rootURL)
             reload()
-            statusMessage = "Imported \(summary.notes) notes, \(summary.pins) pins"
+            flashStatus("Imported \(summary.notes) notes, \(summary.pins) pins")
         } catch {
-            statusMessage = "Import failed: \(error.localizedDescription)"
+            flashStatus("Import failed: \(error.localizedDescription)")
             logger.error("vault import failed: \(error.localizedDescription, privacy: .public)")
         }
     }
@@ -327,7 +353,7 @@ final class VaultStore {
             applyFilePermissions(url)
         } catch {
             logger.error("failed to write note \(latest.id, privacy: .public): \(error.localizedDescription, privacy: .public)")
-            statusMessage = "Couldn’t save note"
+            flashStatus("Couldn’t save note")
         }
     }
 
@@ -341,7 +367,7 @@ final class VaultStore {
             applyFilePermissions(pinsFileURL)
         } catch {
             logger.error("failed to write pins: \(error.localizedDescription, privacy: .public)")
-            statusMessage = "Couldn’t save pins"
+            flashStatus("Couldn’t save pins")
         }
     }
 

@@ -109,7 +109,7 @@ extension PanelView {
 
     @ViewBuilder
     var idlePlaceholder: some View {
-        if !accessibilityTrusted {
+        if !a11y.isAccessibilityTrusted {
             accessibilityPlaceholder
         } else {
             let needsSetup = appState.selectedActionID == EnhancementAction.searchID

@@ -2,7 +2,7 @@
 
 **Product:** Beru
 **Platform:** macOS 26+ (menu bar app)
-**Version this document describes:** 1.1.9 (build 15)
+**Version this document describes:** 1.1.10 (build 16)
 **Bundle ID:** `com.rahul.beru`
 **Status:** Shipped on macOS. Windows and cloud sync are not in this build.
 **Audience:** Product, design, engineering, and anyone deciding what Beru is allowed to do.
@@ -530,6 +530,6 @@ Qualitative, because there is no analytics:
 
 ## 20. Document control
 
-- **Describes:** Beru 1.1.9 as implemented in this repository.
+- **Describes:** Beru 1.1.10 (build 16) as implemented in this repository. This must match `MARKETING_VERSION` / `CURRENT_PROJECT_VERSION` in `project.yml`; they drifted once and the PRD is the behavioural contract, so a mismatch is a defect rather than a formatting nit.
 - **Does not replace:** `README.md` (public pitch), `SECURITY.md` (threat model), `docs/QA-CHECKLIST.md` (manual pass), `CONTRIBUTING.md` (how to change it).
 - **When behavior changes:** update this PRD in the same change as the code, in the section that changed — not as a separate “docs later” pass.
