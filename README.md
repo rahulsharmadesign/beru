@@ -10,17 +10,19 @@ Select a rough idea, press a hotkey, and Beru turns it into a prompt your LLM wi
 ![Swift 5.10](https://img.shields.io/badge/Swift-5.10-orange)
 ![License: MIT](https://img.shields.io/badge/license-MIT-green)
 
-Beru lives in the menu bar. It does not take over the app you are writing in.
+Beru lives in the menu bar. It does not take over the app you are writing in. On macOS 26 it floats as **Liquid Glass**: one HUD slab over the host app, not a frosted card and not a second window you live in. Settings uses the same system window material, with Vault, Actions, Targets, and Runs as native source lists.
 
 ## How it works
 
 1. Select the rough thought, notes, or half-written prompt, in Notes, Cursor, a browser, anywhere.
 2. Press **⌃⌥⌘P** (you can change this).
-3. **Enhance** rewrites it as a clear prompt, using that tool’s guides and Markdown conventions. **Replace** writes it back, or **Copy** takes it to the clipboard.
+3. **Enhance** rewrites it as a clear prompt, using that tool’s guides and Markdown conventions. **⌘↩ Replace** writes it back. **Copy** takes it to the clipboard. A bare Return never overwrites the host selection.
 
 Too lazy to type? Press **⌃⌥⌘L**. Beru opens, listens on this Mac, and writes down what you say. Speak the rough idea; Enhance still turns it into a prompt. Press the shortcut again, or the mic, to stop. Audio is transcribed on-device and never leaves the machine.
 
 Pick the target (Cursor, Claude, ChatGPT, …) so the prompt matches how that model wants to be asked. Add Codex, Gemini, or your own in Settings → Targets.
+
+With no selection, the panel opens on **AI Search**. Ask a follow-up and answers stack in that session until you close the panel.
 
 ## Install
 
@@ -28,7 +30,7 @@ macOS 26+ only.
 
 ### Download (recommended)
 
-1. Download **Beru-x.x.x.dmg** from [Releases](https://github.com/rahulsharmadesign/beru/releases).
+1. Download **V1.01_build_16.dmg** from [Releases](https://github.com/rahulsharmadesign/beru/releases).
 2. Open the DMG and drag **Beru** into **Applications**.
 3. macOS will block it (unsigned). Allow it once:
 
@@ -59,13 +61,19 @@ That builds Beru, signs it on *your* Mac, installs it to `/Applications`, and la
 
 To publish a DMG, push a version tag (`v1.1.0`). GitHub Actions builds it. Locally: `./scripts/make-dmg.sh`.
 
-## First run
+## First run (Get Started)
 
-1. Grant **Accessibility** when asked. Beru needs it to read and replace the selection. The welcome window closes on its own once the grant is there.
-2. Open **Settings** from the menu bar and choose a provider.
-3. Select some text and press the hotkey.
+Three steps only. There is no microphone page.
 
-Optional: **Microphone** and **Speech Recognition**, asked the first time you press the mic (or ⌃⌥⌘L). Speech is recognized on this Mac.
+1. **Welcome** — Beru lives in the menu bar. Select text, press the shortcut, improve it in place.
+2. **Allow Accessibility** — required to read and replace the selection. **Open System Settings** if the grant is not there yet, then Continue.
+3. **Start Beru** — press the shortcut (default **⌃⌥⌘P**). The welcome window closes and the panel opens.
+
+Then open **Settings** from the menu bar and choose a provider (Ollama with a pulled model, or a cloud key). Enhance and Grammar need that before they can run.
+
+Microphone and Speech Recognition are optional. The system prompt appears the first time you press the mic or **⌃⌥⌘L**, not during Get Started. Speech is recognized on this Mac.
+
+**Reduce Transparency** (System Settings → Accessibility → Display) swaps the glass panel for an opaque card without relaunching.
 
 ## Providers
 
@@ -80,14 +88,16 @@ Optional: **Microphone** and **Speech Recognition**, asked the first time you pr
 
 - **Enhance** — Turn a rough idea into a prompt for Cursor, Claude, Codex, Gemini, ChatGPT, and other LLM tools.
 - **Grammar** — Fix spelling and grammar. Keep your meaning and tone.
-- **Social replies** — Suggest a reply to a comment, mention, or DM.
+- **Smart Reply** — Six tones for a comment, mention, or DM. Insert or Copy one card.
 - **Workplace voice** — Draft a reply as a manager, VP, or CEO. Save those voices as custom actions.
 - **Summarize / Explain** — Compress the selection, or make it clear.
+- **AI Search** — Ask without a selection. Follow-ups stack until you close the panel.
 - **Custom actions** — Your own verb chips and prompts, in Settings → Actions.
 - **Voice dictation** — Press **⌃⌥⌘L** (or the mic) and speak the rough idea instead of typing. Beru transcribes on this Mac; nothing is sent to Apple or a Beru server. Press again to stop.
 
 ## What’s next
 
+- **Meeting Notes** — a dedicated workspace for capturing and shaping notes from a meeting. Not in this build; it is the next surface after this freeze.
 - **Windows** is in progress. macOS is the supported build today.
 - **Cloud storage** for settings and runs is on the list, so the same setup could follow you across machines. Local-only remains the default.
 
