@@ -7,8 +7,7 @@ DerivedData/
 xcuserdata/
 .tools/
 .claude/
-.cursor/*
-!.cursor/rules/
+.cursor/
 .qoder/
 .manus_context_backup/
 xcshareddata/swiftpm/
@@ -19,6 +18,11 @@ xcshareddata/swiftpm/
 *.p12
 *.key
 secrets/
+
+# Agent and product docs stay on this machine; not the public GitHub tree.
+AGENTS.md
+docs/PRD.md
+docs/LIQUID-GLASS-AUDIT-PLAN.md
 
 # Apple's Landmarks sample — local cookbook only, nested git repo.
 LandmarksBuildingAnAppWithLiquidGlass/
