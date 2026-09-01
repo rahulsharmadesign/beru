@@ -80,6 +80,8 @@ extension PanelEngine {
         appState.errorNeedsModelSetup.remove(actionID)
         appState.replySuggestions = []
         appState.replyScriptNotices.remove(actionID)
+        appState.grammarSuggestions = []
+        appState.selectedGrammarKind = .corrected
 
         let provider = ProviderRegistry.activeProvider()
         let clipboardForRequest = appState.includeClipboard ? appState.clipboardText : nil
@@ -182,12 +184,16 @@ extension PanelEngine {
             Prompts.composeWithReplyLanguage(
                 Prompts.composeWithFraming(
                     Prompts.composeWithProfile(
-                        Prompts.composeWithThread(
-                            Prompts.composeWithContext(
-                                Prompts.composeWithTarget(systemPrompt, profile: activeTarget),
-                                context: activeContext
+                        Prompts.composeWithInteractionProfile(
+                            Prompts.composeWithThread(
+                                Prompts.composeWithContext(
+                                    Prompts.composeWithTarget(systemPrompt, profile: activeTarget),
+                                    context: activeContext
+                                ),
+                                turns: threadTurns
                             ),
-                            turns: threadTurns
+                            profile: SettingsStore.shared.interactionProfile,
+                            actionID: actionID
                         ),
                         profile: activeAuthorProfile,
                         forReply: actionID == EnhancementAction.replyID
@@ -243,7 +249,8 @@ extension PanelEngine {
                 attempt: attempt,
                 generation: generation,
                 explainsChanges: explainsChanges,
-                isQuickSearch: isQuickSearch
+                isQuickSearch: isQuickSearch,
+                threadEpoch: SessionThread.shared.epoch
             )
         )
     }

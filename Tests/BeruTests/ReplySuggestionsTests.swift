@@ -86,6 +86,23 @@ final class ReplySuggestionsTests: XCTestCase {
             XCTAssertTrue(ReplyTone.promptCatalog.contains(tone.rawValue), tone.rawValue)
         }
         XCTAssertTrue(Prompts.reply.contains("Output ONLY"))
+        XCTAssertTrue(Prompts.reply.contains("concrete detail"))
+        XCTAssertTrue(Prompts.reply.contains("Sounds good"))
+        XCTAssertTrue(ReplyTone.funny.job.lowercased().contains("content"))
+        XCTAssertTrue(ReplyTone.witty.job.lowercased().contains("dry observation"))
+    }
+
+    func testReplyTemperatureIsHigherThanEnhanceAndGrammarStaysZero() {
+        XCTAssertEqual(ProviderTuning.temperature(for: .enhance), 0.3)
+        XCTAssertEqual(
+            ProviderTuning.temperature(for: .enhance, actionID: EnhancementAction.replyID),
+            ProviderTuning.replyTemperature
+        )
+        XCTAssertEqual(ProviderTuning.temperature(for: .grammar), 0.0)
+        XCTAssertEqual(
+            ProviderTuning.temperature(for: .grammar, actionID: EnhancementAction.grammarID),
+            0.0
+        )
     }
 
     @MainActor

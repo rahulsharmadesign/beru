@@ -34,11 +34,47 @@ final class SessionThreadTests: XCTestCase {
         )
     }
 
-    func testKeepsOnlyTheLastThreeTurns() {
-        for i in 1...5 { record("output \(i)") }
+    func testKeepsTurnsUntilCleared() {
+        for i in 1...12 { record("output \(i)") }
         let turns = thread.turns(forBundleID: "com.apple.mail")
-        XCTAssertEqual(turns.count, SessionThread.maxTurns)
-        XCTAssertEqual(turns.map(\.output), ["output 3", "output 4", "output 5"])
+        XCTAssertEqual(turns.count, 12)
+        XCTAssertEqual(turns.first?.output, "output 1")
+        XCTAssertEqual(turns.last?.output, "output 12")
+        thread.clear()
+        XCTAssertTrue(thread.turns(forBundleID: "com.apple.mail").isEmpty)
+    }
+
+    func testClearDropsInFlightRecordFromTheOldEpoch() {
+        record("kept")
+        let stale = thread.epoch
+        thread.clear()
+        thread.record(
+            actionID: EnhancementAction.enhanceID,
+            actionName: "Enhance",
+            instruction: "",
+            input: "some selected text",
+            output: "should not land",
+            bundleID: "com.apple.mail",
+            expectedEpoch: stale
+        )
+        XCTAssertTrue(
+            thread.turns(forBundleID: "com.apple.mail").isEmpty,
+            "a stream that finished after the chip was clicked must not rebuild the thread"
+        )
+    }
+
+    func testRecordMatchingCurrentEpochIsKept() {
+        let epoch = thread.epoch
+        thread.record(
+            actionID: EnhancementAction.enhanceID,
+            actionName: "Enhance",
+            instruction: "",
+            input: "some selected text",
+            output: "fresh",
+            bundleID: "com.apple.mail",
+            expectedEpoch: epoch
+        )
+        XCTAssertEqual(thread.turns(forBundleID: "com.apple.mail").map(\.output), ["fresh"])
     }
 
     func testTurnsAreScopedToTheAppTheyWereRecordedIn() {
@@ -71,15 +107,9 @@ final class SessionThreadTests: XCTestCase {
         XCTAssertEqual(thread.turns(forBundleID: "com.apple.mail").count, 1)
     }
 
-    func testTurnsExpireAfterTheIdleTimeout() {
-        let stale = Date().addingTimeInterval(-(SessionThread.idleTimeout + 60))
-        record("old output", at: stale)
-        XCTAssertTrue(thread.turns(forBundleID: "com.apple.mail").isEmpty)
-    }
-
-    func testTurnsInsideTheIdleWindowSurvive() {
-        let recent = Date().addingTimeInterval(-(SessionThread.idleTimeout - 60))
-        record("recent output", at: recent)
+    func testTurnsSurviveIdleGapsUntilCleared() {
+        let hoursAgo = Date().addingTimeInterval(-(4 * 60 * 60))
+        record("old output", at: hoursAgo)
         XCTAssertEqual(thread.turns(forBundleID: "com.apple.mail").count, 1)
     }
 
@@ -145,10 +175,11 @@ final class SessionThreadTests: XCTestCase {
     }
 
     func testComposedBlockStaysInsideItsBudget() {
-        for i in 1...SessionThread.maxTurns {
+        for i in 1...20 {
             record(String(repeating: "long output \(i) ", count: 200))
         }
         let turns = thread.turns(forBundleID: "com.apple.mail")
+        XCTAssertEqual(turns.count, 20, "storage keeps turns the prompt budget drops")
         let composed = Prompts.composeWithThread("BASE", turns: turns)
         let block = composed.replacingOccurrences(of: "BASE", with: "")
         // The budget covers the turn lines; the fixed heading is not user text.
@@ -157,8 +188,9 @@ final class SessionThreadTests: XCTestCase {
 
     func testTheMostRecentTurnSurvivesWhenTheBudgetIsSpent() {
         let long = String(repeating: "x", count: SessionThread.outputCharBudget)
-        for i in 1...SessionThread.maxTurns { record("\(long)\(i)") }
+        for i in 1...12 { record("\(long)\(i)") }
         let turns = thread.turns(forBundleID: "com.apple.mail")
+        XCTAssertEqual(turns.count, 12)
         let composed = Prompts.composeWithThread("BASE", turns: turns)
         XCTAssertTrue(
             composed.contains("1 turn(s) ago"),

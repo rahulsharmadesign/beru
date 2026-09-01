@@ -40,6 +40,12 @@ final class PanelEngine {
         onOpenSettings?()
     }
 
+    func applyGrammarKind(_ kind: GrammarKind) {
+        appState.selectGrammarKind(kind)
+        guard let body = appState.acceptedText(for: EnhancementAction.grammarID) else { return }
+        Task { await computeDiff(actionID: EnhancementAction.grammarID, original: appState.capturedText, revised: body) }
+    }
+
     /// After Apply on a vault note, reopen Vault on that note.
     var onRevealVaultNote: ((String) -> Void)?
 

@@ -101,7 +101,7 @@ Always on the left: **AI Search**. Then **Enhance Prompt** and **Grammar**. New 
 | **Instruction** | Run whatever you typed in the composer against the current selection or question. Not a saved action. |
 | **Custom** | Any verb you add under Settings → Actions — a workplace voice, a house style, a one-line rewrite. Built-in Enhance Prompt and Grammar cannot be overridden by a saved prompt that would make the chip a lie. |
 
-**Remember recent turns** (on by default): Enhance Prompt, Instruction, and Search can see your last few requests in the same app. The panel shows **Using N prior turns**; click it to forget. Grammar and Smart Reply never see that history. Turns live in memory only.
+**Remember recent turns** (on by default): Enhance Prompt, Instruction, and Search can see earlier requests in the same app until you click the chip, switch apps, or turn the setting off. The panel shows **Using N prior turns**. Grammar and Smart Reply never see that history. Turns live in memory only.
 
 ## Menu bar
 

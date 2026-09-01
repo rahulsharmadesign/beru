@@ -41,7 +41,8 @@ struct AnthropicProvider: LLMProvider {
         system: String,
         user: String,
         role: ModelRole,
-        expectsRationale: Bool = false
+        expectsRationale: Bool = false,
+        actionID: String = ""
     ) -> [String: Any] {
         let modelID = model(for: role)
         var body: [String: Any] = [
@@ -56,7 +57,7 @@ struct AnthropicProvider: LLMProvider {
             "messages": [["role": "user", "content": user]]
         ]
         if Self.acceptsTemperature(modelID) {
-            body["temperature"] = ProviderTuning.temperature(for: role)
+            body["temperature"] = ProviderTuning.temperature(for: role, actionID: actionID)
         }
         if Self.supportsAdaptiveThinking(modelID) {
             body["thinking"] = ["type": "disabled"]
@@ -74,7 +75,8 @@ struct AnthropicProvider: LLMProvider {
         system: String,
         user: String,
         role: ModelRole,
-        expectsRationale: Bool
+        expectsRationale: Bool,
+        actionID: String
     ) -> AsyncThrowingStream<StreamChunk, Error> {
         AsyncThrowingStream { continuation in
             let task = Task {
@@ -90,7 +92,8 @@ struct AnthropicProvider: LLMProvider {
                             system: system,
                             user: user,
                             role: role,
-                            expectsRationale: expectsRationale
+                            expectsRationale: expectsRationale,
+                            actionID: actionID
                         )
                     )
 

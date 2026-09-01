@@ -21,6 +21,9 @@ struct PanelRequest {
     let generation: Int
     let explainsChanges: Bool
     let isQuickSearch: Bool
+    /// `SessionThread.epoch` at `start`. A chip-clear during the stream must
+    /// not let this request append after the user already forgot the thread.
+    let threadEpoch: UInt64
 }
 
 // Running a request: consuming the stream, coalescing publishes, cleaning the
@@ -50,7 +53,8 @@ extension PanelEngine {
                     system: request.systemPrompt,
                     user: request.userMessage,
                     role: request.role,
-                    expectsRationale: request.explainsChanges
+                    expectsRationale: request.explainsChanges,
+                    actionID: request.actionID
                 )
                 for try await chunk in stream {
                     guard case .content(let text) = chunk else {
@@ -120,6 +124,17 @@ extension PanelEngine {
                     Self.strippedWrapping(body),
                     input: request.capturedText
                 )
+                if request.actionID == EnhancementAction.grammarID,
+                   self.isLive(request.generation, for: request.actionID) {
+                    let parsed = GrammarSuggestions.parse(final)
+                    self.appState.grammarSuggestions = parsed
+                    let preferred = SettingsStore.shared.interactionProfile.preferredGrammarKind ?? .corrected
+                    let kind = parsed.contains(where: { $0.kind == preferred }) ? preferred : .corrected
+                    self.appState.selectedGrammarKind = kind
+                    if let body = GrammarSuggestions.body(in: parsed, matching: kind) {
+                        final = body
+                    }
+                }
                 let totalMs = Self.milliseconds(clock.now - requestStart)
                 let ttfbMs = firstTokenAt.map { Self.milliseconds($0 - requestStart) }
                 engineLogger.notice("stream done for \(request.actionID), length = \(final.count), total = \(totalMs) ms, reasoning chunks discarded = \(reasoningChunks)")
@@ -173,7 +188,8 @@ extension PanelEngine {
                             instruction: request.threadInstruction,
                             input: request.capturedText,
                             output: final,
-                            bundleID: request.hostBundleID
+                            bundleID: request.hostBundleID,
+                            expectedEpoch: request.threadEpoch
                         )
                     }
                     if request.isQuickSearch, self.isLive(request.generation, for: request.actionID) {

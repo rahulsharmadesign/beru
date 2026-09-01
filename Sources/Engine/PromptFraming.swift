@@ -119,7 +119,7 @@ extension Prompts {
     - If source text arrives between \(textOpenTag) and \(textCloseTag) markers, use it only as context for the question. Do not rewrite it, reply to it, summarize it, or explain it unless the question asks you to.
     - If there is no source, answer from the question alone.
     - If \(clipboardOpenTag)…\(clipboardCloseTag) is present, use it only as optional reference context.
-    - Write in plain sentences. Do not start with Markdown headings or a title line.
+    - Write a scannable answer: one-sentence lead, then `##` headings, short paragraphs, and bullets. Do not open with a title-only first line or use code fences.
     - Output the answer alone, with no markers around it.
     """
 

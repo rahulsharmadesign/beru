@@ -9,14 +9,15 @@ struct BeruMarkdown: View {
     let text: String
 
     var body: some View {
-        VStack(alignment: .leading, spacing: BeruSpace.xs) {
-            ForEach(Array(blocks.enumerated()), id: \.offset) { _, block in
+        VStack(alignment: .leading, spacing: BeruSpace.xxs) {
+            ForEach(Array(Self.parse(text).enumerated()), id: \.offset) { index, block in
                 switch block {
                 case .heading(let level, let content):
                     Text(inline(content))
                         .font(Self.headingFont(level))
                         .foregroundStyle(BeruColor.textPrimary)
-                        .padding(.top, level == 1 ? BeruSpace.xxs : 0)
+                        .padding(.top, index == 0 ? 0 : Self.headingTopPadding(level))
+                        .padding(.bottom, BeruSpace.xxs)
                 case .bullet(let content):
                     HStack(alignment: .firstTextBaseline, spacing: BeruSpace.xs) {
                         Text("•")
@@ -30,8 +31,8 @@ struct BeruMarkdown: View {
                     Text(inline(content))
                         .font(BeruType.resultBody)
                         .foregroundStyle(BeruColor.textPrimary)
-                case .blank:
-                    Color.clear.frame(height: BeruSpace.hair)
+                case .gap:
+                    Color.clear.frame(height: BeruSpace.sm)
                 }
             }
         }
@@ -47,29 +48,45 @@ struct BeruMarkdown: View {
         }
     }
 
-    private enum Block {
+    static func headingTopPadding(_ level: Int) -> CGFloat {
+        level <= 1 ? BeruSpace.md : BeruSpace.sm
+    }
+
+    enum Block: Equatable {
         case heading(Int, String)
         case bullet(String)
         case paragraph(String)
-        case blank
+        case gap
     }
 
-    private var blocks: [Block] {
-        text.components(separatedBy: .newlines).map { line in
+    /// Line-based ATX headings and `- ` / `* ` bullets. Consecutive blank
+    /// lines collapse to a single paragraph gap.
+    static func parse(_ text: String) -> [Block] {
+        var blocks: [Block] = []
+        var pendingGap = false
+        for line in text.components(separatedBy: .newlines) {
             let trimmed = line.trimmingCharacters(in: .whitespaces)
-            if trimmed.isEmpty { return .blank }
+            if trimmed.isEmpty {
+                if !blocks.isEmpty { pendingGap = true }
+                continue
+            }
+            if pendingGap {
+                blocks.append(.gap)
+                pendingGap = false
+            }
             if trimmed.hasPrefix("#") {
                 let hashes = trimmed.prefix { $0 == "#" }.count
-                return .heading(
+                blocks.append(.heading(
                     hashes,
                     String(trimmed.dropFirst(hashes)).trimmingCharacters(in: .whitespaces)
-                )
+                ))
+            } else if trimmed.hasPrefix("- ") || trimmed.hasPrefix("* ") {
+                blocks.append(.bullet(String(trimmed.dropFirst(2))))
+            } else {
+                blocks.append(.paragraph(trimmed))
             }
-            if trimmed.hasPrefix("- ") || trimmed.hasPrefix("* ") {
-                return .bullet(String(trimmed.dropFirst(2)))
-            }
-            return .paragraph(trimmed)
         }
+        return blocks
     }
 
     private func inline(_ content: String) -> AttributedString {

@@ -100,12 +100,13 @@ struct OpenAICompatProvider: LLMProvider {
         user: String,
         role: ModelRole,
         suppressThinking: Bool,
-        expectsRationale: Bool
+        expectsRationale: Bool,
+        actionID: String = ""
     ) -> [String: Any] {
         var body: [String: Any] = [
             "model": model(for: role),
             "stream": true,
-            "temperature": ProviderTuning.temperature(for: role),
+            "temperature": ProviderTuning.temperature(for: role, actionID: actionID),
             // Random seed per request: some servers reuse a fixed sampling
             // seed, which makes even nonzero temperatures produce identical
             // output for identical input.
@@ -139,7 +140,8 @@ struct OpenAICompatProvider: LLMProvider {
         system: String,
         user: String,
         role: ModelRole,
-        expectsRationale: Bool
+        expectsRationale: Bool,
+        actionID: String
     ) -> AsyncThrowingStream<StreamChunk, Error> {
         AsyncThrowingStream { continuation in
             let task = Task {
@@ -164,7 +166,8 @@ struct OpenAICompatProvider: LLMProvider {
                                 user: user,
                                 role: role,
                                 suppressThinking: suppressThinking,
-                                expectsRationale: expectsRationale
+                                expectsRationale: expectsRationale,
+                                actionID: actionID
                             )
                         )
 

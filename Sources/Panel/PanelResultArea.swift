@@ -76,6 +76,18 @@ extension PanelView {
             } else {
                 ResultView(state: state, usesMarkdown: usesSearchMarkdown)
             }
+            if appState.selectedActionID == EnhancementAction.grammarID,
+               case .done = state,
+               appState.grammarSuggestions.count > 1 {
+                GrammarKindPicker(
+                    suggestions: appState.grammarSuggestions,
+                    selected: appState.selectedGrammarKind,
+                    onSelect: { engine.applyGrammarKind($0) }
+                )
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, BeruSpace.md)
+                .padding(.bottom, BeruSpace.sm)
+            }
         }
         .frame(maxWidth: .infinity, minHeight: PanelMetrics.resultIdleMinHeight)
         // Do not `.id` the tab or animate this swap: that scaled the result

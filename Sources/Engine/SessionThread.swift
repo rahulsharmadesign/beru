@@ -5,19 +5,18 @@ import Observation
 ///
 /// Every request is otherwise exactly `[system, user]` with no history, so two
 /// Enhance passes in a row are strangers: the second cannot build on the first,
-/// and a follow-up like "shorter" has nothing to be shorter than. This keeps the
-/// last few turns for the app you invoked from and folds them into the system
-/// prompt.
+/// and a follow-up like "shorter" has nothing to be shorter than. This keeps
+/// turns for the app you invoked from and folds them into the system prompt.
 ///
-/// Deliberately small and forgetful:
+/// Deliberately forgetful, not small:
 ///
 /// - **Memory only.** Never written to disk, at any setting. It dies with the
 ///   process. This is text pulled out of whatever you had selected, often from a
 ///   document you would not want cached, and it is independent of usage logging.
 /// - **Per app.** Keyed by host bundle id, so an Enhance in Mail cannot leak
 ///   into an Enhance in Terminal, and switching apps clears the thread.
-/// - **Three turns, thirty minutes.** Long enough for a working session,
-///   short enough that yesterday's context never surprises you.
+/// - **Until you clear it.** Click the chip, switch apps, turn the setting off,
+///   or quit. No idle expiry. A safety cap only guards a runaway loop.
 @MainActor
 @Observable
 final class SessionThread {
@@ -34,15 +33,10 @@ final class SessionThread {
         let at: Date
     }
 
-    /// Enough to follow a train of thought, not enough to drift. A fourth turn
-    /// mostly buys the model an older version of the same request to confuse
-    /// with the current one.
-    static let maxTurns = 3
-    /// A working session, not a diary. Reopening the panel after lunch should
-    /// feel like a fresh start.
-    static let idleTimeout: TimeInterval = 30 * 60
+    /// Runaway-loop guard only. The prompt budget, not this, is what the model sees.
+    static let storageCap = 100
     /// The whole block, so history can never crowd out the actual request.
-    static let blockCharBudget = 1200
+    static let blockCharBudget = 8000
     /// Per-turn output. The shape of a previous answer is the useful signal;
     /// the whole of it is not.
     static let outputCharBudget = 400
@@ -50,15 +44,17 @@ final class SessionThread {
 
     private(set) var bundleID: String?
     private(set) var turns: [Turn] = []
+    /// Bumped on `clear()`. An in-flight stream that started before a clear
+    /// must not append after it.
+    private(set) var epoch: UInt64 = 0
 
     private init() {}
 
-    /// Turns available for the app in front, after expiry. Reading this is what
-    /// the panel chip and the prompt layer both go through, so neither can show
-    /// or send a stale thread.
+    /// Turns available for the app in front. Reading this is what the panel
+    /// chip and the prompt layer both go through, so neither can show or send
+    /// a stale thread.
     func turns(forBundleID id: String?) -> [Turn] {
         guard let id, bundleID == id else { return [] }
-        expireIfIdle()
         return turns
     }
 
@@ -69,8 +65,10 @@ final class SessionThread {
         input: String,
         output: String,
         bundleID id: String?,
-        at now: Date = Date()
+        at now: Date = Date(),
+        expectedEpoch: UInt64? = nil
     ) {
+        if let expectedEpoch, expectedEpoch != epoch { return }
         guard Prompts.threadApplies(actionID: actionID) else { return }
         let trimmedOutput = output.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedOutput.isEmpty else { return }
@@ -80,7 +78,6 @@ final class SessionThread {
             bundleID = id
             turns = []
         }
-        expireIfIdle(now: now)
 
         turns.append(
             Turn(
@@ -92,13 +89,14 @@ final class SessionThread {
                 at: now
             )
         )
-        if turns.count > Self.maxTurns {
-            turns.removeFirst(turns.count - Self.maxTurns)
+        if turns.count > Self.storageCap {
+            turns.removeFirst(turns.count - Self.storageCap)
         }
     }
 
     /// User-initiated, from the panel chip.
     func clear() {
+        epoch += 1
         turns = []
         bundleID = nil
     }
@@ -110,16 +108,9 @@ final class SessionThread {
         bundleID = id
     }
 
-    private func expireIfIdle(now: Date = Date()) {
-        guard let last = turns.last else { return }
-        if now.timeIntervalSince(last.at) > Self.idleTimeout {
-            turns = []
-        }
-    }
-
     /// Truncates on a word boundary where there is one nearby, so the model is
     /// not handed a fragment of a word as if it were the whole thought.
-    static func clip(_ text: String, to limit: Int) -> String {
+    nonisolated static func clip(_ text: String, to limit: Int) -> String {
         let collapsed = text
             .trimmingCharacters(in: .whitespacesAndNewlines)
             .replacingOccurrences(of: "\n", with: " ")

@@ -27,9 +27,9 @@ enum ReplyTone: String, CaseIterable, Identifiable, Equatable, Sendable {
         switch self {
         case .formal: return "Polite, complete sentences"
         case .casual: return "Conversational, warm"
-        case .funny: return "Playful and genuinely amusing, still sendable"
+        case .funny: return "Playful and genuinely amusing, still sendable. Humour comes from the content — a callback or understatement — never a bolted-on joke"
         case .professional: return "Work-ready, no fluff"
-        case .witty: return "Dry, clever humor with a sharp observation"
+        case .witty: return "One dry observation about the actual point, then the answer"
         case .sharp: return "Direct, pointed"
         }
     }

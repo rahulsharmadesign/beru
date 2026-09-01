@@ -107,6 +107,11 @@ final class AppState {
     /// Which of the six tones Insert / Copy / Pin will send. Choosing a tone
     /// does not re-run the model.
     var selectedReplyTone: ReplyTone = .formal
+    /// Parsed Grammar bodies. Empty until a Grammar stream finishes.
+    var grammarSuggestions: [GrammarSuggestion] = []
+    /// Which Grammar body the result field and Replace send. Default is the
+    /// copy-edit; Clearer / Tighter are explicit picks.
+    var selectedGrammarKind: GrammarKind = .corrected
     /// Smart Reply when the model switched script (e.g. Roman in, Devanagari out).
     var replyScriptNotices: Set<String> = []
     /// Search mode is the AI Search tab — a question, not a rewrite skill.
@@ -204,6 +209,8 @@ final class AppState {
         errorNeedsModelSetup.removeAll()
         replySuggestions = []
         replyScriptNotices.removeAll()
+        grammarSuggestions = []
+        selectedGrammarKind = .corrected
     }
 
     func dismiss() {
@@ -232,6 +239,8 @@ final class AppState {
         errorNeedsModelSetup.removeAll()
         replySuggestions = []
         replyScriptNotices.removeAll()
+        grammarSuggestions = []
+        selectedGrammarKind = .corrected
     }
 
     func setResult(_ state: ResultState, for actionID: String) {
@@ -248,13 +257,27 @@ final class AppState {
     }
 
     /// Text Insert / Copy / Pin should send. Smart Reply uses the selected
-    /// card, not the tagged stream blob.
+    /// card, not the tagged stream blob. Grammar uses the selected kind.
     func acceptedText(for actionID: String? = nil) -> String? {
         let id = actionID ?? selectedActionID
         if id == EnhancementAction.replyID, !replySuggestions.isEmpty {
             return ReplySuggestions.body(in: replySuggestions, matching: selectedReplyTone)
         }
+        if id == EnhancementAction.grammarID, !grammarSuggestions.isEmpty {
+            return GrammarSuggestions.body(in: grammarSuggestions, matching: selectedGrammarKind)
+        }
         if case .done(let text) = resultState(for: id) { return text }
         return nil
+    }
+
+    func selectGrammarKind(_ kind: GrammarKind) {
+        selectedGrammarKind = kind
+        guard let body = GrammarSuggestions.body(in: grammarSuggestions, matching: kind) else { return }
+        setResult(.done(body), for: EnhancementAction.grammarID)
+        diffs.removeValue(forKey: EnhancementAction.grammarID)
+        if kind != .corrected {
+            restyledNotices.remove(EnhancementAction.grammarID)
+            heavyRewriteNotices.remove(EnhancementAction.grammarID)
+        }
     }
 }

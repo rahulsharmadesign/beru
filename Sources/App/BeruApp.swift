@@ -16,14 +16,28 @@ struct BeruApp: App {
         MenuBarExtra {
             MenuBarContent(coordinator: appDelegate.coordinator)
         } label: {
-            Image("MenuBarIcon")
-                .resizable()
-                .renderingMode(.template)
-                .frame(width: 24, height: 24)
-                .accessibilityLabel("Beru")
+            MenuBarStatusIcon()
         }
         .menuBarExtraStyle(.window)
     }
+}
+
+/// Status-item glyph. The asset is a black-on-clear template; AppKit tints it
+/// to match the menu bar. SwiftUI's resizable `Image` paints the literal black
+/// pixels instead, so load through `NSImage` with `isTemplate` set.
+private struct MenuBarStatusIcon: View {
+    var body: some View {
+        Image(nsImage: Self.templateImage)
+            .accessibilityLabel("Beru")
+    }
+
+    private static let templateImage: NSImage = {
+        guard let image = NSImage(named: "MenuBarIcon")?.copy() as? NSImage else {
+            preconditionFailure("MenuBarIcon asset missing from catalog")
+        }
+        image.isTemplate = true
+        return image
+    }()
 }
 
 struct MenuBarContent: View {

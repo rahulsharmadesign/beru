@@ -30,58 +30,64 @@ struct PanelView: View {
         // scrolls once the window hits 75% of the visible screen height.
         let _ = appearance.signature
 
-        VStack(spacing: PanelMetrics.moduleSpacing) {
-            VStack(spacing: PanelMetrics.moduleSpacing) {
-                closeStrip
-                toolbar
+        // Color.clear fills the hosting view so leftover window height after a
+        // tall tab is empty glass below, not a centered cluster of close + composer.
+        // A flexible max-height frame is banned here (panel_infinite_height guard).
+        Color.clear
+            .overlay(alignment: .top) {
+                VStack(spacing: PanelMetrics.moduleSpacing) {
+                    VStack(spacing: PanelMetrics.moduleSpacing) {
+                        closeStrip
+                        toolbar
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .reportsPanelBand(.chromeTop)
                     .fixedSize(horizontal: false, vertical: true)
+                    .layoutPriority(1)
+
+                    resultSlot
+
+                    composerColumn
+                        .reportsPanelBand(.chromeBottom)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .layoutPriority(1)
+                }
+                .padding(PanelMetrics.moduleInset)
+                .frame(maxWidth: .infinity, alignment: .top)
+                .background(PanelDragRegion())
             }
-            .reportsPanelBand(.chromeTop)
-            .fixedSize(horizontal: false, vertical: true)
-            .layoutPriority(1)
-
-            resultSlot
-
-            composerColumn
-                .reportsPanelBand(.chromeBottom)
-                .fixedSize(horizontal: false, vertical: true)
-                .layoutPriority(1)
-        }
-        .padding(PanelMetrics.moduleInset)
-        .frame(maxWidth: .infinity, alignment: .top)
-        .ignoresSafeArea()
-        .background(PanelDragRegion())
-        .tint(BeruColor.accent)
-        .id(appState.panelSessionID)
-        .onPreferenceChange(PanelBandHeightKey.self, perform: publishLayoutHeights)
-        .onChange(of: appState.selectedActionID) { _, actionID in
-            guard actionID != EnhancementAction.describeID,
-                  actionID != EnhancementAction.searchID else { return }
-            engine.startIfNeeded(actionID: actionID)
-        }
-        .onKeyPress(.escape) {
-            perform(PanelKeyBinding.resolveEscape())
-        }
-        .onKeyPress(keys: [.return], phases: .down) { press in
-            perform(
-                PanelKeyBinding.resolveReturn(
-                    modifiers: PanelKeyModifiers(press: press),
-                    canSubmit: canSubmitDescribe,
-                    hasAcceptableResult: appState.acceptedText() != nil,
-                    allowsReplace: showsHostWriteAction
+            .ignoresSafeArea()
+            .tint(BeruColor.accent)
+            .id(appState.panelSessionID)
+            .onPreferenceChange(PanelBandHeightKey.self, perform: publishLayoutHeights)
+            .onChange(of: appState.selectedActionID) { _, actionID in
+                guard actionID != EnhancementAction.describeID,
+                      actionID != EnhancementAction.searchID else { return }
+                engine.startIfNeeded(actionID: actionID)
+            }
+            .onKeyPress(.escape) {
+                perform(PanelKeyBinding.resolveEscape())
+            }
+            .onKeyPress(keys: [.return], phases: .down) { press in
+                perform(
+                    PanelKeyBinding.resolveReturn(
+                        modifiers: PanelKeyModifiers(press: press),
+                        canSubmit: canSubmitDescribe,
+                        hasAcceptableResult: appState.acceptedText() != nil,
+                        allowsReplace: showsHostWriteAction
+                    )
                 )
-            )
-        }
-        .onKeyPress(characters: CharacterSet(charactersIn: "c123456789"), phases: .down) { press in
-            guard let character = press.characters.first else { return .ignored }
-            return perform(
-                PanelKeyBinding.resolveCharacter(
-                    character,
-                    modifiers: PanelKeyModifiers(press: press),
-                    tabCount: panelTabs.count
+            }
+            .onKeyPress(characters: CharacterSet(charactersIn: "c123456789"), phases: .down) { press in
+                guard let character = press.characters.first else { return .ignored }
+                return perform(
+                    PanelKeyBinding.resolveCharacter(
+                        character,
+                        modifiers: PanelKeyModifiers(press: press),
+                        tabCount: panelTabs.count
+                    )
                 )
-            )
-        }
+            }
     }
 
     /// Applies a resolved intent. Returns the `onKeyPress` disposition so an
@@ -132,6 +138,8 @@ struct PanelView: View {
             }
         } else {
             measured
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .top)
         }
     }
 

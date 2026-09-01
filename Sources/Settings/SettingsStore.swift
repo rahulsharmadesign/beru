@@ -106,6 +106,33 @@ final class SettingsStore {
         didSet { defaults.set(hasDismissedSettingsTip, forKey: Keys.hasDismissedSettingsTip) }
     }
 
+    /// Accepted Insert / Replace / Copy choices on this Mac. Not usage history.
+    var interactionProfile: InteractionProfile {
+        didSet { persistInteractionProfile() }
+    }
+
+    func clearInteractionProfile() {
+        interactionProfile = InteractionProfile()
+    }
+
+    func recordAcceptedInteraction(
+        actionID: String,
+        replyTone: ReplyTone?,
+        grammarKind: GrammarKind?,
+        targetName: String?,
+        instruction: String?
+    ) {
+        var next = interactionProfile
+        next.recordAccepted(
+            actionID: actionID,
+            replyTone: replyTone,
+            grammarKind: grammarKind,
+            targetName: targetName,
+            instruction: instruction
+        )
+        interactionProfile = next
+    }
+
     private enum Keys {
         static let activeProvider = "activeProvider"
         static let ollamaBaseURL = "ollamaBaseURL"
@@ -128,6 +155,7 @@ final class SettingsStore {
         static let hasLaunchedBefore = "hasLaunchedBefore"
         static let hasCompletedGetStarted = "hasCompletedGetStarted"
         static let hasDismissedSettingsTip = "hasDismissedSettingsTip"
+        static let interactionProfile = "interactionProfile"
     }
 
     init(defaults: UserDefaults = .standard) {
@@ -184,6 +212,18 @@ final class SettingsStore {
         lastTargetByApp = defaults.dictionary(forKey: Keys.lastTargetByApp) as? [String: String] ?? [:]
         hasCompletedGetStarted = defaults.bool(forKey: Keys.hasCompletedGetStarted)
         hasDismissedSettingsTip = defaults.bool(forKey: Keys.hasDismissedSettingsTip)
+        if let data = defaults.data(forKey: Keys.interactionProfile),
+           let decoded = try? JSONDecoder().decode(InteractionProfile.self, from: data) {
+            interactionProfile = decoded
+        } else {
+            interactionProfile = InteractionProfile()
+        }
+    }
+
+    private func persistInteractionProfile() {
+        if let data = try? JSONEncoder().encode(interactionProfile) {
+            defaults.set(data, forKey: Keys.interactionProfile)
+        }
     }
 
     /// Whether a provider has enough settings to attempt a request.

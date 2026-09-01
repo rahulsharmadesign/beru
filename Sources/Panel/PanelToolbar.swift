@@ -84,9 +84,9 @@ extension PanelView {
 
     func selectTab(_ actionID: String) {
         guard actionID != appState.selectedActionID else { return }
-        withAnimation(tabMorph) {
-            appState.selectAction(actionID)
-        }
+        // Chip fill still morphs via `.animation(tabMorph, value: isSelected)`.
+        // Animating selectedActionID itself re-lays out chrome with the window.
+        appState.selectAction(actionID)
     }
 
     func chip(for action: EnhancementAction) -> some View {

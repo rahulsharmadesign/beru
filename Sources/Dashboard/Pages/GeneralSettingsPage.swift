@@ -79,17 +79,30 @@ struct GeneralSettingsTab: View {
                 SettingsRow(
                     title: "Remember recent turns",
                     caption: """
-                    Lets Enhance, Describe and Search build on your last \
-                    \(SessionThread.maxTurns) requests in the same app, so a follow-up like \
-                    "shorter" has something to refer to. Kept in memory only, never written \
-                    to disk, and forgotten when you switch apps or after \
-                    \(Int(SessionThread.idleTimeout / 60)) minutes idle.
+                    Lets Enhance, Describe and Search build on earlier requests \
+                    in the same app, so a follow-up like "shorter" has something \
+                    to refer to. Kept in memory only, never written to disk, and \
+                    forgotten when you click the chip, switch apps, or turn this off.
                     """
                 ) {
                     SettingsSwitch(
                         isOn: $settings.sessionContextEnabled,
                         accessibilityLabel: "Remember recent turns"
                     )
+                }
+                SettingsRow(
+                    title: "Learned preferences",
+                    caption: """
+                    From Insert, Replace, and Copy on this Mac. Folded into \
+                    Enhance and Smart Reply only — never sent except inside \
+                    the normal provider request. Not usage history.
+                    """
+                ) {
+                    SettingsPillButton(title: "Clear", role: .destructive) {
+                        settings.clearInteractionProfile()
+                    }
+                    .disabled(settings.interactionProfile.isEmpty)
+                    .accessibilityLabel("Clear learned preferences")
                 }
             }
         }

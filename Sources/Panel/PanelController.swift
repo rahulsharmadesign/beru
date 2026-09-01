@@ -13,7 +13,8 @@ import SwiftUI
 /// - Window height = min(chrome + result, 75% of visible screen).
 /// - Below the cap: result is intrinsic. At the cap: result scrolls inside
 ///   `appState.panelResultScrollHeight`; close / chips / composer stay pinned.
-/// - Grow immediately; shrink after a short debounce. Never drive height from
+/// - Grow immediately and unanimated. Tab-change shrinks are immediate and
+///   unanimated. Other shrinks debounce. Never drive height from
 ///   `NSHostingView.intrinsicContentSize` (`sizingOptions` stays empty).
 @MainActor
 final class PanelController {
@@ -36,6 +37,8 @@ final class PanelController {
     private var lastAppliedHeight: CGFloat = 0
     private var lastChrome: CGFloat = 0
     private var lastResult: CGFloat = 0
+    private var lastActionID: String?
+    private var lastResolvedLayout: PanelLayoutHeights?
 
     private var a11y: AccessibilityPreferences { AccessibilityPreferences.shared }
 
@@ -46,6 +49,8 @@ final class PanelController {
         lastAppliedHeight = 0
         lastChrome = 0
         lastResult = 0
+        lastActionID = nil
+        lastResolvedLayout = nil
         appState.panelResultScrollHeight = nil
         entranceSettledAt = CFAbsoluteTimeGetCurrent() + 0.55
 
@@ -152,6 +157,7 @@ final class PanelController {
         ) else { return }
         lastChrome = applied.lastChrome
         lastResult = applied.lastResult
+        lastResolvedLayout = PanelLayoutHeights(chrome: applied.chrome, result: applied.result)
 
         let cap = maxPanelHeight()
         let chrome = applied.chrome
@@ -179,26 +185,36 @@ final class PanelController {
         if growing {
             pendingResize?.cancel()
             applyContentHeight(target, animated: false)
+            rememberActionID()
             return
         }
 
-        if isStreaming { return }
+        let isTabChange = lastActionID != nil && lastActionID != appState.selectedActionID
+        rememberActionID()
 
-        pendingResize?.cancel()
-        let delay: TimeInterval
-        if CFAbsoluteTimeGetCurrent() < entranceSettledAt {
-            // Preference callbacks during the entrance window used to `return`
-            // without scheduling, so a seed-height panel never shrank once
-            // SwiftUI went quiet.
-            delay = max(0.12, entranceSettledAt - CFAbsoluteTimeGetCurrent() + 0.02)
-        } else {
-            delay = 0.12
+        switch PanelLayoutHeights.shrinkBehavior(isTabChange: isTabChange, isStreaming: isStreaming) {
+        case .applyNowUnanimated:
+            pendingResize?.cancel()
+            applyContentHeight(target, animated: false)
+        case .skip:
+            return
+        case .debounceAnimated:
+            pendingResize?.cancel()
+            let delay: TimeInterval
+            if CFAbsoluteTimeGetCurrent() < entranceSettledAt {
+                // Preference callbacks during the entrance window used to `return`
+                // without scheduling, so a seed-height panel never shrank once
+                // SwiftUI went quiet.
+                delay = max(0.12, entranceSettledAt - CFAbsoluteTimeGetCurrent() + 0.02)
+            } else {
+                delay = 0.12
+            }
+            let work = DispatchWorkItem { [weak self] in
+                self?.applyContentHeight(target, animated: true)
+            }
+            pendingResize = work
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: work)
         }
-        let work = DispatchWorkItem { [weak self] in
-            self?.applyContentHeight(target, animated: true)
-        }
-        pendingResize = work
-        DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: work)
     }
 
     func streamingDidStart() {
@@ -208,6 +224,13 @@ final class PanelController {
     func streamingDidEnd() {
         isStreaming = false
         panel?.invalidateShadow()
+        if let lastResolvedLayout {
+            setLayoutHeights(lastResolvedLayout)
+        }
+    }
+
+    private func rememberActionID() {
+        lastActionID = appState.selectedActionID
     }
 
     private func panelDidMove() {

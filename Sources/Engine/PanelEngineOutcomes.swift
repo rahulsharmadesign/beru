@@ -125,6 +125,15 @@ extension PanelEngine {
                 "accepted \(actionID) via \(kind.rawValue): saved \(savings.savedTokens) est. tokens, lifetime \(cumulative ?? 0)"
             )
         }
+        if accepted {
+            SettingsStore.shared.recordAcceptedInteraction(
+                actionID: actionID,
+                replyTone: actionID == EnhancementAction.replyID ? appState.selectedReplyTone : nil,
+                grammarKind: actionID == EnhancementAction.grammarID ? appState.selectedGrammarKind : nil,
+                targetName: TargetRegistry.shared.profile(withID: appState.selectedTargetID)?.name,
+                instruction: appState.describeInstruction
+            )
+        }
         UsageLog.record {
             UsageEvent(
                 invocationID: invocationID,

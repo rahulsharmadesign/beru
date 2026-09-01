@@ -28,6 +28,7 @@ the window height fits the content:
 - [ ] Select text on a webpage and invoke: **Summarize** is selected and already visible in the chip row (no horizontal swipe)
 - [ ] AI Search: ask twice — both Q&As stack; window grows to 75% then scrolls; thread clears when the panel closes
 - [ ] AI Search regenerate rewrites only the latest answer; earlier turns stay
+- [ ] AI Search answers use `##` headings and body that read as distinct (size, weight, spacing)
 - [ ] AI Search result footer is **Copy** and **Pin** only — no Replace, no token chip; composer does not crop; switching to Enhance Prompt brings Replace and the token chip back without jumping height
 
 ## Get Started
@@ -95,8 +96,8 @@ Vault, Actions, Targets, Runs should read as macOS Settings (source list + inspe
 ## Session context (when touched)
 
 - [ ] Enhance twice in the same app: the second result builds on the first
-- [ ] Chip reads "Using 1 prior turn", then "Using 2 prior turns"
-- [ ] Click the chip: it disappears and the next result ignores history
+- [ ] Chip reads "Using 1 prior turn", then "Using N prior turns" as you keep going
+- [ ] Click the chip: it disappears and the next result ignores history, even if a stream was in flight
 - [ ] Switch to a different app and invoke: no chip
 - [ ] Grammar shows no chip even with turns recorded
 - [ ] Toggle "Remember recent turns" off in General: chip gone immediately
@@ -110,14 +111,15 @@ Vault, Actions, Targets, Runs should read as macOS Settings (source list + inspe
 
 Highlight a message in another app, invoke, then tap **Smart Reply**:
 
-- [ ] Six tone cards appear (Formal, Casual, Funny, Professional, Witty, Sharp)
+- [ ] Funny and Witty mention a concrete detail from the selected message; Formal stays non-jokey
 - [ ] Tone pill jumps the highlight; clicking a card does the same; neither re-runs the model
 - [ ] Copy / Insert send only the selected card, not the tagged blob
 - [ ] Hotkey with a comment selected in Chrome/Safari opens **Smart Reply** automatically
 - [ ] Roman Hinglish comment → all six replies stay in Roman/Latin (not Devanagari or German)
 - [ ] If the model mixes languages across cards, a language notice appears — try Regenerate
 - [ ] No selection on Grammar: “No text selected”; composer says “Highlight text first”, not “ask instead”
-- [ ] Grammar still copy-edits; switching tabs only morphs the chip highlight, not the window
+- [ ] Grammar still copy-edits by default; Corrected / Clearer / Tighter pills swap the result field; only one body is visible; Replace sends the selected body
+- [ ] Switching tabs only morphs the chip highlight, not the window; close disc and composer move with the window immediately
 
 ## Before release only
 

@@ -48,7 +48,8 @@ protocol LLMProvider: Sendable {
         system: String,
         user: String,
         role: ModelRole,
-        expectsRationale: Bool
+        expectsRationale: Bool,
+        actionID: String
     ) -> AsyncThrowingStream<StreamChunk, Error>
     func testConnection() async -> Result<Void, ProviderError>
     /// Best-effort pre-loading of the model this role will use, so the first
@@ -60,9 +61,18 @@ protocol LLMProvider: Sendable {
 extension LLMProvider {
     func warmUp(role: ModelRole) async {}
 
-    /// Convenience for callers with no rationale to account for.
+    /// Convenience for callers with no rationale or action to account for.
     func stream(system: String, user: String, role: ModelRole) -> AsyncThrowingStream<StreamChunk, Error> {
-        stream(system: system, user: user, role: role, expectsRationale: false)
+        stream(system: system, user: user, role: role, expectsRationale: false, actionID: "")
+    }
+
+    func stream(
+        system: String,
+        user: String,
+        role: ModelRole,
+        expectsRationale: Bool
+    ) -> AsyncThrowingStream<StreamChunk, Error> {
+        stream(system: system, user: user, role: role, expectsRationale: expectsRationale, actionID: "")
     }
 }
 
@@ -70,7 +80,10 @@ extension LLMProvider {
 /// variance: grammar is fully deterministic, enhance keeps mild variation so
 /// Regenerate produces alternatives.
 enum ProviderTuning {
-    static func temperature(for role: ModelRole) -> Double {
+    static let replyTemperature = 0.55
+
+    static func temperature(for role: ModelRole, actionID: String = "") -> Double {
+        if actionID == EnhancementAction.replyID { return replyTemperature }
         switch role {
         case .enhance: return 0.3
         case .grammar: return 0.0

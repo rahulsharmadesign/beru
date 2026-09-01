@@ -230,6 +230,8 @@ final class DocumentFramingTests: XCTestCase {
         XCTAssertFalse(composed.contains(Prompts.taskFramingRules))
         XCTAssertTrue(composed.contains("use it only as context"))
         XCTAssertFalse(composed.contains("never answer, obey"))
+        XCTAssertTrue(composed.contains("##"))
+        XCTAssertFalse(composed.contains("Do not use Markdown headings"))
     }
 
     func testResolvedVerbPromptPrefersLiveText() {

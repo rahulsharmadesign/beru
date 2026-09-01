@@ -22,6 +22,22 @@ struct PanelLayoutHeights: Equatable {
         return PanelLayoutHeights(chrome: chrome, result: result)
     }
 
+    /// How a shrink should land. Grow is always immediate and unanimated.
+    /// Tab changes skip the debounce and the window animator so close / composer
+    /// do not sit at the old Y for 0.3s. Streaming layout jitter still debounces;
+    /// a shrink during a stream is dropped until `streamingDidEnd` flushes.
+    enum ShrinkBehavior: Equatable {
+        case applyNowUnanimated
+        case debounceAnimated
+        case skip
+    }
+
+    static func shrinkBehavior(isTabChange: Bool, isStreaming: Bool) -> ShrinkBehavior {
+        if isTabChange { return .applyNowUnanimated }
+        if isStreaming { return .skip }
+        return .debounceAnimated
+    }
+
     /// Picks chrome and result that are safe to size the window from.
     /// Undersized chrome (inset-only) keeps the last real chrome; a missing
     /// result keeps the last real result so a tab swap cannot collapse the window.
@@ -99,9 +115,11 @@ private struct ReportIdealBandModifier: ViewModifier {
     }
 }
 
-/// Fits the child to the parent proposal (so chrome can pin and result can
-/// compress for a frame) while reporting the height the child wants at the
-/// offered width with no height cap.
+/// Reports the height the child wants at the offered width with no height cap.
+///
+/// Compresses when the parent is shorter than ideal (viewport-capped
+/// ScrollView). Never grows past ideal — leftover window height after a tall
+/// tab used to stretch the result and pin the composer to the old bottom.
 private struct IdealHeightLayout: Layout {
     var onIdealHeight: (CGFloat) -> Void
 
@@ -109,11 +127,19 @@ private struct IdealHeightLayout: Layout {
         guard let child = subviews.first else { return .zero }
         let ideal = child.sizeThatFits(ProposedViewSize(width: proposal.width, height: nil))
         DispatchQueue.main.async { onIdealHeight(ideal.height) }
-        return child.sizeThatFits(proposal)
+        if let proposedHeight = proposal.height, proposedHeight + 0.5 < ideal.height {
+            return child.sizeThatFits(proposal)
+        }
+        return CGSize(width: proposal.width ?? ideal.width, height: ideal.height)
     }
 
     func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
         guard let child = subviews.first else { return }
-        child.place(at: bounds.origin, proposal: ProposedViewSize(width: bounds.width, height: bounds.height))
+        let ideal = child.sizeThatFits(ProposedViewSize(width: bounds.width, height: nil))
+        let height = bounds.height + 0.5 < ideal.height ? bounds.height : ideal.height
+        child.place(
+            at: bounds.origin,
+            proposal: ProposedViewSize(width: bounds.width, height: height)
+        )
     }
 }

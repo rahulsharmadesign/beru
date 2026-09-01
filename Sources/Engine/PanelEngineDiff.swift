@@ -57,6 +57,7 @@ extension PanelEngine {
         // most of its substitutions are unrelated words, the model paraphrased —
         // and it should say so rather than pass a rewrite off as a correction.
         if actionID == EnhancementAction.grammarID,
+           appState.selectedGrammarKind == .corrected,
            WordDiff.paraphraseScore(ops) > Self.grammarParaphraseCeiling {
             appState.restyledNotices.insert(actionID)
         }
