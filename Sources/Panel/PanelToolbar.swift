@@ -79,7 +79,7 @@ extension PanelView {
     var tabMorph: Animation {
         a11y.reduceMotion
             ? .easeOut(duration: 0.12)
-            : .easeOut(duration: 0.32)
+            : .easeInOut(duration: 0.4)
     }
 
     func selectTab(_ actionID: String) {

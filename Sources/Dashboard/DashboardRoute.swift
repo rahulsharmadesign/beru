@@ -50,8 +50,8 @@ enum DashboardRoute: String, Identifiable, CaseIterable, Hashable {
         }
     }
 
-    /// Lucide icon name (kebab-case). Used in the panel; settings sidebar
-    /// uses `systemImage`.
+    /// Stored icon id (may be Lucide kebab-case). `BeruIcon` maps it to SF Symbols.
+    /// Settings sidebar uses `systemImage`.
     var lucideIcon: String {
         switch self {
         case .general: return "settings"

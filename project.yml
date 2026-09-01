@@ -9,9 +9,6 @@ packages:
   KeyboardShortcuts:
     url: https://github.com/sindresorhus/KeyboardShortcuts
     from: 2.2.1
-  Lucide:
-    url: https://github.com/bring-shrubbery/lucide-swift.git
-    from: 1.16.0
 
 targets:
   Beru:
@@ -28,8 +25,8 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.rahul.beru
-        MARKETING_VERSION: "1.1.10"
-        CURRENT_PROJECT_VERSION: "16"
+        MARKETING_VERSION: "1.1.11"
+        CURRENT_PROJECT_VERSION: "17"
         SWIFT_VERSION: "5.10"
         # Signed with the machine's Apple Development certificate, MANUALLY and
         # with no provisioning profile.
@@ -61,8 +58,6 @@ targets:
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
     dependencies:
       - package: KeyboardShortcuts
-      - package: Lucide
-        product: Lucide
     info:
       path: Resources/Info.plist
       properties:

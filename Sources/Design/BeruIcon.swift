@@ -1,20 +1,22 @@
-import Lucide
 import SwiftUI
 
-/// Lucide icons (ISC) used consistently across Beru.
+/// SF Symbols used consistently across Beru. Stored ids may still be Lucide
+/// kebab-case, Material names, or SF Symbol names; `IconNames.system` maps them.
 struct BeruIcon: View {
     let name: String
     var size: CGFloat = 18
+    /// Kept so existing call sites compile. SF Symbols use font weight, not stroke.
     var strokeWidth: CGFloat = 1.8
 
     var body: some View {
-        (Lucide(IconNames.lucide(stored: name)) ?? Lucide(.circleQuestionMark))
+        Image(systemName: IconNames.system(stored: name))
+            .font(.system(size: size, weight: strokeWidth >= 2.2 ? .semibold : .medium))
             .frame(width: size, height: size)
             .accessibilityHidden(true)
     }
 }
 
-/// Icon + title label using Lucide instead of SF Symbols.
+/// Icon + title label using SF Symbols.
 struct BeruLabel: View {
     let title: String
     let icon: String
@@ -30,67 +32,82 @@ struct BeruLabel: View {
     }
 }
 
-/// Resolves stored icon ids (Lucide kebab-case or legacy SF Symbol / Material names).
+/// Resolves stored icon ids (Lucide kebab-case, Material, or SF Symbol) to SF Symbols.
 enum IconNames {
-    static func lucide(stored: String) -> String {
-        legacy[stored] ?? stored
+    static func system(stored: String) -> String {
+        if let mapped = lucideToSystem[stored] { return mapped }
+        if stored.contains(".") { return stored }
+        return stored
     }
 
-    private static let legacy: [String: String] = [
-        // SF Symbols — actions & targets
-        "checkmark.circle": "circle-check",
+    private static let lucideToSystem: [String: String] = [
+        // Lucide kebab-case
+        "circle-check": "checkmark.circle",
         "sparkles": "sparkles",
-        "sparkle.magnifyingglass": "sparkles",
-        "arrowshape.turn.up.left": "corner-up-left",
-        "list.bullet.rectangle": "list",
+        "corner-up-left": "arrowshape.turn.up.left",
+        "list": "list.bullet",
         "lightbulb": "lightbulb",
-        "face.smiling": "smile",
+        "smile": "face.smiling",
         "briefcase": "briefcase",
-        "arrow.down.right.and.arrow.up.left": "minimize-2",
-        "circle.dashed": "circle-dashed",
-        "chevron.left.forwardslash.chevron.right": "code",
-        "bubble.left.and.bubble.right": "messages-square",
-        "sparkle": "sparkles",
-        "globe.asia.australia": "globe",
-        "text.bubble": "message-square",
-        "wand.and.stars": "wand-sparkles",
+        "minimize-2": "arrow.down.right.and.arrow.up.left",
+        "circle-dashed": "circle.dashed",
+        "code": "chevron.left.forwardslash.chevron.right",
+        "messages-square": "bubble.left.and.bubble.right",
+        "globe": "globe",
+        "message-square": "message",
+        "wand-sparkles": "wand.and.stars",
         "target": "target",
-        "character.bubble": "message-circle",
-        "arrow.up.left.and.arrow.down.right": "maximize-2",
-        "list.bullet": "list",
-        "bubble.left": "message-square",
-        // SF Symbols — chrome
-        "gearshape": "settings",
-        "checkmark": "check",
-        "chevron.up.chevron.down": "chevrons-up-down",
-        "graduationcap": "graduation-cap",
-        "chevron.down": "chevron-down",
-        "arrow.clockwise": "rotate-cw",
-        "xmark": "x",
-        "magnifyingglass": "search",
-        "arrow.up.circle.fill": "circle-arrow-up",
-        "arrow.down.right": "arrow-down-right",
-        "arrow.up.right": "arrow-up-right",
+        "message-circle": "message.circle",
+        "maximize-2": "arrow.up.left.and.arrow.down.right",
+        "settings": "gearshape",
+        "check": "checkmark",
+        "chevrons-up-down": "chevron.up.chevron.down",
+        "graduation-cap": "graduationcap",
+        "chevron-down": "chevron.down",
+        "rotate-cw": "arrow.clockwise",
+        "x": "xmark",
+        "search": "magnifyingglass",
+        "circle-arrow-up": "arrow.up.circle.fill",
+        "arrow-down-right": "arrow.down.right",
+        "arrow-up-right": "arrow.up.right",
+        "arrow-up": "arrow.up",
         "equal": "equal",
-        "trash": "trash-2",
+        "trash-2": "trash",
         "plus": "plus",
-        "waveform": "mic",
-        "books.vertical": "library",
-        "mic.fill": "mic",
-        "mic.slash": "mic-off",
-        // Material Symbols — settings chrome
-        "close": "x",
+        "minus": "minus",
+        "mic": "mic.fill",
+        "library": "books.vertical",
+        "mic-off": "mic.slash",
+        "eye": "eye",
+        "eye-off": "eye.slash",
+        "circle-x": "xmark.circle",
+        "pin": "pin",
+        "pin-off": "pin.slash",
+        "sticky-note": "note.text",
+        "list-filter": "line.3.horizontal.decrease",
+        "package": "shippingbox",
+        "cpu": "cpu",
+        "house": "house",
+        "link": "link",
+        "pause": "pause",
+        "history": "clock.arrow.circlepath",
+        "person": "person",
+        "info": "info.circle",
+        "lock": "lock.fill",
+        "database": "internaldrive",
+        // Material Symbols leftover in settings chrome
+        "close": "xmark",
         "visibility": "eye",
-        "visibility_off": "eye-off",
-        "expand_more": "chevron-down",
-        "check_circle": "circle-check",
-        "cancel": "circle-x",
+        "visibility_off": "eye.slash",
+        "expand_more": "chevron.down",
+        "check_circle": "checkmark.circle",
+        "cancel": "xmark.circle",
         "keep": "pin",
-        "keep_off": "pin-off",
-        "sticky_note_2": "sticky-note",
+        "keep_off": "pin.slash",
+        "sticky_note_2": "note.text",
         "auto_awesome": "sparkles",
-        "filter_list": "list-filter",
-        "inventory_2": "package",
+        "filter_list": "line.3.horizontal.decrease",
+        "inventory_2": "shippingbox",
         "track_changes": "target",
         "memory": "cpu",
         "remove": "minus",
@@ -99,7 +116,7 @@ enum IconNames {
     ]
 }
 
-/// Empty-state placeholder with a Lucide icon.
+/// Empty-state placeholder with an SF Symbol.
 ///
 /// One shared layout for every "nothing selected / nothing here" moment in
 /// the dashboard, so icon size, spacing, and typography never drift between

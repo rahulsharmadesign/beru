@@ -171,7 +171,7 @@ struct ActionsView: View {
                 }
                 SettingsRow(title: "Icon") {
                     SettingsField(
-                        placeholder: "Lucide icon",
+                        placeholder: "SF Symbol or icon name",
                         text: customIconBinding(for: action)
                     )
                 }

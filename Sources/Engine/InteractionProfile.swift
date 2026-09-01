@@ -56,7 +56,7 @@ struct InteractionProfile: Equatable, Codable, Sendable {
            let raw = lastReplyTone,
            let tone = ReplyTone(rawValue: raw) {
             lines.append(
-                "This person usually sends \(tone.title) replies when they Insert. Prefer that humour density on Funny and Witty; still honor the six-tone catalog."
+                "This person usually sends \(tone.title) replies when they Insert. Honor the six-tone catalog. Humour belongs only on Funny and Witty, never on Formal or Professional."
             )
         }
         if actionID == EnhancementAction.enhanceID {

@@ -49,4 +49,8 @@ enum BeruMetrics {
     /// iOS 26 / macOS 26 compact toolbar control height. Off the 8pt grid
     /// because that is the system pill size, not a spacing step.
     static let tabPillHeight: CGFloat = 36
+
+    /// Circular ProgressView while a prompt is in flight or Replace is writing.
+    /// On the 8pt grid (same as `BeruSpace.lg`).
+    static let loaderSize: CGFloat = 24
 }

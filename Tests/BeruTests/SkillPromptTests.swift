@@ -46,6 +46,8 @@ final class BuiltInPromptScopeTests: XCTestCase {
         XCTAssertTrue(Prompts.enhance.contains("not a reply, not a summary"))
         XCTAssertTrue(Prompts.enhance.contains("not the finished deliverable"))
         XCTAssertTrue(Prompts.enhance.contains("immediately usable"))
+        XCTAssertTrue(Prompts.enhance.contains("Do not add length limits"))
+        XCTAssertFalse(Prompts.enhance.contains("under 20 lines"))
     }
 
     @MainActor

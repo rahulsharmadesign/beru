@@ -14,7 +14,7 @@ the window height fits the content:
 
 - [ ] Idle, with Accessibility granted (text selected, before running)
 - [ ] Idle, with Accessibility **not** granted (the placeholder card)
-- [ ] Loading / streaming
+- [ ] Loading / streaming: 24pt circular spinner in the result and on send; Replace shows the spinner while the toast is up
 - [ ] Long result: window grows up to **75%** of the visible screen; close disc, chips, and composer (Replace / Copy / Pin) stay visible; only the result scrolls
 - [ ] Result with a diff, and result long enough to scroll
 - [ ] Error, with Retry visible
@@ -59,6 +59,7 @@ Open Settings and visit every sidebar route twice, in this order:
 - [ ] Resize the window narrow: rows reflow without jumping or clipping
 - [ ] Light mode and dark mode
 - [ ] General → Open Beru / Dictate: both recorders are the same width as Name, right edges and × buttons line up
+- [ ] About → Check for Updates: latest version copy, or Install plus a download icon beside About in the sidebar; local signing explains it will not replace itself
 
 ## Runs and Vault
 
@@ -118,8 +119,8 @@ Highlight a message in another app, invoke, then tap **Smart Reply**:
 - [ ] Roman Hinglish comment → all six replies stay in Roman/Latin (not Devanagari or German)
 - [ ] If the model mixes languages across cards, a language notice appears — try Regenerate
 - [ ] No selection on Grammar: “No text selected”; composer says “Highlight text first”, not “ask instead”
-- [ ] Grammar still copy-edits by default; Corrected / Clearer / Tighter pills swap the result field; only one body is visible; Replace sends the selected body
-- [ ] Switching tabs only morphs the chip highlight, not the window; close disc and composer move with the window immediately
+- [ ] Grammar still copy-edits by default; the Corrected / Clearer / Tighter segmented control swaps the result field; only one body is visible; Replace sends the selected body; no token savings pill
+- [ ] Switching tabs only morphs the chip highlight over 0.4s (ease-in-out), not the window; close disc and composer move with the window immediately
 
 ## Before release only
 

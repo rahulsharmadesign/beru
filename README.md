@@ -24,7 +24,7 @@ Pick the target (Cursor, Claude, ChatGPT, …) so the prompt matches how that mo
 
 With no selection, the panel opens on **AI Search**. Type a one-off ask into the composer and an **Instruction** chip appears for that run. Ask a follow-up on Search and answers stack until you close the panel.
 
-On Search the result footer is **Copy** and **Pin** — no Replace, no token chip. Smart Reply keeps **Insert** but also hides the token chip (an answer, not a tighter prompt). On Enhance Prompt, Grammar, Summarize, Explain, and Instruction it is **⌘↩ Replace**, **Copy**, **Pin**, and the token chip. A bare Return never overwrites the host selection. Enhance a vault note and **Apply** writes back into that note.
+On Search the result footer is **Copy** and **Pin** — no Replace, no token chip. Smart Reply keeps **Insert** but also hides the token chip (an answer, not a tighter prompt). Grammar hides it too (a copy-edit, not a cheaper prompt). On Enhance Prompt, Summarize, Explain, and Instruction it is **⌘↩ Replace**, **Copy**, **Pin**, and the token chip. A bare Return never overwrites the host selection. Enhance a vault note and **Apply** writes back into that note.
 
 ## Install
 
@@ -32,7 +32,7 @@ macOS 26+ only.
 
 ### Download (recommended)
 
-1. Download **V1.01_build_16.dmg** from [Releases](https://github.com/rahulsharmadesign/beru/releases).
+1. Download **Beru-1.1.11.dmg** from [Releases](https://github.com/rahulsharmadesign/beru/releases).
 2. Open the DMG and drag **Beru** into **Applications**.
 3. macOS will block it (unsigned). Allow it once:
 
@@ -151,7 +151,7 @@ Where an enhanced prompt is going. Cursor, ChatGPT, Claude, and Kimi ship as sta
 
 ### About
 
-Version and build, MIT license, privacy note, GitHub, issues, tip jar, and in-app update when a newer DMG is on GitHub. Local `install.sh` builds do not offer to replace themselves with a release.
+Version and build, MIT license, privacy note, GitHub, issues, tip jar, and **Check for Updates** against GitHub Releases. If a newer DMG is there, Install appears on About and a download icon sits beside About in the sidebar. Local `install.sh` builds explain that they do not replace themselves with a release.
 
 ## What’s next
 

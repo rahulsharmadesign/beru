@@ -67,5 +67,7 @@ final class GrammarSuggestionsTests: XCTestCase {
         XCTAssertTrue(Prompts.grammar.contains("kind=\"clearer\""))
         XCTAssertTrue(Prompts.grammar.contains("kind=\"tighter\""))
         XCTAssertTrue(Prompts.grammar.contains("Do not restyle"))
+        XCTAssertTrue(Prompts.grammar.contains("not a second copy-edit"))
+        XCTAssertFalse(Prompts.grammar.contains("Why isn't the grammar response working?"))
     }
 }

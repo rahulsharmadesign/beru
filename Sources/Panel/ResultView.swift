@@ -13,10 +13,15 @@ struct ResultView: View {
             } else if state == .loading {
                 // Declared height so the window has something to size to before
                 // any text arrives. No ScrollView — the panel sizes to content.
-                Color.clear
-                    .frame(maxWidth: .infinity, minHeight: PanelMetrics.resultPlaceholderHeight)
+                BeruLoader()
+                    .frame(
+                        maxWidth: .infinity,
+                        minHeight: PanelMetrics.resultPlaceholderHeight,
+                        alignment: .center
+                    )
             } else if state == .thinking {
                 VStack(spacing: BeruSpace.xs) {
+                    BeruLoader()
                     Text("Thinking…")
                         .font(BeruType.caption)
                         .foregroundStyle(BeruColor.textSecondary)

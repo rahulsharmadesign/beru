@@ -245,12 +245,15 @@ private struct SidebarUpdateChip: View {
     @Bindable private var updates = AppUpdateService.shared
 
     var body: some View {
-        SettingsPrimaryButton(
-            title: updates.buttonTitle,
-            enabled: !updates.isBusy
+        SettingsIconButton(
+            icon: "square.and.arrow.down",
+            size: 14,
+            frameSize: BeruMetrics.hitTargetCompact,
+            enabled: !updates.isBusy,
+            help: updates.availableVersion.map { "Install Beru \($0)" } ?? "Install the latest Beru"
         ) {
             updates.install()
         }
-        .accessibilityLabel("Update")
+        .accessibilityLabel("Install update")
     }
 }

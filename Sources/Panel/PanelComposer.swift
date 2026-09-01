@@ -79,11 +79,17 @@ extension PanelView {
                 PanelHitCapsule(help: primaryFooterHelp, accessibilityLabel: primaryFooterTitle) {
                     performReplace()
                 } label: {
-                    BeruButton(
-                        title: primaryFooterTitle,
-                        variant: .primary,
-                        size: .compact
-                    ) {}
+                    ZStack {
+                        BeruButton(
+                            title: primaryFooterTitle,
+                            variant: .primary,
+                            size: .compact
+                        ) {}
+                        .opacity(appState.replacedFeedback == nil ? 1 : 0)
+                        if appState.replacedFeedback != nil {
+                            BeruLoader()
+                        }
+                    }
                 }
             }
 
@@ -166,28 +172,6 @@ extension PanelView {
         .padding(.vertical, BeruSpace.xs)
         .frame(minHeight: PanelMetrics.composerMinHeight, alignment: .center)
         .frame(maxWidth: .infinity)
-    }
-
-    var sendButton: some View {
-        Button(action: submitIfReady) {
-            ZStack {
-                Circle()
-                    .fill(canSubmitDescribe ? BeruColor.accent : BeruColor.disabledFill)
-                BeruIcon(name: "arrow-up", size: 15, strokeWidth: 2.4)
-                    .foregroundStyle(canSubmitDescribe ? BeruColor.onAccent : BeruColor.textSecondary)
-            }
-            .frame(width: BeruMetrics.hitTarget, height: BeruMetrics.hitTarget)
-            .contentShape(Circle())
-        }
-        .buttonStyle(.plain)
-        .help("Run this intent")
-        .accessibilityLabel("Run this intent")
-        .accessibilityHint("Send the instruction to Beru")
-    }
-
-    func submitIfReady() {
-        guard canSubmitDescribe else { return }
-        submitDescribe()
     }
 
     var composerPlaceholder: String {

@@ -17,9 +17,14 @@ extension PanelView {
 
     var showsHostWriteAction: Bool { !isSearchTab }
 
-    /// Savings is "this rewrite is cheaper to paste into an AI". Search and
-    /// Smart Reply return an answer, not a tighter prompt.
-    var showsTokenSavings: Bool { !isSearchTab && !isSmartReply }
+    var isGrammar: Bool {
+        appState.selectedActionID == EnhancementAction.grammarID
+    }
+
+    /// Savings is "this rewrite is cheaper to paste into an AI". Search,
+    /// Smart Reply, and Grammar are not tighter prompts — Grammar's number
+    /// reads as a correction count.
+    var showsTokenSavings: Bool { !isSearchTab && !isSmartReply && !isGrammar }
 
     var primaryFooterTitle: String {
         if appState.vaultNoteID != nil { return "Apply" }
@@ -70,5 +75,39 @@ extension PanelView {
             menu.addItem(item)
         }
         menu.popUp(positioning: nil, at: NSEvent.mouseLocation, in: nil)
+    }
+
+    var isPromptBusy: Bool {
+        switch appState.resultState(for: appState.selectedActionID) {
+        case .loading, .thinking, .streaming: return true
+        default: return false
+        }
+    }
+
+    var sendButton: some View {
+        Button(action: submitIfReady) {
+            ZStack {
+                Circle()
+                    .fill(canSubmitDescribe ? BeruColor.accent : BeruColor.disabledFill)
+                if isPromptBusy {
+                    BeruLoader(tint: canSubmitDescribe ? BeruColor.onAccent : BeruColor.textSecondary)
+                } else {
+                    BeruIcon(name: "arrow-up", size: 15, strokeWidth: 2.4)
+                        .foregroundStyle(canSubmitDescribe ? BeruColor.onAccent : BeruColor.textSecondary)
+                }
+            }
+            .frame(width: BeruMetrics.hitTarget, height: BeruMetrics.hitTarget)
+            .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .disabled(isPromptBusy)
+        .help("Run this intent")
+        .accessibilityLabel(isPromptBusy ? "Loading" : "Run this intent")
+        .accessibilityHint("Send the instruction to Beru")
+    }
+
+    func submitIfReady() {
+        guard canSubmitDescribe, !isPromptBusy else { return }
+        submitDescribe()
     }
 }

@@ -88,6 +88,9 @@ final class ReplySuggestionsTests: XCTestCase {
         XCTAssertTrue(Prompts.reply.contains("Output ONLY"))
         XCTAssertTrue(Prompts.reply.contains("concrete detail"))
         XCTAssertTrue(Prompts.reply.contains("Sounds good"))
+        XCTAssertTrue(Prompts.reply.contains("Humour belongs only in the Funny and Witty tones"))
+        XCTAssertFalse(Prompts.reply.contains("Where the tone allows, be humorous"))
+        XCTAssertTrue(ReplyTone.formal.job.lowercased().contains("no humour"))
         XCTAssertTrue(ReplyTone.funny.job.lowercased().contains("content"))
         XCTAssertTrue(ReplyTone.witty.job.lowercased().contains("dry observation"))
     }

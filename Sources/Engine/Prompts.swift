@@ -33,15 +33,16 @@ enum Prompts {
     OUTPUT SHAPE
     - Use labeled Task: / Context: / Requirements: / Constraints: / Deliverable: sections only when the source itself has several distinct asks or a real procedure. Omit empty sections.
     - For a simple or one-sentence request, write one short natural-language prompt. Do not emit a labeled skeleton, a numbered process, or a template of work the author did not describe.
+    - Do not add length limits, style rules, sensory lists, tone, or “output only X” unless the author already said them.
     - Output ONLY the improved prompt. Do not answer the request, explain your rewrite, add markdown fences, or wrap it in quotes.
 
     Examples:
 
     Input: <text>write a poem about the sea</text>
-    Output: Write a short original poem about the sea. Use concrete sensory detail (sound, light, weather) rather than clichés. Keep it under 20 lines. Output only the poem.
+    Output: Write a poem about the sea.
 
     Input: <text>Why i am getting this error.</text>
-    Output: Explain why this error occurs, using only the error text and surrounding code the author provided. If those are missing, say what is needed. Reply with a short cause and the fix — not a project-wide investigation.
+    Output: Explain why this error occurs, using only the error text and surrounding code the author provided. If those are missing, say what is needed.
 
     Input: <text>before updating the docs, confirm everything still works, then update the docs to match</text>
     Output: Task: Confirm the project still works, then update the documentation so it matches current behavior.
@@ -95,14 +96,14 @@ enum Prompts {
     Input: <text>their are three thing we need to discus before the meting tommorow</text>
     Output:
     <grammar kind="corrected">There are three things we need to discuss before the meeting tomorrow.</grammar>
-    <grammar kind="clearer">We have three things to discuss before tomorrow's meeting.</grammar>
-    <grammar kind="tighter">Three things to discuss before tomorrow's meeting.</grammar>
+    <grammar kind="clearer">There are three things we need to discuss before tomorrow's meeting.</grammar>
+    <grammar kind="tighter">There are three things to discuss before tomorrow's meeting.</grammar>
 
     Input: <text>Can you check why i am not getting proper grammer respoense. Is there's any problem.</text>
     Output:
     <grammar kind="corrected">Can you check why I am not getting a proper grammar response? Is there any problem?</grammar>
-    <grammar kind="clearer">Can you check why I'm not getting a proper grammar response? Is something wrong?</grammar>
-    <grammar kind="tighter">Why isn't the grammar response working?</grammar>
+    <grammar kind="clearer">Can you check why I am not getting a proper grammar response? Is there a problem?</grammar>
+    <grammar kind="tighter">Can you check why I'm not getting a proper grammar response? Is there a problem?</grammar>
     """
     // MARK: - Teach Me
     //
@@ -145,7 +146,7 @@ enum Prompts {
     - Each reply is first person ("I", "we") as the recipient.
     - Be thoughtful: engage with what the message actually says. Quote or paraphrase one concrete detail from it (a name, date, ask, constraint, or objection). Answer that ask, acknowledge its feeling, and propose a next step when one is needed.
     - Never write a generic filler reply. Ban "Sounds good", "Thanks", "Got it", "Sure thing", and "Will do" unless the incoming message is only a greeting.
-    - Where the tone allows, be humorous — but intelligently: a clever observation or a light turn of phrase that lands, never cringe, never sarcasm at someone's expense, never forced jokes in serious threads.
+    - Humour belongs only in the Funny and Witty tones. Formal and Professional must not joke, pun, or undercut the ask.
     - Match the incoming message's language, script (Latin vs Devanagari vs Arabic, etc.), and register (formal, casual, code-mixed). Never change script unless the message itself uses that script.
     - Stay concise. No subject line, no "Hi," unless the thread clearly needs it.
     - The six replies must actually differ in tone, not just in a word or two.

@@ -35,11 +35,13 @@ enum AppUpdateFeed {
     }
 
     static func dmgAsset(named assets: [String], preferring version: String) -> String? {
-        let dmgs = assets.filter { $0.lowercased().hasSuffix(".dmg") && $0.lowercased().contains("beru") }
-        if let exact = dmgs.first(where: { $0.localizedCaseInsensitiveContains(version) }) {
+        let allDmgs = assets.filter { $0.lowercased().hasSuffix(".dmg") }
+        let named = allDmgs.filter { $0.lowercased().contains("beru") }
+        let pool = named.isEmpty ? allDmgs : named
+        if let exact = pool.first(where: { $0.localizedCaseInsensitiveContains(version) }) {
             return exact
         }
-        return dmgs.first
+        return pool.first
     }
 
     static func compare(_ lhs: String, _ rhs: String) -> ComparisonResult {
@@ -71,6 +73,8 @@ final class AppUpdateService {
     enum Status: Equatable {
         case idle
         case checking
+        case upToDate
+        case localBuild
         case available(version: String, downloadURL: URL)
         case downloading
         case installing
@@ -80,6 +84,14 @@ final class AppUpdateService {
     private(set) var status: Status = .idle
     private var checkTask: Task<Void, Never>?
 
+    var showsInstallButton: Bool {
+        switch status {
+        case .available, .downloading, .installing: return true
+        default: return false
+        }
+    }
+
+    /// Sidebar and panel: a newer DMG is ready, or the last install failed.
     var showsUpdateButton: Bool {
         switch status {
         case .available, .downloading, .installing, .failed: return true
@@ -87,11 +99,32 @@ final class AppUpdateService {
         }
     }
 
+    var checkButtonTitle: String {
+        switch status {
+        case .checking: return "Checking…"
+        case .failed: return "Retry"
+        default: return "Check for Updates"
+        }
+    }
+
     var buttonTitle: String {
         switch status {
         case .downloading, .installing: return "Updating…"
         case .failed: return "Retry"
-        default: return "Update"
+        default: return "Install"
+        }
+    }
+
+    var statusMessage: String? {
+        switch status {
+        case .idle: return nil
+        case .checking: return "Checking GitHub for a newer build…"
+        case .upToDate: return "You’re on the latest version."
+        case .localBuild:
+            return "This local build does not install GitHub DMGs. Install a release to get updates."
+        case .available(let version, _): return "Beru \(version) is available."
+        case .downloading, .installing: return "Updating…"
+        case .failed(let message): return message
         }
     }
 
@@ -111,8 +144,8 @@ final class AppUpdateService {
 
     func check() {
         guard !isBusy else { return }
-        guard !AppSigning.isLocalDevelopmentBuild else {
-            status = .idle
+        if AppSigning.isLocalDevelopmentBuild {
+            status = .localBuild
             return
         }
         checkTask?.cancel()
@@ -138,31 +171,27 @@ final class AppUpdateService {
             let (data, response) = try await URLSession.shared.data(for: request)
             if Task.isCancelled { return }
             if let http = response as? HTTPURLResponse, http.statusCode != 200 {
-                status = .idle
+                status = .failed("Couldn’t check for updates.")
                 return
             }
             let release = try JSONDecoder().decode(GitHubRelease.self, from: data)
             let latest = AppUpdateFeed.version(fromTag: release.tagName)
             let current = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0"
-            guard AppUpdateFeed.shouldOfferUpdate(
-                latest: latest,
-                current: current,
-                isLocalDevelopmentBuild: AppSigning.isLocalDevelopmentBuild
-            ) else {
-                status = .idle
+            guard AppUpdateFeed.isNewer(latest, than: current) else {
+                status = .upToDate
                 return
             }
             let names = release.assets.map(\.name)
             guard let dmgName = AppUpdateFeed.dmgAsset(named: names, preferring: latest),
                   let asset = release.assets.first(where: { $0.name == dmgName }),
                   AppUpdateFeed.isTrustedDownload(asset.browserDownloadURL) else {
-                status = .idle
+                status = .failed("No trusted disk image on the latest GitHub release.")
                 return
             }
             status = .available(version: latest, downloadURL: asset.browserDownloadURL)
         } catch {
             if !Task.isCancelled {
-                status = .idle
+                status = .failed("Couldn’t check for updates.")
             }
         }
     }

@@ -62,7 +62,7 @@ The About pane can download and install a new build. That code path replaces the
 
 What it does:
 
-- **Source is pinned.** Only the project's own GitHub Releases host is accepted (`AppUpdateFeed.isTrustedDownload`). A feed pointing elsewhere is refused before anything is downloaded.
+- **Source is pinned.** Only the project's own GitHub Releases host is accepted (`AppUpdateFeed.isTrustedDownload`). A feed pointing elsewhere is refused before anything is downloaded. **Check for Updates** on About is a manual GitHub poll; install is still the path that replaces the bundle.
 - **The payload is verified before the installed app is touched.** The mounted bundle must pass `codesign --verify --deep --strict`, its `CFBundleIdentifier` must match the running app, and — when the running app has a leaf certificate — the download's signing authority must match it. A build that fails any of these is discarded and the installed app is left alone.
 - **The old bundle is moved aside, never deleted first.** An earlier version ran `rm -rf` on the installed app and then copied the replacement in. A failure between those two steps left the user with no application. The swap now stages the new bundle beside the destination, verifies the staged copy, moves the old one to a backup path, and swaps. Any error restores the backup.
 - **The swap script is not at a predictable path.** It is written into a freshly created `0700` directory with a random name. A fixed path in the shared temporary directory could be pre-created or symlinked by another process running as the user, which would have had this script's privileges.

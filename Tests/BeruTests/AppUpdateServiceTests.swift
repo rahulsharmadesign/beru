@@ -31,6 +31,13 @@ final class AppUpdateServiceTests: XCTestCase {
         XCTAssertEqual(AppUpdateFeed.dmgAsset(named: assets, preferring: "1.1.2"), "Beru-1.1.2.dmg")
     }
 
+    func testFallsBackToABareDMGWhenTheNameOmitsBeru() {
+        XCTAssertEqual(
+            AppUpdateFeed.dmgAsset(named: ["notes.txt", "V1.01_build_16.dmg"], preferring: "1.01"),
+            "V1.01_build_16.dmg"
+        )
+    }
+
     func testTrustedDownloadHosts() {
         XCTAssertTrue(
             AppUpdateFeed.isTrustedDownload(

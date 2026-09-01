@@ -19,9 +19,9 @@ enum GrammarKind: String, CaseIterable, Identifiable, Equatable, Sendable {
 
     static var promptCatalog: String {
         """
-        - corrected: copy-edit only. Preserve meaning, tone, and voice. Fix every error. A misspelled or ungrammatical word MUST be replaced with the correct word in the same place — never left as-is, and never deleted without putting the correction there. Do not restyle, paraphrase, or swap a correct word for a synonym. Helper words grammar requires (a, the, 's, not, doesn't) may be added or removed. Do not add new sentences, drop existing ones, or change their order. Return the document verbatim only when it already has no spelling, grammar, or punctuation errors.
-        - clearer: light rephrase of the corrected document. Same meaning, easier to read.
-        - tighter: shorter rephrase of the corrected document. Same meaning, fewer words.
+        - corrected: copy-edit only. Preserve meaning, tone, voice, and sentence order. Fix every error. A misspelled or ungrammatical word MUST be replaced with the correct word in the same place — never left as-is, and never deleted without putting the correction there. Do not restyle, paraphrase, or swap a correct word for a synonym. Helper words grammar requires (a, the, 's, not, doesn't) may be added or removed. Do not add new sentences, drop existing ones, or change their order. Return the document verbatim only when it already has no spelling, grammar, or punctuation errors.
+        - clearer: optional light rephrase of the corrected document only — not a second copy-edit. Same meaning, easier to read. If the corrected document is already clear, repeat it verbatim.
+        - tighter: optional shorter rephrase of the corrected document only — not a second copy-edit. Same meaning, fewer words. If the corrected document is already tight, repeat it verbatim.
         """
     }
 

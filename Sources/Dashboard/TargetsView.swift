@@ -121,7 +121,7 @@ struct TargetsView: View {
                         }
                         SettingsRow(title: "Icon") {
                             SettingsField(
-                                placeholder: "Lucide icon",
+                                placeholder: "SF Symbol or icon name",
                                 text: binding(for: profile).icon
                             )
                         }
