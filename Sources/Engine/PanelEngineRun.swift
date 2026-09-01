@@ -48,15 +48,33 @@ extension PanelEngine {
             return
         }
 
-        let capturedText = appState.capturedText
-        let capturedEmpty = capturedText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        // Snapshot before persist: promoting composer-as-source clears the field.
+        let composerSnapshot = instruction ?? appState.describeInstruction
+        let resolved = EnhancementAction.resolveInput(
+            actionID: actionID,
+            capturedText: appState.capturedText,
+            composerText: composerSnapshot
+        )
         let isQuickSearch = actionID == EnhancementAction.searchID
         // Verb skills need material to work on. Search and the intent bar may
         // run on an empty capture — the question or instruction is the job.
-        if !EnhancementAction.allowsEmptyCapture(actionID), capturedEmpty {
+        // Typed composer text counts as that material when nothing was selected.
+        if !EnhancementAction.allowsEmptyCapture(actionID),
+           resolved.sourceText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             appState.setResult(.idle, for: actionID)
             return
         }
+
+        var capturedText = resolved.sourceText
+        if resolved.usedComposerAsSource {
+            if capturedText.count > Self.maxCapturedLength {
+                capturedText = String(capturedText.prefix(Self.maxCapturedLength))
+                appState.truncationNotice = true
+            }
+            appState.capturedText = capturedText
+            appState.describeInstruction = ""
+        }
+        let capturedEmpty = capturedText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
 
         /// Recorded in the history so a surprising result can be traced back to
         /// the prompt that produced it.
@@ -64,9 +82,10 @@ extension PanelEngine {
 
         let generation = beginGeneration(for: actionID)
         if actionID == EnhancementAction.searchID {
-            let question = (instruction ?? appState.describeInstruction)
-                .trimmingCharacters(in: .whitespacesAndNewlines)
-            appState.beginSearchTurn(question: question, regenerating: previousResult != nil)
+            appState.beginSearchTurn(
+                question: resolved.extraInstruction,
+                regenerating: previousResult != nil
+            )
         }
         appState.setResult(.loading, for: actionID)
         appState.savings[actionID] = nil
@@ -87,8 +106,7 @@ extension PanelEngine {
         let clipboardForRequest = appState.includeClipboard ? appState.clipboardText : nil
         var userMessage: String
         if actionID == EnhancementAction.searchID {
-            let question = (instruction ?? appState.describeInstruction)
-                .trimmingCharacters(in: .whitespacesAndNewlines)
+            let question = resolved.extraInstruction
             if capturedEmpty {
                 userMessage = question
             } else {
@@ -110,8 +128,7 @@ extension PanelEngine {
                 : Prompts.regenerateSuffix(previous: previousResult)
         }
         if actionID != EnhancementAction.describeID, actionID != EnhancementAction.searchID {
-            let extra = (instruction ?? appState.describeInstruction)
-                .trimmingCharacters(in: .whitespacesAndNewlines)
+            let extra = resolved.extraInstruction
             if !extra.isEmpty {
                 userMessage += Prompts.additionalInstruction(extra)
             }
@@ -214,8 +231,8 @@ extension PanelEngine {
         let invocationID = appState.invocationID
         // Captured before the Task so the thread records what was asked on this
         // run, not whatever the intent field holds by the time it finishes.
-        let threadInstruction = (instruction ?? appState.describeInstruction)
-            .trimmingCharacters(in: .whitespacesAndNewlines)
+        // Search question or rewrite extras — empty when the composer was the source.
+        let threadInstruction = resolved.extraInstruction
         let hostBundleID = appState.hostBundleID
         UsageLog.record {
             UsageEvent(

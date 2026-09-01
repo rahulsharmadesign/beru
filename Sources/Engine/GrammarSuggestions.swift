@@ -1,7 +1,7 @@
 import Foundation
 
-/// Grammar returns three bodies in one call. The result field shows the
-/// selected one; Corrected is the default copy-edit.
+/// Grammar returns three bodies in one call. Cards show all three; Corrected
+/// is the default selection for Replace / Copy / Pin.
 enum GrammarKind: String, CaseIterable, Identifiable, Equatable, Sendable {
     case corrected
     case clearer

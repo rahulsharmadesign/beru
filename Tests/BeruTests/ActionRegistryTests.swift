@@ -120,9 +120,10 @@ final class ActionRegistryTests: XCTestCase {
         XCTAssertTrue(EnhancementAction.allowsEmptyCapture(EnhancementAction.searchID))
         XCTAssertFalse(EnhancementAction.allowsEmptyCapture(EnhancementAction.grammarID))
         let grammar = EnhancementAction.emptyCaptureCopy(actionID: EnhancementAction.grammarID)
-        XCTAssertEqual(grammar.title, "No text selected")
-        XCTAssertTrue(grammar.subtitle.contains("Highlight text"))
-        XCTAssertTrue(grammar.subtitle.contains("AI Search"))
+        XCTAssertEqual(grammar.title, "Type or paste text")
+        XCTAssertTrue(grammar.subtitle.contains("Return"))
+        XCTAssertTrue(grammar.subtitle.localizedCaseInsensitiveContains("highlight text"))
+        XCTAssertFalse(grammar.subtitle.contains("AI Search"))
         XCTAssertFalse(grammar.subtitle.localizedCaseInsensitiveContains("ask instead"))
         let search = EnhancementAction.emptyCaptureCopy(actionID: EnhancementAction.searchID)
         XCTAssertEqual(search.title, "Ask a question")
@@ -132,7 +133,7 @@ final class ActionRegistryTests: XCTestCase {
             EnhancementAction.composerPlaceholder(
                 actionID: EnhancementAction.grammarID, hasCapture: false, isQuickSearch: false
             ),
-            "Highlight text first"
+            "Type or paste text"
         )
         XCTAssertEqual(
             EnhancementAction.composerPlaceholder(
@@ -180,6 +181,51 @@ final class ActionRegistryTests: XCTestCase {
             EnhancementAction.contextSummary(actionName: "Grammar", hostAppName: "Mail", characterCount: 0)
                 .contains("No text selected")
         )
+    }
+
+    func testResolveInputUsesComposerAsSourceWhenCaptureIsEmpty() {
+        let grammarFromComposer = EnhancementAction.resolveInput(
+            actionID: EnhancementAction.grammarID,
+            capturedText: "",
+            composerText: "  their are three thing  "
+        )
+        XCTAssertEqual(grammarFromComposer.sourceText, "their are three thing")
+        XCTAssertEqual(grammarFromComposer.extraInstruction, "")
+        XCTAssertTrue(grammarFromComposer.usedComposerAsSource)
+
+        let grammarIdle = EnhancementAction.resolveInput(
+            actionID: EnhancementAction.grammarID,
+            capturedText: "   ",
+            composerText: ""
+        )
+        XCTAssertEqual(grammarIdle.sourceText, "")
+        XCTAssertFalse(grammarIdle.usedComposerAsSource)
+
+        let grammarWithSelection = EnhancementAction.resolveInput(
+            actionID: EnhancementAction.grammarID,
+            capturedText: "selected draft",
+            composerText: "keep my tone"
+        )
+        XCTAssertEqual(grammarWithSelection.sourceText, "selected draft")
+        XCTAssertEqual(grammarWithSelection.extraInstruction, "keep my tone")
+        XCTAssertFalse(grammarWithSelection.usedComposerAsSource)
+
+        let search = EnhancementAction.resolveInput(
+            actionID: EnhancementAction.searchID,
+            capturedText: "",
+            composerText: "what is a monad"
+        )
+        XCTAssertEqual(search.sourceText, "")
+        XCTAssertEqual(search.extraInstruction, "what is a monad")
+        XCTAssertFalse(search.usedComposerAsSource)
+
+        let enhance = EnhancementAction.resolveInput(
+            actionID: EnhancementAction.enhanceID,
+            capturedText: "",
+            composerText: "write a parser"
+        )
+        XCTAssertEqual(enhance.sourceText, "write a parser")
+        XCTAssertTrue(enhance.usedComposerAsSource)
     }
 
     @MainActor

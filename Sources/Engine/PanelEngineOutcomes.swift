@@ -61,12 +61,13 @@ extension PanelEngine {
 
     func copy(text: String) {
         guard appState.replacedFeedback == nil else { return }
+        guard !appState.copiedFeedback else { return }
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(text, forType: .string)
         recordDecision(.copied, text: text)
         appState.copiedFeedback = true
         Task {
-            try? await Task.sleep(for: .milliseconds(800))
+            try? await Task.sleep(for: .milliseconds(1400))
             appState.copiedFeedback = false
             onDismiss()
         }

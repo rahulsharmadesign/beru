@@ -90,7 +90,9 @@ extension PanelView {
                 Circle()
                     .fill(canSubmitDescribe ? BeruColor.accent : BeruColor.disabledFill)
                 if isPromptBusy {
-                    BeruLoader(tint: canSubmitDescribe ? BeruColor.onAccent : BeruColor.textSecondary)
+                    BeruLoader.compact(
+                        tint: canSubmitDescribe ? BeruColor.onAccent : BeruColor.textSecondary
+                    )
                 } else {
                     BeruIcon(name: "arrow-up", size: 15, strokeWidth: 2.4)
                         .foregroundStyle(canSubmitDescribe ? BeruColor.onAccent : BeruColor.textSecondary)

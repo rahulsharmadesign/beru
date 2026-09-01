@@ -14,8 +14,9 @@ the window height fits the content:
 
 - [ ] Idle, with Accessibility granted (text selected, before running)
 - [ ] Idle, with Accessibility **not** granted (the placeholder card)
-- [ ] Loading / streaming: 24pt circular spinner in the result and on send; Replace shows the spinner while the toast is up
+- [ ] Loading / streaming: 32pt accent ring spinner in the result (selected primary, 50% track, 0.8s spin); send / Replace use a compact ring
 - [ ] Long result: window grows up to **75%** of the visible screen; close disc, chips, and composer (Replace / Copy / Pin) stay visible; only the result scrolls
+- [ ] Copy: icon pops to a green check, label reads Copied, then the panel closes after ~1.4s
 - [ ] Result with a diff, and result long enough to scroll
 - [ ] Error, with Retry visible
 - [ ] Error from an unknown model, with Retry **and** Connect to model
@@ -114,13 +115,15 @@ Highlight a message in another app, invoke, then tap **Smart Reply**:
 
 - [ ] Funny and Witty mention a concrete detail from the selected message; Formal stays non-jokey
 - [ ] Tone pill jumps the highlight; clicking a card does the same; neither re-runs the model
-- [ ] Copy / Insert send only the selected card, not the tagged blob
+- [ ] Copy / Insert send only the selected card, not the tagged blob; icon-only copy on a card copies that card
 - [ ] Hotkey with a comment selected in Chrome/Safari opens **Smart Reply** automatically
 - [ ] Roman Hinglish comment → all six replies stay in Roman/Latin (not Devanagari or German)
 - [ ] If the model mixes languages across cards, a language notice appears — try Regenerate
-- [ ] No selection on Grammar: “No text selected”; composer says “Highlight text first”, not “ask instead”
-- [ ] Grammar still copy-edits by default; the Corrected / Clearer / Tighter segmented control swaps the result field; only one body is visible; Replace sends the selected body; no token savings pill
-- [ ] Switching tabs only morphs the chip highlight over 0.4s (ease-in-out), not the window; close disc and composer move with the window immediately
+- [ ] No selection on Grammar: idle says “Type or paste text”; composer matches; not “ask instead”. Type a sentence, Return → Grammar result; context line shows character count; composer is empty optional extras
+- [ ] With a selection, Grammar still auto-runs; composer stays optional extras; Replace unchanged
+- [ ] Type on Search with no selection, then click Enhance: Enhance runs on that text without a second Return
+- [ ] Grammar shows Corrected / Clearer / Tighter as stacked cards like Smart Reply; selected card has the accent border; icon-only copy sits bottom-right on each card; clicking a card selects it without re-running; Replace / footer Copy send the selected body; no token savings pill
+- [ ] Switching tabs slides the accent pill left/width over 0.4s (cubic-bezier 0.65, 0, 0.35, 1), not the window; close disc and composer move with the window immediately
 
 ## Before release only
 

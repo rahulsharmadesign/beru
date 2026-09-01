@@ -50,7 +50,12 @@ enum BeruMetrics {
     /// because that is the system pill size, not a spacing step.
     static let tabPillHeight: CGFloat = 36
 
-    /// Circular ProgressView while a prompt is in flight or Replace is writing.
-    /// On the 8pt grid (same as `BeruSpace.lg`).
-    static let loaderSize: CGFloat = 24
+    /// Result-area spinner. Capped at 32pt so it stays a glyph, not a disc.
+    /// Send / Replace use `loaderSizeCompact`.
+    static let loaderSize: CGFloat = 32
+    /// Stroke of the result ring.
+    static let loaderStroke: CGFloat = 4
+    /// Fits inside `hitTarget` (28) on send and Replace.
+    static let loaderSizeCompact: CGFloat = 16
+    static let loaderStrokeCompact: CGFloat = 2
 }

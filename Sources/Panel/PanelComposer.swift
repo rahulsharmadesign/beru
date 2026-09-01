@@ -61,13 +61,6 @@ extension PanelView {
                     .accessibilityAddTraits(.updatesFrequently)
             }
 
-            if appState.copiedFeedback {
-                Text("Copied")
-                    .font(BeruType.footnote)
-                    .foregroundStyle(BeruColor.textSecondary)
-                    .transition(.opacity)
-            }
-
             if appState.pinnedFeedback {
                 Text("Pinned")
                     .font(BeruType.footnote)
@@ -87,20 +80,22 @@ extension PanelView {
                         ) {}
                         .opacity(appState.replacedFeedback == nil ? 1 : 0)
                         if appState.replacedFeedback != nil {
-                            BeruLoader()
+                            BeruLoader.compact()
                         }
                     }
                 }
             }
 
-            PanelHitCapsule(help: "Copy to clipboard", accessibilityLabel: "Copy") {
+            PanelHitCapsule(
+                help: appState.copiedFeedback ? "Copied" : "Copy to clipboard",
+                accessibilityLabel: appState.copiedFeedback ? "Copied" : "Copy"
+            ) {
                 performCopy()
             } label: {
-                BeruButton(
-                    title: "Copy",
-                    variant: showsHostWriteAction ? .pill : .primary,
-                    size: .compact
-                ) {}
+                CopyOutcomeButton(
+                    copied: appState.copiedFeedback,
+                    variant: showsHostWriteAction ? .pill : .primary
+                )
             }
 
             PanelHitCapsule(help: "Save this result in the vault", accessibilityLabel: "Pin") {

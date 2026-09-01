@@ -13,7 +13,7 @@ struct PanelView: View {
     @Bindable var settings = SettingsStore.shared
     @Bindable var appearance = AppearanceObserver.shared
     @Bindable var thread = SessionThread.shared
-    @Namespace var tabGlass
+    @State var tabChipFrames: [String: CGRect] = [:]
 
     init(
         appState: AppState,

@@ -39,7 +39,26 @@ extension PanelView {
                     ReplySuggestionsView(
                         suggestions: appState.replySuggestions,
                         selected: appState.selectedReplyTone,
-                        onSelect: { appState.selectedReplyTone = $0 }
+                        copied: appState.copiedFeedback,
+                        onSelect: { appState.selectedReplyTone = $0 },
+                        onCopy: { copyReplyTone($0) }
+                    )
+                }
+            } else if appState.selectedActionID == EnhancementAction.grammarID,
+                      case .done = state,
+                      !appState.grammarSuggestions.isEmpty {
+                VStack(alignment: .leading, spacing: 0) {
+                    if appState.cleanNotices.contains(appState.selectedActionID) {
+                        noticeLine("No spelling, grammar or punctuation errors found — your text is unchanged")
+                    } else if appState.restyledNotices.contains(appState.selectedActionID) {
+                        noticeLine("Some of these swap correct words for different ones rather than fixing errors — Regenerate to try again")
+                    }
+                    GrammarSuggestionsView(
+                        suggestions: appState.grammarSuggestions,
+                        selected: appState.selectedGrammarKind,
+                        copied: appState.copiedFeedback,
+                        onSelect: { engine.applyGrammarKind($0) },
+                        onCopy: { copyGrammarKind($0) }
                     )
                 }
             } else if appState.selectedActionID == EnhancementAction.searchID {
@@ -75,18 +94,6 @@ extension PanelView {
                 idlePlaceholder
             } else {
                 ResultView(state: state, usesMarkdown: usesSearchMarkdown)
-            }
-            if appState.selectedActionID == EnhancementAction.grammarID,
-               case .done = state,
-               appState.grammarSuggestions.count > 1 {
-                GrammarKindPicker(
-                    suggestions: appState.grammarSuggestions,
-                    selected: appState.selectedGrammarKind,
-                    onSelect: { engine.applyGrammarKind($0) }
-                )
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, BeruSpace.md)
-                .padding(.bottom, BeruSpace.sm)
             }
         }
         .frame(maxWidth: .infinity, minHeight: PanelMetrics.resultIdleMinHeight)
@@ -210,11 +217,7 @@ extension PanelView {
     }
 
     var rewrittenNotice: some View {
-        noticeLine(
-            appState.selectedActionID == EnhancementAction.grammarID
-                ? "Rewritten rather than corrected, so there's no diff to show — Regenerate if you only wanted corrections"
-                : "Rewritten from scratch, so there's no useful diff to show"
-        )
+        noticeLine("Rewritten from scratch, so there's no useful diff to show")
     }
 
     func noticeLine(_ text: String) -> some View {
@@ -277,6 +280,18 @@ extension PanelView {
         .padding(BeruSpace.lg)
         // The retry row can wrap onto a second line once a fallback provider
         // and Connect to model are both present, so the window has to be told.
+    }
+
+    func copyReplyTone(_ tone: ReplyTone) {
+        appState.selectedReplyTone = tone
+        guard let text = ReplySuggestions.body(in: appState.replySuggestions, matching: tone) else { return }
+        engine.copy(text: text)
+    }
+
+    func copyGrammarKind(_ kind: GrammarKind) {
+        engine.applyGrammarKind(kind)
+        guard let text = GrammarSuggestions.body(in: appState.grammarSuggestions, matching: kind) else { return }
+        engine.copy(text: text)
     }
 
     /// Short label for the "Try with [X]" button. Takes the first word of the

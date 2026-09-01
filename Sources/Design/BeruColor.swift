@@ -77,6 +77,16 @@ enum BeruColor {
     static var positive: Color { Color(nsColor: .systemGreen) }
     static var destructive: Color { Color(nsColor: .systemRed) }
 
+    /// Track of the loading ring at 50% opacity so it does not read as a black disc.
+    static var loaderTrack: Color {
+        Color(nsColor: NSColor(name: "BeruLoaderTrack") { appearance in
+            let dark = appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+            return dark
+                ? NSColor(srgbRed: 35 / 255, green: 35 / 255, blue: 38 / 255, alpha: 0.5)
+                : NSColor(srgbRed: 0.90, green: 0.90, blue: 0.91, alpha: 0.5)
+        })
+    }
+
     // MARK: - Fixed appearance pairs
 
     /// For surfaces that must pick a side explicitly rather than follow the

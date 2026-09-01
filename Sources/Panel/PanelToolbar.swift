@@ -50,9 +50,14 @@ extension PanelView {
                             .id(action.id)
                     }
                 }
+                .coordinateSpace(name: "tabRow")
+                .background(alignment: .leading) {
+                    slidingTabPill
+                }
             }
             .frame(height: BeruMetrics.tabPillHeight)
             .frame(maxWidth: .infinity, alignment: .leading)
+            .onPreferenceChange(TabChipFrameKey.self) { tabChipFrames = $0 }
             // Webpage → Summarize (and similar) land on a chip past the fold;
             // bring the active tab into view without a manual swipe.
             .onAppear { scrollChipIntoView(proxy) }
@@ -75,18 +80,33 @@ extension PanelView {
         }
     }
 
-    /// Selection morph. Scoped to the chip so the window does not re-layout.
+    /// CSS pill: `left`/`width` over 0.4s `cubic-bezier(0.65, 0, 0.35, 1)`.
+    /// Scoped to this overlay so the window does not re-layout.
     var tabMorph: Animation {
         a11y.reduceMotion
             ? .easeOut(duration: 0.12)
-            : .easeInOut(duration: 0.4)
+            : .timingCurve(0.65, 0, 0.35, 1, duration: 0.4)
     }
 
     func selectTab(_ actionID: String) {
         guard actionID != appState.selectedActionID else { return }
-        // Chip fill still morphs via `.animation(tabMorph, value: isSelected)`.
-        // Animating selectedActionID itself re-lays out chrome with the window.
+        // Do not wrap selectAction in withAnimation — that re-lays out chrome
+        // with the window. The sliding pill animates via `.animation(tabMorph)`.
         appState.selectAction(actionID)
+    }
+
+    /// One absolute pill. Position and width track the selected chip's frame,
+    /// same as setting `style.left` / `style.width` from `offsetLeft` / `offsetWidth`.
+    @ViewBuilder
+    var slidingTabPill: some View {
+        if let frame = tabChipFrames[appState.selectedActionID] {
+            Capsule()
+                .fill(BeruColor.accent)
+                .frame(width: frame.width, height: BeruMetrics.tabPillHeight)
+                .offset(x: frame.minX)
+                .allowsHitTesting(false)
+                .animation(tabMorph, value: appState.selectedActionID)
+        }
     }
 
     func chip(for action: EnhancementAction) -> some View {
@@ -102,28 +122,22 @@ extension PanelView {
                 .frame(height: BeruMetrics.tabPillHeight)
                 .contentShape(Capsule())
                 .background {
-                    chipFill(selected: isSelected)
+                    Capsule()
+                        .strokeBorder(isSelected ? Color.clear : BeruColor.border, lineWidth: 0.75)
+                }
+                .background {
+                    GeometryReader { geo in
+                        Color.clear.preference(
+                            key: TabChipFrameKey.self,
+                            value: [action.id: geo.frame(in: .named("tabRow"))]
+                        )
+                    }
                 }
         }
         .buttonStyle(.plain)
         .frame(height: BeruMetrics.tabPillHeight)
-        .animation(tabMorph, value: isSelected)
         .help(action.summary)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
-    }
-
-    /// One sliding accent pill. Idle chips keep a hairline so the row stays
-    /// readable; the fill is a single matched-geometry source.
-    func chipFill(selected: Bool) -> some View {
-        ZStack {
-            Capsule()
-                .strokeBorder(selected ? Color.clear : BeruColor.border, lineWidth: 0.75)
-            if selected {
-                Capsule()
-                    .fill(BeruColor.accent)
-                    .matchedGeometryEffect(id: "tab-selection", in: tabGlass)
-            }
-        }
     }
 
     /// Context as caption text — not a second chip row competing with verbs.
@@ -192,5 +206,15 @@ extension PanelView {
             hostAppName: appState.hostAppName,
             characterCount: count
         )
+    }
+}
+
+/// Chip frames in the tab row, used to slide the selection pill like CSS
+/// `offsetLeft` / `offsetWidth`.
+private struct TabChipFrameKey: PreferenceKey {
+    static var defaultValue: [String: CGRect] = [:]
+
+    static func reduce(value: inout [String: CGRect], nextValue: () -> [String: CGRect]) {
+        value.merge(nextValue(), uniquingKeysWith: { $1 })
     }
 }

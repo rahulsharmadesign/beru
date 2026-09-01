@@ -78,6 +78,8 @@ enum IconNames {
         "mic": "mic.fill",
         "library": "books.vertical",
         "mic-off": "mic.slash",
+        // DictationButton. Lucide `audio-lines` is not an SF Symbol name.
+        "audio-lines": "mic.fill",
         "eye": "eye",
         "eye-off": "eye.slash",
         "circle-x": "xmark.circle",

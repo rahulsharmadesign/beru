@@ -42,9 +42,8 @@ struct EnhancementAction: Identifiable, Codable, Equatable {
 
     /// Title and body for the panel when this action has nothing to work on.
     ///
-    /// Verb skills cannot run on an empty capture. The sentence must not tell
-    /// people to type in the composer — that field is a no-op until they
-    /// highlight text or switch to Search.
+    /// Rewrite chips accept typed composer text as the source. Idle copy must
+    /// invite Return, not send people only to Search.
     static func emptyCaptureCopy(actionID: String) -> (title: String, subtitle: String) {
         if actionID == searchID {
             return (
@@ -59,13 +58,13 @@ struct EnhancementAction: Identifiable, Codable, Equatable {
             )
         }
         return (
-            "No text selected",
-            "Highlight text in another app and press the shortcut, or switch to AI Search to ask."
+            "Type or paste text",
+            "Type below and press Return, or highlight text in another app and press the shortcut."
         )
     }
 
-    /// Composer field hint. Search and Instruction can run with no selection;
-    /// every other chip cannot, so the empty-capture line must not say “ask”.
+    /// Composer field hint. Empty-capture rewrite chips take typed text as the
+    /// source; Search and Instruction stay a question / instruction.
     static func composerPlaceholder(actionID: String, hasCapture: Bool, isQuickSearch: Bool) -> String {
         if isQuickSearch || actionID == searchID {
             return "Ask anything — no selection needed"
@@ -74,7 +73,7 @@ struct EnhancementAction: Identifiable, Codable, Equatable {
             return "Type what you want Beru to do"
         }
         if !hasCapture {
-            return "Highlight text first"
+            return "Type or paste text"
         }
         switch actionID {
         case grammarID:
@@ -144,6 +143,45 @@ struct EnhancementAction: Identifiable, Codable, Equatable {
     /// Search and one-off instructions can run from the composer alone.
     static func allowsEmptyCapture(_ actionID: String) -> Bool {
         actionID == searchID || actionID == describeID
+    }
+
+    /// How the composer and host capture combine for one run.
+    ///
+    /// Rewrite skills with no capture treat typed composer text as the source
+    /// document — the same role a host selection plays — and must not also
+    /// send it as an extra instruction.
+    struct ResolvedInput: Equatable {
+        var sourceText: String
+        var extraInstruction: String
+        var usedComposerAsSource: Bool
+    }
+
+    static func resolveInput(
+        actionID: String,
+        capturedText: String,
+        composerText: String
+    ) -> ResolvedInput {
+        let captured = capturedText.trimmingCharacters(in: .whitespacesAndNewlines)
+        let composer = composerText.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !captured.isEmpty {
+            return ResolvedInput(
+                sourceText: capturedText,
+                extraInstruction: composer,
+                usedComposerAsSource: false
+            )
+        }
+        if allowsEmptyCapture(actionID) {
+            return ResolvedInput(
+                sourceText: "",
+                extraInstruction: composer,
+                usedComposerAsSource: false
+            )
+        }
+        return ResolvedInput(
+            sourceText: composer,
+            extraInstruction: "",
+            usedComposerAsSource: !composer.isEmpty
+        )
     }
 
     /// Current system prompt for a shipped verb, or nil for any other id.
