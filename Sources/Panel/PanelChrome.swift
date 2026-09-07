@@ -20,7 +20,7 @@ struct PanelUpdateButton: View {
                     .foregroundStyle(BeruColor.onAccent)
                     .padding(.horizontal, BeruSpace.xs)
                     .padding(.vertical, BeruSpace.xxs)
-                    .background(Capsule().fill(BeruColor.accent))
+                    .background(Capsule().fill(BeruColor.accentGradient))
                     .allowsHitTesting(false)
             }
             .fixedSize()
@@ -32,7 +32,7 @@ struct PanelUpdateButton: View {
 }
 
 /// Settings gear. AppKit hit target so window-drag does not swallow the click.
-/// SF Symbol `gearshape` at 16pt — the system settings glyph.
+/// Lucide `settings` at 16pt — the system settings glyph.
 struct PanelSettingsLink: View {
     let action: () -> Void
     @State private var isHovered = false
@@ -40,16 +40,14 @@ struct PanelSettingsLink: View {
     var body: some View {
         ZStack {
             DictationPressView(onToggle: action)
-            Image(systemName: "gearshape")
-                .resizable()
-                .scaledToFit()
-                .frame(width: BeruSpace.md, height: BeruSpace.md)
+            BeruIcon(name: "settings", size: BeruMetrics.iconSize)
                 .foregroundStyle(isHovered ? BeruColor.textPrimary : BeruColor.textSecondary)
                 .allowsHitTesting(false)
         }
         .frame(width: BeruMetrics.hitTarget, height: BeruMetrics.hitTarget)
         .contentShape(Rectangle())
         .onHover { isHovered = $0 }
+.beruHoverEase(isHovered)
         .help("Settings")
         .accessibilityLabel("Settings")
         .accessibilityAddTraits(.isButton)
@@ -92,7 +90,7 @@ struct PanelIconHitButton: View {
             DictationPressView(onToggle: { if enabled { action() } })
             BeruIcon(name: icon, size: 16)
                 .foregroundStyle(BeruColor.textPrimary)
-                .opacity(enabled ? 1 : 0.35)
+                .opacity(enabled ? 1 : 0.45)
                 .allowsHitTesting(false)
         }
         .frame(width: BeruMetrics.hitTarget, height: BeruMetrics.hitTarget)

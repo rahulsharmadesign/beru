@@ -23,6 +23,8 @@ enum BeruType {
 
     static let rowTitle = font(14)
     static let control = font(14)
+    static let controlMedium = font(14, weight: .medium)
+    static let controlSemibold = font(14, weight: .semibold)
     static let search = font(14)
     static let sidebar = font(14)
     static let sidebarSelected = font(14, weight: .medium)
@@ -51,4 +53,6 @@ enum BeruType {
     static let captionSemibold = font(11, weight: .semibold)
 
     static let mono = Font.system(size: 13, design: .monospaced)
+    /// Keyboard-chip mono: the dense floor at monospaced design.
+    static let monoCaption = Font.system(size: 12, design: .monospaced)
 }

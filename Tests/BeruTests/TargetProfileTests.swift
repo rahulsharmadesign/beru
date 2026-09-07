@@ -376,3 +376,67 @@ final class TargetRegistryRefreshTests: XCTestCase {
         XCTAssertEqual(refreshed.last, custom)
     }
 }
+
+/// Guards the conditional-output-shape fix: Enhance must return one clean
+/// prompt for a simple ask on every target, with sections only for genuinely
+/// multi-ask inputs.
+///
+/// The base prompt said this already, but the ChatGPT and Kimi fragments
+/// demanded sections flatly ("Structure it with short markdown-headed
+/// sections", "Number the requirements"), and a small model obeys the flat
+/// demand over the conditional rule — so every Enhance came back wrapped in
+/// Task/Requirements/Output scaffolding. Like the invention-rule tests above,
+/// these pin the measured wording, not model behavior.
+final class TargetConditionalStructureTests: XCTestCase {
+    private func shipped(_ id: String) -> TargetProfile {
+        TargetProfile.builtInDefaults.first { $0.id == id }!
+    }
+
+    func testChatGPTSectionsAreConditionalOnTheInput() {
+        let fragment = shipped("target-chatgpt").promptFragment
+        XCTAssertFalse(
+            fragment.contains("Structure it with short markdown-headed sections"),
+            "flat section demand overrides the base prompt's conditional rule"
+        )
+        XCTAssertTrue(fragment.contains("only when the input itself carries several distinct asks"))
+        XCTAssertTrue(fragment.contains("not a sectioned spec"))
+    }
+
+    func testKimiNumberingAndFormatAreConditionalOnTheInput() {
+        let fragment = shipped("target-kimi").promptFragment
+        XCTAssertFalse(
+            fragment.contains("Number the requirements, one sentence each, with the most important as step 1."),
+            "flat numbering demand turns a one-liner into a numbered list of one"
+        )
+        XCTAssertFalse(fragment.contains("Define the output format concretely:"))
+        XCTAssertTrue(fragment.contains("never a numbered list of one"))
+        XCTAssertTrue(fragment.contains("only as concretely as the input supports"))
+    }
+
+    func testBasePromptForbidsSectionsOnSimpleAsks() {
+        XCTAssertTrue(Prompts.enhance.contains("Never emit labeled sections"))
+        XCTAssertTrue(Prompts.enhance.contains("a small prompt stays small even when the destination target prefers sections"))
+    }
+
+    func testBasePromptTeachesNoSectionedExample() {
+        XCTAssertFalse(
+            Prompts.enhance.contains("Task: Confirm the project still works"),
+            "the structured few-shot is the only Task:/Requirements: teacher left"
+        )
+        XCTAssertFalse(
+            Prompts.enhance.contains("Output: Task:"),
+            "no example output may use labeled sections — the rule text naming them is fine"
+        )
+    }
+
+    func testComposedChatGPTAndKimiCarryTheConditionalRule() {
+        for id in ["target-chatgpt", "target-kimi"] {
+            let composed = Prompts.composeWithTarget(Prompts.enhance, profile: shipped(id))
+            XCTAssertTrue(composed.hasPrefix(Prompts.enhance))
+            XCTAssertTrue(
+                composed.contains(Prompts.targetInventionRule),
+                "\(id) composed without the anti-invention rule"
+            )
+        }
+    }
+}

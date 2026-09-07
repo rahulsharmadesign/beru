@@ -67,6 +67,9 @@ final class AppCoordinator {
             self?.showDashboard(route: .models)
         }
         engine.onOpenSettings = { [weak self] in
+            // The requested order: the panel goes away first, then Settings
+            // appears. dismiss() also disarms the mic and cancels any run.
+            self?.dismiss()
             self?.showDashboard(route: .general)
         }
         engine.onRevealVaultNote = { [weak self] id in
@@ -337,9 +340,11 @@ final class AppCoordinator {
                 return EnhancementAction.replyID
             }
         }
+        // Plain selections elsewhere are prompt material: Enhance runs by
+        // default; summarization stays one chip away.
         return Self.isSocialFeedSelection(bundleID: host?.bundleID, windowTitle: windowTitle)
             ? EnhancementAction.replyID
-            : EnhancementAction.summarizeID
+            : EnhancementAction.enhanceID
     }
 
     private static let communicationBundlePrefixes: [String] = [

@@ -48,7 +48,11 @@ struct VaultView: View {
     }
 
     var body: some View {
-        SettingsWorkspace(title: "Vault", subtitle: DashboardRoute.vault.pageSubtitle) {
+        SettingsWorkspace(
+            title: DashboardRoute.vault.title,
+            subtitle: DashboardRoute.vault.pageSubtitle,
+            icon: DashboardRoute.vault.lucideIcon
+        ) {
             VStack(spacing: 0) {
                 toolbar
                 Group {
@@ -188,30 +192,15 @@ struct VaultView: View {
                 text: $searchText,
                 placeholder: pane == .notes ? "Search notes" : "Search pins"
             )
-            .frame(maxWidth: 260)
+            .frame(maxWidth: BeruMetrics.toolbarSearchWidth)
 
-            Picker("Vault", selection: $pane) {
-                ForEach(VaultPane.allCases) { option in
-                    Text(option.title).tag(option)
-                }
-            }
-            .pickerStyle(.segmented)
-            .fixedSize()
-            .accessibilityLabel("Vault")
-
-            SettingsOverflowMenu(title: "Folder") {
-                Button(displayPath) {}
-                    .disabled(true)
-                Divider()
-                Button("Choose folder…") { store.chooseRootFolder() }
-                if !store.isUsingDefaultRoot {
-                    Button("Use local folder") { store.resetToDefaultRoot() }
-                }
-                Divider()
-                Button("Export vault…") { store.exportZip() }
-                Button("Import vault…") { store.importZip() }
-            }
-            .help(store.rootURL.path)
+            SettingsSegmented(
+                selection: $pane,
+                options: VaultPane.allCases.map {
+                    SettingsPickerOption(value: $0, title: $0.title)
+                },
+                accessibilityLabel: "Vault"
+            )
 
             Spacer(minLength: BeruSpace.xs)
 
@@ -222,11 +211,31 @@ struct VaultView: View {
                     .lineLimit(1)
                     .layoutPriority(-1)
             }
+
+            SettingsOverflowMenu(title: "Folder", items: folderMenuItems)
+                .help(store.rootURL.path)
         }
     }
 
     var displayPath: String {
         store.rootURL.path.replacingOccurrences(of: NSHomeDirectory(), with: "~")
+    }
+
+    var folderMenuItems: [DropdownItem] {
+        var items: [DropdownItem] = [
+            DropdownItem(title: displayPath, isEnabled: false),
+            .separator(),
+            DropdownItem(title: "Choose folder…") { store.chooseRootFolder() },
+        ]
+        if !store.isUsingDefaultRoot {
+            items.append(DropdownItem(title: "Use local folder") { store.resetToDefaultRoot() })
+        }
+        items.append(contentsOf: [
+            .separator(),
+            DropdownItem(title: "Export vault…") { store.exportZip() },
+            DropdownItem(title: "Import vault…") { store.importZip() },
+        ])
+        return items
     }
 
     // MARK: - Notes list

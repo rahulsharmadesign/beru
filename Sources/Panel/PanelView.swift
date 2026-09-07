@@ -13,7 +13,18 @@ struct PanelView: View {
     @Bindable var settings = SettingsStore.shared
     @Bindable var appearance = AppearanceObserver.shared
     @Bindable var thread = SessionThread.shared
-    @State var tabChipFrames: [String: CGRect] = [:]
+    /// Chip currently playing the select pop. Cleared after the bounce so
+    /// the tab settles back to 1.00 instead of staying enlarged.
+    @State var chipPopID: String? = nil
+    /// Haze float menu open from a composer pill, if any.
+    @State var openMenuID: String? = nil
+    /// Search answer showing the copied check. Resets after a beat.
+    @State var copiedTurnID: UUID? = nil
+    /// Pill frames for anchoring the open float. Overlay-only state.
+    @State var menuAnchors: [String: CGRect] = [:]
+    /// Identity of the composer first-run beam lap. Regenerated whenever the
+    /// beam should run again (fresh open, or returning to the AI Search tab).
+    @State var beamRunID = UUID()
 
     init(
         appState: AppState,
@@ -54,9 +65,13 @@ struct PanelView: View {
                 }
                 .padding(PanelMetrics.moduleInset)
                 .frame(maxWidth: .infinity, alignment: .top)
+                .background(BeruColor.panelGradient)
                 .background(PanelDragRegion())
+                .coordinateSpace(name: "panelMenu")
+                .onPreferenceChange(MenuAnchorKey.self) { menuAnchors = $0 }
             }
             .ignoresSafeArea()
+            .overlay(alignment: .topLeading) { menuLayer }
             .tint(BeruColor.accent)
             .id(appState.panelSessionID)
             .onPreferenceChange(PanelBandHeightKey.self, perform: publishLayoutHeights)
@@ -66,7 +81,11 @@ struct PanelView: View {
                 engine.startIfNeeded(actionID: actionID)
             }
             .onKeyPress(.escape) {
-                perform(PanelKeyBinding.resolveEscape())
+                if openMenuID != nil {
+                    openMenuID = nil
+                    return .handled
+                }
+                return perform(PanelKeyBinding.resolveEscape())
             }
             .onKeyPress(keys: [.return], phases: .down) { press in
                 perform(
@@ -154,6 +173,7 @@ struct PanelView: View {
     }
 
     func publishLayoutHeights(_ bands: [PanelHeightBand: CGFloat]) {
+        PanelControllerTrace.band("bands top=\(bands[.chromeTop] ?? -1) bottom=\(bands[.chromeBottom] ?? -1) result=\(bands[.result] ?? -1)")
         guard let layout = PanelLayoutHeights.fromBands(
             top: bands[.chromeTop] ?? 0,
             bottom: bands[.chromeBottom] ?? 0,

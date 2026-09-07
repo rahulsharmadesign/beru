@@ -1,9 +1,8 @@
-import AppKit
 import SwiftUI
 
-// Reusable dashboard controls. Settings screens use system macOS widgets
-// (bordered buttons, rounded-border fields, switch, checkbox, menu picker,
-// NSSearchField). The panel keeps Beru capsules.
+// Reusable dashboard buttons, toggles, and badges. Fields live in
+// SettingsFields.swift, pickers and menus in SettingsPickers.swift.
+// Native switch, checkbox, and bordered buttons stay out.
 
 struct SettingsPillButton: View {
     let title: String
@@ -14,13 +13,16 @@ struct SettingsPillButton: View {
     let action: () -> Void
 
     var body: some View {
-        Button(role: role, action: action) {
-            settingsButtonLabel(title: title, leadingIcon: leadingIcon, trailingIcon: trailingIcon)
-        }
-        .buttonStyle(.bordered)
-        .controlSize(.regular)
-        .disabled(!enabled)
-        .fixedSize()
+        BeruButton(
+            title: title,
+            variant: .pill,
+            size: .regular,
+            leadingIcon: leadingIcon,
+            trailingIcon: trailingIcon,
+            enabled: enabled,
+            role: role,
+            action: action
+        )
     }
 }
 
@@ -31,50 +33,85 @@ struct SettingsPrimaryButton: View {
     let action: () -> Void
 
     var body: some View {
-        Button(action: action) {
-            settingsButtonLabel(title: title, leadingIcon: icon, trailingIcon: nil)
-        }
-        .buttonStyle(.borderedProminent)
-        .controlSize(.regular)
-        .disabled(!enabled)
-        .fixedSize()
-        .tint(BeruColor.accent)
+        BeruButton(
+            title: title,
+            variant: .primary,
+            size: .regular,
+            leadingIcon: icon,
+            enabled: enabled,
+            action: action
+        )
     }
 }
 
+/// Haze check: 18pt box, accent fill, Lucide check. Replaces `.checkbox`.
 struct SettingsTogglePill: View {
     let title: String
-    var icon: String? = nil
     @Binding var isOn: Bool
 
     var body: some View {
-        Toggle(isOn: $isOn) {
-            settingsButtonLabel(title: title, leadingIcon: icon, trailingIcon: nil)
+        Button { isOn.toggle() } label: {
+            HStack(spacing: BeruSpace.xs) {
+                ZStack {
+                    BeruRadius.shape(BeruRadius.sm)
+                        .fill(isOn ? AnyShapeStyle(BeruColor.accentGradient) : AnyShapeStyle(BeruColor.subtleFill))
+                        .overlay {
+                            if !isOn {
+                                BeruRadius.shape(BeruRadius.sm)
+                                    .strokeBorder(BeruColor.border, lineWidth: 1)
+                            }
+                        }
+                    if isOn {
+                        BeruIcon(name: "check", size: BeruMetrics.iconSizeDense)
+                            .foregroundStyle(BeruColor.onAccent)
+                    }
+                }
+                .frame(width: BeruSpace.md, height: BeruSpace.md)
+                Text(title)
+                    .font(BeruType.control)
+                    .foregroundStyle(BeruColor.textPrimary)
+                    .lineLimit(1)
+            }
+            .contentShape(Rectangle())
         }
-        .toggleStyle(.checkbox)
-        .controlSize(.regular)
+        .buttonStyle(.plain)
         .fixedSize()
+        .accessibilityLabel(title)
+        .accessibilityValue(isOn ? "On" : "Off")
+        .accessibilityAddTraits(isOn ? .isSelected : [])
     }
 }
 
+/// Haze round button: subtle-fill circle, hairline, Lucide glyph.
 struct SettingsIconButton: View {
     let icon: String
-    var size: CGFloat = 16
+    var size: CGFloat = BeruMetrics.iconSize
     var frameSize: CGFloat = BeruMetrics.hitTarget
     var enabled: Bool = true
     let help: String
     let action: () -> Void
 
+    @State private var isHovered = false
+
     var body: some View {
         Button(action: action) {
-            BeruIcon(name: icon, size: size)
-                .frame(width: frameSize, height: frameSize)
+            ZStack {
+                Circle().fill(isHovered && enabled ? BeruColor.hoverFill : BeruColor.subtleFill)
+                Circle().strokeBorder(BeruColor.border, lineWidth: 1)
+                BeruIcon(name: icon, size: size)
+                    .foregroundStyle(BeruColor.textPrimary)
+            }
+            .frame(width: frameSize, height: frameSize)
+            .contentShape(Circle())
         }
-        .buttonStyle(.borderless)
+        .buttonStyle(.plain)
         .disabled(!enabled)
+        .fixedSize()
+        .opacity(enabled ? 1 : 0.45)
         .help(help)
         .accessibilityLabel(help)
-        .fixedSize()
+        .onHover { isHovered = $0 }
+.beruHoverEase(isHovered)
     }
 }
 
@@ -84,10 +121,7 @@ struct SettingsInlineButton: View {
     let action: () -> Void
 
     var body: some View {
-        Button(title, role: role, action: action)
-            .buttonStyle(.borderless)
-            .controlSize(.small)
-            .fixedSize()
+        BeruButton(title: title, variant: .inline, size: .regular, role: role, action: action)
     }
 }
 
@@ -104,7 +138,8 @@ struct SettingsValue: View {
     }
 }
 
-/// Granted / Needed (or Unavailable) on a settings row. Color is the status.
+/// Granted / Needed (or Unavailable) on a settings row. Haze metapill:
+/// surface fill, hairline, status-colored text.
 struct SettingsStatusBadge: View {
     let title: String
     var isPositive: Bool = false
@@ -115,161 +150,49 @@ struct SettingsStatusBadge: View {
             .foregroundStyle(isPositive ? BeruColor.positive : BeruColor.textSecondary)
             .padding(.horizontal, BeruSpace.xs)
             .padding(.vertical, BeruSpace.xxs)
-            .background(BeruColor.badge, in: BeruRadius.shape(BeruRadius.sm))
+            .background {
+                BeruRadius.shape(BeruRadius.sm)
+                    .fill(BeruColor.badge)
+                    .overlay {
+                        BeruRadius.shape(BeruRadius.sm)
+                            .strokeBorder(BeruColor.border, lineWidth: 1)
+                    }
+            }
             .accessibilityLabel(title)
     }
 }
 
-struct SettingsField: View {
-    let placeholder: String
-    @Binding var text: String
-    var width: CGFloat = BeruMetrics.fieldWidth
-    var alignment: TextAlignment = .leading
-
-    var body: some View {
-        TextField(placeholder, text: $text)
-            .textFieldStyle(.roundedBorder)
-            .font(BeruType.control)
-            .multilineTextAlignment(alignment)
-            .frame(width: width)
-            .controlSize(.regular)
-    }
-}
-
-struct SettingsSecretField: View {
-    let placeholder: String
-    @Binding var text: String
-    var width: CGFloat = BeruMetrics.fieldWidth
-    @State private var visible = false
-
-    var body: some View {
-        HStack(spacing: BeruSpace.xs) {
-            Group {
-                if visible {
-                    TextField(placeholder, text: $text)
-                } else {
-                    SecureField(placeholder, text: $text)
-                }
-            }
-            .textFieldStyle(.roundedBorder)
-            .font(BeruType.mono)
-            .controlSize(.regular)
-            Button {
-                visible.toggle()
-            } label: {
-                BeruIcon(name: visible ? "visibility_off" : "visibility", size: 15)
-            }
-            .buttonStyle(.borderless)
-            .help(visible ? "Hide secret" : "Show secret")
-            .accessibilityLabel(visible ? "Hide secret" : "Show secret")
-        }
-        .frame(width: width)
-    }
-}
-
+/// Haze toggle: 40×24 track, 18pt thumb, accent gradient when on.
+/// Replaces `.switch`.
 struct SettingsSwitch: View {
     @Binding var isOn: Bool
     var accessibilityLabel: String = "Toggle"
 
     var body: some View {
-        Toggle(accessibilityLabel, isOn: $isOn)
-            .toggleStyle(.switch)
-            .controlSize(.small)
-            .labelsHidden()
-            .accessibilityLabel(accessibilityLabel)
-            .accessibilityValue(isOn ? "On" : "Off")
-            .tint(BeruColor.accent)
-    }
-}
-
-struct SettingsSearchField: View {
-    @Binding var text: String
-    var placeholder: String = "Search settings..."
-
-    var body: some View {
-        SettingsSearchFieldRep(text: $text, placeholder: placeholder)
-            .frame(minHeight: BeruSpace.lg)
-            .accessibilityLabel(placeholder)
-    }
-}
-
-private struct SettingsSearchFieldRep: NSViewRepresentable {
-    @Binding var text: String
-    var placeholder: String
-
-    func makeCoordinator() -> Coordinator {
-        Coordinator(text: $text)
-    }
-
-    func makeNSView(context: Context) -> NSSearchField {
-        let field = NSSearchField()
-        field.placeholderString = placeholder
-        field.delegate = context.coordinator
-        field.sendsSearchStringImmediately = true
-        field.sendsWholeSearchString = false
-        field.stringValue = text
-        return field
-    }
-
-    func updateNSView(_ field: NSSearchField, context: Context) {
-        context.coordinator.text = $text
-        field.placeholderString = placeholder
-        if field.stringValue != text {
-            field.stringValue = text
+        Button {
+            isOn.toggle()
+        } label: {
+            ZStack(alignment: isOn ? .trailing : .leading) {
+                Capsule()
+                    .fill(isOn ? AnyShapeStyle(BeruColor.accentGradient) : AnyShapeStyle(BeruColor.subtleFill))
+                    .overlay {
+                        if !isOn {
+                            Capsule().strokeBorder(BeruColor.border, lineWidth: 1)
+                        }
+                    }
+                Circle()
+                    .fill(isOn ? BeruColor.onAccent : BeruColor.panelSolid)
+                    .frame(width: BeruMetrics.toggleThumb, height: BeruMetrics.toggleThumb)
+                    // (24pt track − 18pt thumb) / 2.
+                    .padding(3)
+            }
+            .frame(width: BeruMetrics.toggleWidth, height: BeruMetrics.toggleHeight)
+            .contentShape(Capsule())
         }
-    }
-
-    final class Coordinator: NSObject, NSSearchFieldDelegate {
-        var text: Binding<String>
-        init(text: Binding<String>) { self.text = text }
-
-        func controlTextDidChange(_ obj: Notification) {
-            guard let field = obj.object as? NSSearchField else { return }
-            text.wrappedValue = field.stringValue
-        }
-    }
-}
-
-struct SettingsMenuPill<Selection: Hashable, Content: View>: View {
-    @Binding var selection: Selection
-    let label: String
-    @ViewBuilder var content: Content
-
-    var body: some View {
-        Menu(label) { content }
-            .menuStyle(.automatic)
-            .controlSize(.regular)
-            .fixedSize()
-            .accessibilityLabel(label)
-            .accessibilityValue(String(describing: selection))
-    }
-}
-
-/// Action menu (Folder, More) for workspace toolbars. Not a picker.
-struct SettingsOverflowMenu<Content: View>: View {
-    let title: String
-    @ViewBuilder var content: Content
-
-    var body: some View {
-        Menu(title) { content }
-            .menuStyle(.automatic)
-            .controlSize(.regular)
-            .fixedSize()
-            .accessibilityLabel(title)
-    }
-}
-
-@ViewBuilder
-private func settingsButtonLabel(title: String, leadingIcon: String?, trailingIcon: String?) -> some View {
-    HStack(spacing: BeruSpace.xxs) {
-        if let leadingIcon {
-            BeruIcon(name: leadingIcon, size: 14)
-        }
-        Text(title)
-            .font(BeruType.control)
-            .lineLimit(1)
-        if let trailingIcon {
-            BeruIcon(name: trailingIcon, size: 14)
-        }
+        .buttonStyle(.plain)
+        .animation(.easeOut(duration: 0.15), value: isOn)
+        .accessibilityLabel(accessibilityLabel)
+        .accessibilityValue(isOn ? "On" : "Off")
+        .accessibilityAddTraits(isOn ? .isSelected : [])
     }
 }

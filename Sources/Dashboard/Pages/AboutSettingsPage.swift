@@ -33,8 +33,16 @@ struct AboutSettingsTab: View {
     }
 
     var body: some View {
-        SettingsPage(title: "About", subtitle: DashboardRoute.about.pageSubtitle) {
-            identity
+        SettingsPage(
+            title: DashboardRoute.about.title,
+            subtitle: DashboardRoute.about.pageSubtitle,
+            icon: DashboardRoute.about.lucideIcon
+        ) {
+            SettingsHeroCard(
+                name: "Beru",
+                tagline: "A menu bar utility that refines selected text in any app.",
+                version: "\(version) (\(build))"
+            )
 
             SettingsSection(title: "This build") {
                 SettingsRow(title: "Version") {
@@ -47,7 +55,7 @@ struct AboutSettingsTab: View {
 
             SettingsSection(
                 title: "Updates",
-                subtitle: "Checks GitHub Releases for a newer Beru DMG. Does not clone the repository."
+                subtitle: "Checks GitHub Releases for a newer Beru DMG."
             ) {
                 if let message = updates.statusMessage {
                     SettingsFootnote(text: message)
@@ -79,26 +87,23 @@ struct AboutSettingsTab: View {
                 SettingsFootnote(text: "No analytics, telemetry, or crash reporting. API keys stay in the Keychain. Usage history is off until you turn it on, and never leaves this Mac.")
             }
 
-            SettingsSection(title: "Support", subtitle: "Optional. Nothing here is required to use Beru.") {
+            SettingsSection(title: "Support") {
                 SettingsRow(
-                    title: "Send a tip",
-                    caption: "Made with love, late-night curiosity, and an AI companion that never runs out of tokens."
+                    title: "Send a tip"
                 ) {
-                    SettingsPrimaryButton(title: "Razorpay") {
+                    SettingsPillButton(title: "Razorpay") {
                         NSWorkspace.shared.open(BeruAbout.tip)
                     }
                 }
                 SettingsRow(
-                    title: "Source",
-                    caption: "Code, license, and release notes."
+                    title: "Source"
                 ) {
                     SettingsPillButton(title: "GitHub") {
                         NSWorkspace.shared.open(BeruAbout.source)
                     }
                 }
                 SettingsRow(
-                    title: "Contact",
-                    caption: "Bugs, ideas, and questions. GitHub issues is the inbox."
+                    title: "Contact"
                 ) {
                     SettingsPillButton(title: "Open") {
                         NSWorkspace.shared.open(BeruAbout.issues)
@@ -106,28 +111,5 @@ struct AboutSettingsTab: View {
                 }
             }
         }
-    }
-
-    private var identity: some View {
-        HStack(alignment: .center, spacing: 16) {
-            Image("BrandMark")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 56, height: 56)
-                .clipShape(BeruRadius.shape(BeruRadius.lg))
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Beru")
-                    .font(BeruSans.pageTitle)
-                    .foregroundStyle(SettingsTheme.textPrimary)
-                Text("A menu bar utility that refines selected text in any app.")
-                    .font(BeruSans.rowCaption)
-                    .foregroundStyle(SettingsTheme.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            Spacer(minLength: 0)
-        }
-        .padding(.bottom, 8)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("Beru, a menu bar utility that refines selected text in any app.")
     }
 }

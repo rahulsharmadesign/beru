@@ -12,39 +12,40 @@ struct GeneralSettingsTab: View {
     @Bindable private var settings = SettingsStore.shared
 
     var body: some View {
-        SettingsPage(title: "General", subtitle: DashboardRoute.general.pageSubtitle) {
-            SettingsSection(title: "Account", subtitle: "Profile details stored only on this Mac.") {
-                SettingsRow(title: "Name", caption: "Used only for greetings on this Mac.") {
-                    SettingsField(placeholder: "Your name", text: $settings.userName, alignment: .trailing)
+        SettingsPage(
+            title: DashboardRoute.general.title,
+            subtitle: DashboardRoute.general.pageSubtitle,
+            icon: DashboardRoute.general.lucideIcon
+        ) {
+            SettingsSection(title: "Account") {
+                SettingsRow(title: "Name") {
+                    SettingsField(placeholder: "Your name", text: $settings.userName, alignment: .center)
                 }
             }
 
-            SettingsSection(title: "Accent", subtitle: "Primary color for selected controls and actions.") {
-                SettingsRow(title: "Primary color", caption: "Selected controls, focus, and primary actions.") {
-                    Picker("", selection: $settings.primaryColorID) {
-                        ForEach(PrimaryColor.allCases) { option in
-                            Text(option.title).tag(option.rawValue)
-                        }
-                    }
-                    .labelsHidden()
-                    .accessibilityLabel("Primary color")
-                    .pickerStyle(.menu)
-                    .fixedSize()
-                    .tint(BeruColor.accent)
-                }
+            SettingsSection(
+                title: "Accent",
+                subtitle: "Beru's tint across pills, selection, and the send disc."
+            ) {
+                SettingsAccentSwatches(
+                    selection: Binding(
+                        get: { PrimaryColor(rawValue: settings.primaryColorID) ?? .indigo },
+                        set: { settings.primaryColorID = $0.rawValue }
+                    )
+                )
             }
 
-            SettingsSection(title: "Keyboard", subtitle: "Global shortcuts for opening Beru and dictation.") {
+            SettingsSection(title: "Keyboard") {
                 SettingsRow(title: "Open Beru", caption: "Select text in another app, then press this shortcut.") {
                     SettingsShortcutRecorder(name: .invokeBeru)
                 }
-                SettingsRow(title: "Dictate", caption: "Opens Beru in Ask and starts listening. Press again, Escape, or the mic to stop.") {
+                SettingsRow(title: "Dictate", caption: "Opens Beru in Ask and starts listening.") {
                     SettingsShortcutRecorder(name: .dictateToBeru)
                 }
             }
 
-            SettingsSection(title: "Startup", subtitle: "Launch behavior when you sign in.") {
-                SettingsRow(title: "Run Beru at login", caption: "Start in the menu bar when you sign in.") {
+            SettingsSection(title: "Startup") {
+                SettingsRow(title: "Run Beru at login") {
                     SettingsSwitch(isOn: Binding(
                         get: { settings.launchAtLogin },
                         set: { enabled in
@@ -55,17 +56,15 @@ struct GeneralSettingsTab: View {
                 }
             }
 
-            SettingsSection(title: "Panel", subtitle: "Default behavior for the floating composer.") {
+            SettingsSection(title: "Panel") {
                 SettingsRow(title: "Default action", caption: "Used when enhancing the clipboard or a vault note.") {
-                    Picker("", selection: $settings.defaultActionID) {
-                        ForEach(ActionRegistry.shared.allActions) { action in
-                            Text(action.name).tag(action.id)
-                        }
-                    }
-                    .labelsHidden()
-                    .accessibilityLabel("Default action")
-                    .pickerStyle(.menu)
-                    .fixedSize()
+                    SettingsMenuPicker(
+                        selection: $settings.defaultActionID,
+                        options: ActionRegistry.shared.allActions.map {
+                            SettingsPickerOption(value: $0.id, title: $0.name)
+                        },
+                        accessibilityLabel: "Default action"
+                    )
                 }
                 SettingsRow(
                     title: "Explain what changed",
@@ -78,25 +77,23 @@ struct GeneralSettingsTab: View {
                 }
                 SettingsRow(
                     title: "Remember recent turns",
-                    caption: """
-                    Lets Enhance, Describe and Search build on earlier requests \
-                    in the same app, so a follow-up like "shorter" has something \
-                    to refer to. Kept in memory only, never written to disk, and \
-                    forgotten when you click the chip, switch apps, or turn this off.
-                    """
+                    caption: "Follow-ups can build on earlier requests in the same app. Memory only, never written to disk."
                 ) {
                     SettingsSwitch(
                         isOn: $settings.sessionContextEnabled,
                         accessibilityLabel: "Remember recent turns"
                     )
                 }
+            }
+
+            SettingsSection(
+                title: "Reset",
+                subtitle: "Clear what Beru has learned from how you use it.",
+                tone: .danger
+            ) {
                 SettingsRow(
                     title: "Learned preferences",
-                    caption: """
-                    From Insert, Replace, and Copy on this Mac. Folded into \
-                    Enhance and Smart Reply only — never sent except inside \
-                    the normal provider request. Not usage history.
-                    """
+                    caption: "Beru forgets the tone, grammar kind, and target it saw you pick last."
                 ) {
                     SettingsPillButton(title: "Clear", role: .destructive) {
                         settings.clearInteractionProfile()
@@ -112,55 +109,5 @@ struct GeneralSettingsTab: View {
         do {
             if enabled { try SMAppService.mainApp.register() } else { try SMAppService.mainApp.unregister() }
         } catch { }
-    }
-}
-
-/// Native shortcut recorder. `KeyboardShortcuts.RecorderCocoa` is an
-/// `NSSearchField`; leave its system bezel in place. The host reports a
-/// fixed intrinsic size so `SettingsRow`'s `.fixedSize` does not shrink
-/// each recorder to its shortcut string (P vs L).
-private struct SettingsShortcutRecorder: View {
-    let name: KeyboardShortcuts.Name
-
-    var body: some View {
-        ShortcutRecorderField(name: name)
-            .frame(width: BeruMetrics.fieldWidth, height: BeruMetrics.hitTarget)
-    }
-}
-
-private struct ShortcutRecorderField: NSViewRepresentable {
-    let name: KeyboardShortcuts.Name
-
-    func makeNSView(context: Context) -> ShortcutRecorderHost {
-        ShortcutRecorderHost(name: name)
-    }
-
-    func updateNSView(_ host: ShortcutRecorderHost, context: Context) {
-        host.recorder.shortcutName = name
-    }
-}
-
-private final class ShortcutRecorderHost: NSView {
-    let recorder: KeyboardShortcuts.RecorderCocoa
-
-    init(name: KeyboardShortcuts.Name) {
-        recorder = KeyboardShortcuts.RecorderCocoa(for: name)
-        super.init(frame: .zero)
-        recorder.focusRingType = .default
-        recorder.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(recorder)
-        NSLayoutConstraint.activate([
-            recorder.leadingAnchor.constraint(equalTo: leadingAnchor),
-            recorder.trailingAnchor.constraint(equalTo: trailingAnchor),
-            recorder.topAnchor.constraint(equalTo: topAnchor),
-            recorder.bottomAnchor.constraint(equalTo: bottomAnchor)
-        ])
-    }
-
-    @available(*, unavailable)
-    required init?(coder: NSCoder) { nil }
-
-    override var intrinsicContentSize: NSSize {
-        NSSize(width: BeruMetrics.fieldWidth, height: BeruMetrics.hitTarget)
     }
 }

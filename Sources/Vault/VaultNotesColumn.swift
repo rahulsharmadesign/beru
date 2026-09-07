@@ -5,7 +5,6 @@ import SwiftUI
 extension VaultView {
     var notesColumn: some View {
         WorkspaceSourceList(
-            selection: $selection,
             isEmpty: filteredNotes.isEmpty,
             emptyIcon: searchText.isEmpty ? "sticky-note" : "search",
             emptyTitle: searchText.isEmpty ? "No notes yet" : "No matches",
@@ -24,8 +23,7 @@ extension VaultView {
                             .fixedSize()
                     }
                 )
-                .tag(note.id)
-                .workspaceSourceRow()
+                .workspaceRowSelection($selection, value: note.id, isSelected: selection == note.id)
                 .contextMenu {
                     Button("Delete", role: .destructive) {
                         pendingDeleteID = note.id

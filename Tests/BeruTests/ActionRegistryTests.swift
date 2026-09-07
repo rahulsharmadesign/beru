@@ -143,6 +143,13 @@ final class ActionRegistryTests: XCTestCase {
         )
         XCTAssertEqual(
             EnhancementAction.composerPlaceholder(
+                actionID: EnhancementAction.searchID, hasCapture: true, isQuickSearch: false
+            ),
+            "Ask about the selected text…",
+            "the hint must agree with the quoted source block above the thread"
+        )
+        XCTAssertEqual(
+            EnhancementAction.composerPlaceholder(
                 actionID: EnhancementAction.describeID, hasCapture: false, isQuickSearch: false
             ),
             "Type what you want Beru to do"

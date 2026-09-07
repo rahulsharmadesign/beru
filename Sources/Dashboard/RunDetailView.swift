@@ -70,8 +70,8 @@ struct RunDetailView: View {
             sectionLabel(title)
             Text(text.isEmpty ? "—" : text)
                 .textSelection(.enabled)
-                .font(BeruSans.rowCaption)
-                .foregroundStyle(SettingsTheme.textPrimary)
+                .font(BeruType.footnote)
+                .foregroundStyle(BeruColor.textPrimary)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .settingsEditorSurface()
         }
@@ -101,16 +101,16 @@ struct RunDetailView: View {
 
                 if ops == nil {
                     Text("No change view — the result keeps too little of your original wording for a readable word-by-word comparison.")
-                        .font(BeruSans.footnote)
-                        .foregroundStyle(SettingsTheme.textSecondary)
+                        .font(BeruType.footnote)
+                        .foregroundStyle(BeruColor.textSecondary)
                 }
             }
         } else if case .failed(let message) = run.outcome {
             VStack(alignment: .leading, spacing: BeruSpace.xs) {
                 sectionLabel("What happened")
                 Text(message ?? "The generation failed.")
-                    .font(BeruSans.rowCaption)
-                    .foregroundStyle(SettingsTheme.textSecondary)
+                    .font(BeruType.footnote)
+                    .foregroundStyle(BeruColor.textSecondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .settingsEditorSurface()
             }
@@ -133,11 +133,11 @@ struct RunDetailView: View {
     private func why(_ text: String) -> some View {
         VStack(alignment: .leading, spacing: BeruSpace.hair) {
             Text("Why this changed")
-                .font(BeruSans.rowTitle)
-                .foregroundStyle(SettingsTheme.textPrimary)
+                .font(BeruType.rowTitle)
+                .foregroundStyle(BeruColor.textPrimary)
             Text(text)
-                .font(BeruSans.rowCaption)
-                .foregroundStyle(SettingsTheme.textSecondary)
+                .font(BeruType.footnote)
+                .foregroundStyle(BeruColor.textSecondary)
                 .textSelection(.enabled)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -176,13 +176,13 @@ struct RunDetailView: View {
     private func fact(_ label: String, _ value: String) -> some View {
         VStack(alignment: .leading, spacing: BeruSpace.hair) {
             Text(label)
-                .font(BeruSans.footnote)
-                .foregroundStyle(SettingsTheme.textSecondary)
+                .font(BeruType.footnote)
+                .foregroundStyle(BeruColor.textSecondary)
                 .textCase(.uppercase)
                 .tracking(0.2)
             Text(value)
-                .font(BeruSans.control)
-                .foregroundStyle(SettingsTheme.textPrimary)
+                .font(BeruType.control)
+                .foregroundStyle(BeruColor.textPrimary)
                 .monospacedDigit()
                 .lineLimit(2)
                 .fixedSize(horizontal: false, vertical: true)
@@ -251,8 +251,8 @@ struct RunDetailView: View {
 
     private func sectionLabel(_ title: String) -> some View {
         Text(title)
-            .font(BeruSans.footnote)
-            .foregroundStyle(SettingsTheme.textSecondary)
+            .font(BeruType.footnote)
+            .foregroundStyle(BeruColor.textSecondary)
             .textCase(.uppercase)
             .tracking(0.3)
     }

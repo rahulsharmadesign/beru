@@ -37,9 +37,17 @@ final class SessionThread {
     static let storageCap = 100
     /// The whole block, so history can never crowd out the actual request.
     static let blockCharBudget = 8000
-    /// Per-turn output. The shape of a previous answer is the useful signal;
-    /// the whole of it is not.
+    /// Per-turn output for Enhance and Describe. The shape of a previous
+    /// answer is the useful signal; the whole of it is not.
     static let outputCharBudget = 400
+    /// Output budget for a turn, by action. Search answers ride the
+    /// user-message transcript verbatim and the user may ask about any of
+    /// them next, so they are stored whole — clipping one would mean
+    /// answering from a stub. Enhance and Describe outputs stay clipped:
+    /// only their shape feeds the system-side history block.
+    static func outputBudget(for actionID: String) -> Int? {
+        actionID == EnhancementAction.searchID ? nil : outputCharBudget
+    }
     static let inputDigestCharBudget = 160
 
     private(set) var bundleID: String?
@@ -69,7 +77,15 @@ final class SessionThread {
         expectedEpoch: UInt64? = nil
     ) {
         if let expectedEpoch, expectedEpoch != epoch { return }
-        guard Prompts.threadApplies(actionID: actionID) else { return }
+        // Search turns are recorded even though the system-side thread block
+        // skips them: Search follow-ups ride their Q&A transcript in the user
+        // message instead (see PanelEngineRun).
+        let recordable: Set<String> = [
+            EnhancementAction.enhanceID,
+            EnhancementAction.describeID,
+            EnhancementAction.searchID,
+        ]
+        guard recordable.contains(actionID) else { return }
         let trimmedOutput = output.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedOutput.isEmpty else { return }
 
@@ -85,7 +101,8 @@ final class SessionThread {
                 actionName: actionName,
                 instruction: instruction.trimmingCharacters(in: .whitespacesAndNewlines),
                 inputDigest: Self.clip(input, to: Self.inputDigestCharBudget),
-                output: Self.clip(trimmedOutput, to: Self.outputCharBudget),
+                output: Self.outputBudget(for: actionID).map { Self.clip(trimmedOutput, to: $0) }
+                    ?? trimmedOutput,
                 at: now
             )
         )

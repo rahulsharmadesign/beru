@@ -1,6 +1,7 @@
 import SwiftUI
 
-/// Adaptive two-column shell shared by settings and workspace pages.
+/// Settings shell: grouped sidebar + detail. Same nine routes and behavior,
+/// rebuilt around Haze rows — icon tiles, group headers, gradient selection.
 struct DashboardView: View {
     @Bindable var model: DashboardModel
     @State private var query = ""
@@ -20,19 +21,19 @@ struct DashboardView: View {
         // under the traffic lights and meets the vertical rule at a T-junction.
         VStack(spacing: 0) {
             Color.clear
-                .frame(height: SettingsChrome.titlebarHeight)
+                .frame(height: BeruMetrics.titlebarHeight)
                 .frame(maxWidth: .infinity)
             Rectangle()
-                .fill(SettingsTheme.border)
-                .frame(height: 1)
+                .fill(BeruColor.border)
+                .frame(height: BeruMetrics.hairline)
                 .frame(maxWidth: .infinity)
             HStack(spacing: 0) {
                 sidebar
-                    .frame(width: SettingsChrome.sidebarWidth)
+                    .frame(width: BeruMetrics.sidebarWidth)
                     .frame(maxHeight: .infinity)
                 Rectangle()
-                    .fill(SettingsTheme.border)
-                    .frame(width: 1)
+                    .fill(BeruColor.border)
+                    .frame(width: BeruMetrics.hairline)
                     .frame(maxHeight: .infinity)
                 detail
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -41,7 +42,7 @@ struct DashboardView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .clipped()
         .tint(BeruColor.accent)
-        .font(BeruSans.font(13))
+        .font(BeruType.font(13))
     }
 
     private var filteredMenu: [DashboardRoute] {
@@ -67,52 +68,59 @@ struct DashboardView: View {
 
     private var sidebar: some View {
         VStack(alignment: .leading, spacing: 0) {
-            VStack(alignment: .leading, spacing: 0) {
-                SettingsSearchField(text: $query)
-                    .padding(.bottom, SettingsChrome.headerContentSpacing)
-                if filteredMenu.isEmpty && filteredFooter.isEmpty {
-                    sidebarNoMatches
-                    Spacer(minLength: 0)
-                } else {
-                    ScrollView {
-                        VStack(spacing: 2) {
-                            ForEach(settingsMenu) { route in
-                                sidebarButton(route)
-                            }
-                            if !settingsMenu.isEmpty && !workspaceMenu.isEmpty {
-                                sidebarGroupDivider
-                            }
-                            ForEach(workspaceMenu) { route in
-                                sidebarButton(route)
-                            }
-                        }
+            SettingsSearchField(text: $query)
+                .padding(.horizontal, BeruMetrics.workspaceListInset)
+                .padding(.top, BeruSpace.md)
+                .padding(.bottom, BeruSpace.sm)
+            if filteredMenu.isEmpty && filteredFooter.isEmpty {
+                sidebarNoMatches
+                Spacer(minLength: 0)
+            } else {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: BeruSpace.xs) {
+                        sidebarGroup(title: "Settings", routes: settingsMenu)
+                        sidebarGroup(title: "Workspace", routes: workspaceMenu)
                     }
-                    .scrollBounceBehavior(.basedOnSize)
-                    Spacer(minLength: 0)
-                    if searchIsEmpty {
-                        SettingsTipCard {
-                            model.route = .models
-                        }
-                        .padding(.bottom, BeruSpace.xs)
+                    .padding(.horizontal, BeruSpace.xs)
+                }
+                .scrollBounceBehavior(.basedOnSize)
+                Spacer(minLength: 0)
+                if searchIsEmpty {
+                    SettingsTipCard {
+                        model.route = .models
                     }
+                    .padding(.horizontal, BeruSpace.xs)
+                    .padding(.bottom, BeruSpace.xs)
                 }
             }
-            .padding(.horizontal, SettingsChrome.workspaceListInset)
-            .padding(.top, BeruSpace.md)
             if searchIsEmpty || !filteredFooter.isEmpty {
                 VStack(spacing: 0) {
                     SettingsHeaderRule()
-                    VStack(spacing: 2) {
-                        ForEach(filteredFooter) { route in
-                            sidebarButton(route)
-                        }
+                    ForEach(filteredFooter) { route in
+                        sidebarButton(route)
                     }
-                    .padding(.horizontal, SettingsChrome.workspaceListInset)
+                    .padding(.horizontal, BeruSpace.xs)
+                    .padding(.vertical, BeruSpace.xxs)
                     .frame(maxWidth: .infinity, minHeight: BeruMetrics.workspaceChromeMinHeight)
                 }
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+    }
+
+    @ViewBuilder
+    private func sidebarGroup(title: String, routes: [DashboardRoute]) -> some View {
+        if !routes.isEmpty {
+            Text(title)
+                .font(BeruType.footnoteSemibold)
+                .foregroundStyle(BeruColor.textTertiary)
+                .padding(.horizontal, BeruSpace.sm)
+                .padding(.top, BeruSpace.xs)
+                .accessibilityAddTraits(.isHeader)
+            ForEach(routes) { route in
+                sidebarButton(route)
+            }
+        }
     }
 
     private func sidebarButton(_ route: DashboardRoute) -> some View {
@@ -124,32 +132,24 @@ struct DashboardView: View {
         .buttonStyle(.plain)
     }
 
-    /// Separates preferences from workspace pages.
-    private var sidebarGroupDivider: some View {
-        Rectangle()
-            .fill(SettingsTheme.border)
-            .frame(height: 1)
-            .padding(.horizontal, BeruSpace.xxs)
-            .padding(.vertical, BeruSpace.xs)
-    }
-
-    private var sidebarNoMatches: some View {
-        Text("No matches")
-            .font(BeruSans.rowCaption)
-            .foregroundStyle(SettingsTheme.textSecondary)
-            .frame(maxWidth: .infinity, alignment: .center)
-            .padding(.top, 24)
-    }
-
     private func sidebarRow(_ route: DashboardRoute) -> some View {
         let selected = model.route == route
         return HStack(spacing: BeruSpace.sm) {
-            Image(systemName: route.systemImage)
-                .font(BeruType.body)
-                .foregroundStyle(SettingsTheme.textSecondary)
-                .frame(width: 18, height: 18)
+            ZStack {
+                BeruRadius.shape(BeruRadius.sm)
+                    .fill(selected ? BeruColor.onAccent.opacity(0.22) : BeruColor.subtleFill)
+                    .overlay {
+                        if !selected {
+                            BeruRadius.shape(BeruRadius.sm)
+                                .strokeBorder(BeruColor.border, lineWidth: 1)
+                        }
+                    }
+                BeruIcon(name: route.lucideIcon, size: BeruMetrics.iconSize)
+                    .foregroundStyle(selected ? BeruColor.onAccent : BeruColor.textSecondary)
+            }
+            .frame(width: BeruMetrics.roundButtonSm, height: BeruMetrics.roundButtonSm)
             Text(route.title)
-                .font(selected ? BeruSans.sidebarSelected : BeruSans.sidebar)
+                .font(selected ? BeruType.sidebarSelected : BeruType.sidebar)
             Spacer(minLength: 0)
             if route == .models {
                 ModelsDownloadBadge()
@@ -158,14 +158,23 @@ struct DashboardView: View {
                 SidebarUpdateChip()
             }
         }
-        .foregroundStyle(SettingsTheme.textPrimary)
+        .foregroundStyle(selected ? BeruColor.onAccent : BeruColor.textPrimary)
         .padding(.horizontal, BeruSpace.sm)
-        .padding(.vertical, BeruSpace.xs)
+        .padding(.vertical, BeruSpace.xxs)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background {
-            GlassSelectedFill(isSelected: selected, radius: SettingsChrome.rowRadius)
+            BeruRadius.shape(BeruRadius.md)
+                .fill(selected ? AnyShapeStyle(BeruColor.accentGradient) : AnyShapeStyle(Color.clear))
         }
-        .contentShape(RoundedRectangle(cornerRadius: SettingsChrome.rowRadius, style: .continuous))
+        .contentShape(RoundedRectangle(cornerRadius: BeruRadius.md, style: .continuous))
+    }
+
+    private var sidebarNoMatches: some View {
+        Text("No matches")
+            .font(BeruType.footnote)
+            .foregroundStyle(BeruColor.textSecondary)
+            .frame(maxWidth: .infinity, alignment: .center)
+            .padding(.top, BeruSpace.xl)
     }
 
     private var detail: some View {
@@ -193,8 +202,7 @@ private struct ModelsDownloadBadge: View {
     var body: some View {
         if pull.pulling != nil {
             Text("Downloading…")
-                .font(BeruSans.footnote)
-                .foregroundStyle(SettingsTheme.textSecondary)
+                .font(BeruType.footnote)
                 .lineLimit(1)
         }
     }
@@ -208,30 +216,30 @@ private struct SettingsTipCard: View {
 
     var body: some View {
         if !settings.hasDismissedSettingsTip {
-            VStack(alignment: .leading, spacing: 8) {
-                HStack(alignment: .center, spacing: 8) {
+            VStack(alignment: .leading, spacing: BeruSpace.xs) {
+                HStack(alignment: .center, spacing: BeruSpace.xs) {
                     Text("Tip")
-                        .font(BeruSans.sidebarHeader)
-                        .foregroundStyle(SettingsTheme.textPrimary)
+                        .font(BeruType.sidebarHeader)
+                        .foregroundStyle(BeruColor.textPrimary)
                     Spacer(minLength: 0)
-                    SettingsIconButton(icon: "x", size: 12, frameSize: 22, help: "Dismiss tip") {
+                    SettingsIconButton(icon: "x", size: BeruMetrics.iconSizeDense, frameSize: BeruMetrics.hitTargetCompact, help: "Dismiss tip") {
                         settings.hasDismissedSettingsTip = true
                     }
                 }
                 Text("Gemma 3 1B is a lightweight local model (~815 MB) that fits the widget.")
-                    .font(BeruSans.footnote)
-                    .foregroundStyle(SettingsTheme.textSecondary)
+                    .font(BeruType.footnote)
+                    .foregroundStyle(BeruColor.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
                 SettingsPrimaryButton(title: "View models", action: onViewModels)
             }
             .padding(BeruSpace.sm)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background {
-                BeruRadius.shape(SettingsChrome.rowRadius)
-                    .fill(BeruColor.surface)
+                BeruRadius.shape(BeruRadius.md)
+                    .fill(BeruColor.card)
                     .overlay {
-                        BeruRadius.shape(SettingsChrome.rowRadius)
-                            .strokeBorder(SettingsTheme.border, lineWidth: 1)
+                        BeruRadius.shape(BeruRadius.md)
+                            .strokeBorder(BeruColor.border, lineWidth: 1)
                     }
             }
             .opacity(revealed ? 1 : 0)

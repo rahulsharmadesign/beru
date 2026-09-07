@@ -5,19 +5,22 @@ struct OllamaModelIDPicker: View {
     @Binding var selection: String
     var accessibilityLabel: String
 
-    var body: some View {
-        Picker("", selection: $selection) {
-            ForEach(RecommendedOllamaModel.all) { item in
-                Text(item.title).tag(item.name)
-            }
-            if !RecommendedOllamaModel.all.contains(where: { $0.name == selection }),
-               !selection.isEmpty {
-                Text(selection).tag(selection)
-            }
+    private var options: [SettingsPickerOption<String>] {
+        var list = RecommendedOllamaModel.all.map {
+            SettingsPickerOption(value: $0.name, title: $0.title)
         }
-        .labelsHidden()
-        .accessibilityLabel(accessibilityLabel)
-        .pickerStyle(.menu)
-        .fixedSize()
+        if !RecommendedOllamaModel.all.contains(where: { $0.name == selection }),
+           !selection.isEmpty {
+            list.append(SettingsPickerOption(value: selection, title: selection))
+        }
+        return list
+    }
+
+    var body: some View {
+        SettingsMenuPicker(
+            selection: $selection,
+            options: options,
+            accessibilityLabel: accessibilityLabel
+        )
     }
 }

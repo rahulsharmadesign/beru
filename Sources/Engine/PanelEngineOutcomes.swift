@@ -106,6 +106,68 @@ extension PanelEngine {
         onDismiss()
     }
 
+    /// A like/dislike vote on a finished result. Logged as training signal.
+    /// For Smart Reply and Grammar, a like additionally teaches the existing
+    /// preference the prompt reader already consumes (preferred tone/kind);
+    /// a dislike clears a matching preference so it stops biasing. Other
+    /// actions log only — their prompts have no preference consumer yet.
+    ///
+    /// `grammarKind` lets a Grammar row vote teach that row's kind even when
+    /// another row is selected. `replyTone` does the same for Reply rows.
+    /// Nil (the footer path) votes the selection.
+    func recordResultVote(
+        actionID: String,
+        liked: Bool,
+        text: String,
+        question: String? = nil,
+        grammarKind: GrammarKind? = nil,
+        replyTone: ReplyTone? = nil
+    ) {
+        UsageLog.record {
+            UsageEvent(
+                invocationID: appState.invocationID,
+                kind: liked ? .liked : .disliked,
+                actionID: actionID,
+                instruction: question ?? appState.describeInstruction,
+                outputChars: text.count,
+                outputDigest: UsageLog.digest(text),
+                hadResult: true
+            )
+        }
+        let settings = SettingsStore.shared
+        if liked {
+            if actionID == EnhancementAction.replyID {
+                settings.recordAcceptedInteraction(
+                    actionID: actionID,
+                    replyTone: replyTone ?? appState.selectedReplyTone,
+                    grammarKind: nil,
+                    targetName: nil,
+                    instruction: nil
+                )
+            } else if actionID == EnhancementAction.grammarID {
+                settings.recordAcceptedInteraction(
+                    actionID: actionID,
+                    replyTone: nil,
+                    grammarKind: grammarKind ?? appState.selectedGrammarKind,
+                    targetName: nil,
+                    instruction: nil
+                )
+            }
+        } else {
+            if actionID == EnhancementAction.replyID,
+               settings.interactionProfile.lastReplyTone == (replyTone ?? appState.selectedReplyTone).rawValue {
+                var next = settings.interactionProfile
+                next.lastReplyTone = nil
+                settings.interactionProfile = next
+            } else if actionID == EnhancementAction.grammarID,
+                      settings.interactionProfile.lastGrammarKind
+                        == (grammarKind ?? appState.selectedGrammarKind).rawValue {
+                var next = settings.interactionProfile
+                next.lastGrammarKind = nil
+                settings.interactionProfile = next
+            }
+        }
+    }
     /// Records a terminal user decision. Must be called BEFORE onDismiss(),
     /// which clears the results, captured text, and savings this reads from.
     /// Carries only a length and digest — the full output was already stored

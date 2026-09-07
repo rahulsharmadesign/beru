@@ -48,6 +48,28 @@ final class AppState {
     /// AI Search Q&A stack for this panel open. Cleared on dismiss / reset —
     /// not persisted. Soft-capped so a long session cannot balloon forever.
     var searchThread: [SearchThreadTurn] = []
+    /// Like/dislike votes per search turn, keyed by turn id. Session-only
+    /// like the thread; each vote is also logged as training signal.
+    var searchFeedback: [UUID: Bool] = [:]
+    /// Like/dislike vote on the current result, keyed by action id. Cleared
+    /// on every new run so a vote never sticks to regenerated text, and on
+    /// dismiss / reset with everything else session-scoped.
+    var resultFeedback: [String: Bool] = [:]
+    /// Per-row Grammar votes, keyed by kind. The footer vote follows the
+    /// selection; a row vote follows its own row even when another is
+    /// selected. Session-only, cleared on dismiss / reset like the rest.
+    var grammarVote: [GrammarKind: Bool] = [:]
+    /// Per-row Smart Reply votes, keyed by tone. Same session semantics.
+    var replyVote: [ReplyTone: Bool] = [:]
+    /// Row showing the pin check: a search turn id, grammar kind raw value,
+    /// or reply tone raw value. The footer "Pinned" label is gone on those
+    /// tabs, so the row flashes instead. Cleared on dismiss / reset.
+    var pinnedRow: String? = nil
+    /// Actions whose finished result is currently reloading (Regenerate after
+    /// `.done`). The footer stays mounted while set so the window does not
+    /// collapse and regrow on every refresh. Cleared the moment any terminal
+    /// or idle state lands via `setResult`, and on dismiss / reset.
+    var reloadingActions: Set<String> = []
     /// Soft ceiling for stacked Search turns in one panel session.
     static let searchThreadMaxTurns = 20
     /// The instruction text typed into the intent bar.
@@ -180,6 +202,12 @@ final class AppState {
         streamTasks.removeAll()
         results.removeAll()
         searchThread.removeAll()
+        searchFeedback.removeAll()
+        resultFeedback.removeAll()
+        reloadingActions.removeAll()
+        grammarVote.removeAll()
+        replyVote.removeAll()
+        pinnedRow = nil
         savings.removeAll()
         // Only on reset, never on dismiss: regenerating during the fade-out
         // would rebuild the view hierarchy mid-animation.
@@ -219,6 +247,12 @@ final class AppState {
         streamTasks.removeAll()
         results.removeAll()
         searchThread.removeAll()
+        searchFeedback.removeAll()
+        resultFeedback.removeAll()
+        reloadingActions.removeAll()
+        grammarVote.removeAll()
+        replyVote.removeAll()
+        pinnedRow = nil
         savings.removeAll()
         capturedText = ""
         capturedElement = nil
@@ -245,6 +279,31 @@ final class AppState {
 
     func setResult(_ state: ResultState, for actionID: String) {
         results[actionID] = state
+        switch state {
+        case .done, .error, .idle:
+            reloadingActions.remove(actionID)
+        default:
+            break
+        }
+    }
+
+    /// The outcome strip stays mounted while a finished result reloads —
+    /// dimmed, actions inert — so Regenerate does not collapse the chrome
+    /// and bounce the composer mid-refresh.
+    ///
+    /// Search, Grammar, and Reply have no footer: their rows own every
+    /// action. The shell mounts there only for result-level info with no
+    /// row home (write-back toast, applied context).
+    func showsFooter(for actionID: String) -> Bool {
+        switch actionID {
+        case EnhancementAction.searchID:
+            return false
+        case EnhancementAction.grammarID, EnhancementAction.replyID:
+            return replacedFeedback != nil || contextApplications[actionID] != nil
+        default:
+            if case .done = resultState(for: actionID) { return true }
+            return reloadingActions.contains(actionID)
+        }
     }
 
     func registerStreamTask(_ task: Task<Void, Never>, for actionID: String) {

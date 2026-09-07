@@ -88,6 +88,15 @@ extension PanelEngine {
             )
         }
         appState.setResult(.loading, for: actionID)
+        appState.resultFeedback.removeValue(forKey: actionID)
+        if actionID == EnhancementAction.grammarID {
+            // Fresh triple, fresh ballots: a vote on the old Corrected must
+            // not stick to the new one.
+            appState.grammarVote.removeAll()
+        }
+        if actionID == EnhancementAction.replyID {
+            appState.replyVote.removeAll()
+        }
         appState.savings[actionID] = nil
         appState.diffs[actionID] = nil
         appState.rationales[actionID] = nil
@@ -107,14 +116,36 @@ extension PanelEngine {
         var userMessage: String
         if actionID == EnhancementAction.searchID {
             let question = resolved.extraInstruction
+            // Follow-up context rides the USER message: small models resolve
+            // "From when?" against a conversation they can see next to the
+            // question far better than against a system-side history block.
+            // The system-side thread block stays off for Search.
+            // The whole thread rides along — every completed Q&A for this
+            // app, oldest first, stored whole — so a follow-up at turn 6 can
+            // still resolve against turns 1 and 2. storageCap is the only
+            // guard; a long session costs a longer input on every turn.
+            let priorTurns = SessionThread.shared.turns(forBundleID: appState.hostBundleID)
+            if appState.hostBundleID == nil {
+                engineLogger.notice("search follow-up with nil hostBundleID — no transcript attached")
+            } else if appState.searchThread.count > 1, priorTurns.isEmpty {
+                engineLogger.notice(
+                    "search follow-up without transcript — prior turn still streaming or host changed"
+                )
+            }
+            let transcript = Self.searchTranscript(turns: priorTurns)
+            var message = ""
+            if !transcript.isEmpty {
+                message += "Earlier in this conversation:\n\(transcript)\n\n"
+            }
             if capturedEmpty {
-                userMessage = question
+                message += question
             } else {
-                userMessage = Prompts.userMessage(
+                message += Prompts.userMessage(
                     capturedText: capturedText,
                     clipboardText: clipboardForRequest
                 ) + "\n\nQuestion:\n\(question)"
             }
+            userMessage = message
         } else {
             userMessage = Prompts.userMessage(
                 capturedText: capturedText,
@@ -164,6 +195,11 @@ extension PanelEngine {
         let threadTurns = SettingsStore.shared.sessionContextEnabled
             && Prompts.threadApplies(actionID: actionID)
             ? SessionThread.shared.turns(forBundleID: appState.hostBundleID)
+                // Search turns only feed Search. A question-and-answer is the
+                // wrong kind of history for prompt enhancement: small models
+                // read the previous answer as the thing to keep answering and
+                // produce an answer-shaped result instead of an enhanced prompt.
+                .filter { actionID == EnhancementAction.searchID || $0.actionID != EnhancementAction.searchID }
             : []
 
         // Composed last so the explanation request is the final instruction —
@@ -270,6 +306,18 @@ extension PanelEngine {
                 threadEpoch: SessionThread.shared.epoch
             )
         )
+    }
+
+    /// The full Q&A transcript attached to a Search follow-up, oldest first
+    /// so the conversation reads in order. Turns with no recorded answer are
+    /// skipped — a question that produced nothing is not context.
+    static func searchTranscript(turns: [SessionThread.Turn]) -> String {
+        turns
+            .compactMap { turn -> String? in
+                guard !turn.output.isEmpty else { return nil }
+                return "Q: \(turn.instruction)\nA: \(turn.output)"
+            }
+            .joined(separator: "\n\n")
     }
 
     /// Retries the current action with a specific provider, switching the active

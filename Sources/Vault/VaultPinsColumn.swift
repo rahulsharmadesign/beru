@@ -6,7 +6,6 @@ import SwiftUI
 extension VaultView {
     var pinsList: some View {
         WorkspaceSourceList(
-            selection: $pinSelection,
             isEmpty: filteredPins.isEmpty,
             emptyIcon: searchText.isEmpty ? "pin-off" : "search",
             emptyTitle: searchText.isEmpty ? "No pins yet" : "No matches",
@@ -20,8 +19,7 @@ extension VaultView {
                     subtitle: pinSubtitle(pin),
                     icon: pin.kind == .link ? "link" : "pin"
                 )
-                .tag(pin.id)
-                .workspaceSourceRow()
+                .workspaceRowSelection($pinSelection, value: pin.id, isSelected: pinSelection == pin.id)
                 .contextMenu {
                     Button("Delete", role: .destructive) {
                         pendingDeletePinID = pin.id
@@ -85,10 +83,7 @@ extension VaultView {
     @ViewBuilder
     func pinBody(for pin: VaultPin) -> some View {
         SettingsSection(
-            title: pin.kind == .link ? "Link" : "Snippet",
-            subtitle: pin.kind == .link
-                ? "Opens in the browser."
-                : "Saved from a panel result or a note."
+            title: pin.kind == .link ? "Link" : "Snippet"
         ) {
             if pin.kind == .link, let url = pin.url, !url.isEmpty {
                 Text(url)
@@ -110,29 +105,30 @@ extension VaultView {
 
     func pinFooter(for pin: VaultPin) -> some View {
         WorkspaceChromeBar {
-            if pin.kind == .run, let body = pin.body, !body.isEmpty {
-                SettingsPrimaryButton(title: "Enhance", icon: "sparkles") {
-                    model.enhanceText(body)
+            WrapHStack(spacing: BeruSpace.xs, lineSpacing: BeruSpace.xs) {
+                if pin.kind == .run, let body = pin.body, !body.isEmpty {
+                    SettingsPrimaryButton(title: "Enhance", icon: "sparkles") {
+                        model.enhanceText(body)
+                    }
+                }
+                if pin.kind == .link, let url = pin.url {
+                    SettingsPrimaryButton(title: "Open", icon: "arrow-up-right") {
+                        openURL(url)
+                    }
+                }
+                SettingsPillButton(title: "Copy") {
+                    let text = pin.kind == .link ? (pin.url ?? pin.title) : (pin.body ?? pin.title)
+                    NSPasteboard.general.clearContents()
+                    NSPasteboard.general.setString(text, forType: .string)
+                    store.flashStatus("Copied pin")
+                }
+                if let noteID = pin.sourceNoteID, store.note(id: noteID) != nil {
+                    SettingsPillButton(title: "Open note") {
+                        pane = .notes
+                        selection = noteID
+                    }
                 }
             }
-            if pin.kind == .link, let url = pin.url {
-                SettingsPrimaryButton(title: "Open", icon: "arrow-up-right") {
-                    openURL(url)
-                }
-            }
-            SettingsPillButton(title: "Copy") {
-                let text = pin.kind == .link ? (pin.url ?? pin.title) : (pin.body ?? pin.title)
-                NSPasteboard.general.clearContents()
-                NSPasteboard.general.setString(text, forType: .string)
-                store.flashStatus("Copied pin")
-            }
-            if let noteID = pin.sourceNoteID, store.note(id: noteID) != nil {
-                SettingsPillButton(title: "Open note") {
-                    pane = .notes
-                    selection = noteID
-                }
-            }
-            Spacer(minLength: 0)
         }
     }
 
@@ -156,11 +152,15 @@ extension VaultView {
 
     var linkSheet: some View {
         VStack(alignment: .leading, spacing: BeruSpace.md) {
-            Text("Pin link")
-                .font(BeruType.section)
-                .foregroundStyle(BeruColor.textPrimary)
-            SettingsField(placeholder: "Title", text: $linkTitle, width: 364)
-            SettingsField(placeholder: "https://", text: $linkURL, width: 364)
+            HStack(spacing: BeruSpace.xs) {
+                BeruIcon(name: "link", size: BeruMetrics.iconSize)
+                    .foregroundStyle(BeruColor.accent)
+                Text("Pin link")
+                    .font(BeruType.section)
+                    .foregroundStyle(BeruColor.textPrimary)
+            }
+            SettingsField(placeholder: "Title", text: $linkTitle, width: BeruMetrics.sheetFieldWidth)
+            SettingsField(placeholder: "https://", text: $linkURL, width: BeruMetrics.sheetFieldWidth)
             Text("Only http and https links can be pinned.")
                 .font(BeruType.footnote)
                 .foregroundStyle(BeruColor.textSecondary)
@@ -181,7 +181,7 @@ extension VaultView {
             }
         }
         .padding(BeruSpace.lg)
-        .frame(width: 420)
+        .frame(width: BeruMetrics.sheetWidth)
     }
 
     func openURL(_ string: String) {

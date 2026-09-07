@@ -44,7 +44,7 @@ final class DashboardModel {
 final class DashboardWindowController: NSWindowController, NSWindowDelegate {
     private let model: DashboardModel
     private var hostedView: NSView?
-    private var glassView: NSGlassEffectView?
+    private var blurView: NSVisualEffectView?
     private var opaqueView: DashboardCanvasView?
     private var usingOpaqueMaterial = false
     private var hasInstalledMaterial = false
@@ -62,8 +62,8 @@ final class DashboardWindowController: NSWindowController, NSWindowDelegate {
             contentRect: NSRect(
                 x: 0,
                 y: 0,
-                width: SettingsChrome.windowWidth,
-                height: SettingsChrome.windowHeight
+                width: BeruMetrics.windowWidth,
+                height: BeruMetrics.windowHeight
             ),
             styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
             backing: .buffered,
@@ -110,10 +110,11 @@ final class DashboardWindowController: NSWindowController, NSWindowDelegate {
         fatalError("init(coder:) is not used; the dashboard is created in code")
     }
 
-    /// Seats the SwiftUI host on an `NSGlassEffectView` slab. Reduce
-    /// Transparency swaps to an opaque canvas. SwiftUI's
-    /// `.containerBackground(for: .window)` does not reach an AppKit-hosted
-    /// window, so the material has to live here.
+    /// Seats the SwiftUI host on a soft `NSVisualEffectView` blur — Haze
+    /// translucency, not Liquid Glass refraction. Reduce Transparency swaps
+    /// to an opaque canvas. SwiftUI's `.containerBackground(for: .window)`
+    /// does not reach an AppKit-hosted window, so the material has to live
+    /// here.
     private func attachHost(_ view: NSView) {
         hostedView = view
         view.translatesAutoresizingMaskIntoConstraints = true
@@ -128,8 +129,8 @@ final class DashboardWindowController: NSWindowController, NSWindowDelegate {
         hasInstalledMaterial = true
 
         hostedView?.removeFromSuperview()
-        glassView?.contentView = nil
-        glassView = nil
+        blurView?.removeFromSuperview()
+        blurView = nil
         opaqueView = nil
 
         guard let host = hostedView, let window else { return }
@@ -147,17 +148,18 @@ final class DashboardWindowController: NSWindowController, NSWindowDelegate {
             canvas.addSubview(host)
             canvas.refreshColors()
         } else {
-            let glass = NSGlassEffectView(frame: bounds)
-            glass.style = .regular
-            glass.clipsToBounds = true
-            glass.autoresizingMask = [.width, .height]
-            glassView = glass
-            window.contentView = glass
+            let blur = NSVisualEffectView(frame: bounds)
+            blur.material = .windowBackground
+            blur.blendingMode = .behindWindow
+            blur.state = .active
+            blur.autoresizingMask = [.width, .height]
+            blurView = blur
+            window.contentView = blur
             window.isOpaque = false
             usingOpaqueMaterial = false
             window.backgroundColor = .clear
-            host.frame = glass.bounds
-            glass.contentView = host
+            host.frame = blur.bounds
+            blur.addSubview(host)
         }
     }
 
@@ -193,6 +195,20 @@ final class DashboardWindowController: NSWindowController, NSWindowDelegate {
         NSApp.setActivationPolicy(.regular)
         NSApp.activate(ignoringOtherApps: true)
         window?.makeKeyAndOrderFront(nil)
+        animateIn()
+    }
+
+    /// Quiet entrance: a short fade with a whisper of scale, so the window
+    /// does not pop. Much softer than the panel's spring — this is a large
+    /// window, and big springy windows read as heavy.
+    private func animateIn() {
+        guard let window, !AccessibilityPreferences.shared.reduceMotion else { return }
+        window.alphaValue = 0
+        NSAnimationContext.runAnimationGroup({ context in
+            context.duration = 0.2
+            context.timingFunction = CAMediaTimingFunction(controlPoints: 0.16, 1.0, 0.3, 1.0)
+            window.animator().alphaValue = 1
+        })
     }
 
     /// Apply from a vault note: select that note and bring Vault forward.

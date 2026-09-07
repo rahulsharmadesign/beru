@@ -118,6 +118,7 @@ extension Prompts {
     Answer the user's question. That is the whole job.
     - If source text arrives between \(textOpenTag) and \(textCloseTag) markers, use it only as context for the question. Do not rewrite it, reply to it, summarize it, or explain it unless the question asks you to.
     - If there is no source, answer from the question alone.
+    - If the source is a single word or fragment too thin to answer the question, say so in the first sentence, offer the likely senses, and do not guess a specific product, document, or source. Skip the section shape below for that answer.
     - If \(clipboardOpenTag)…\(clipboardCloseTag) is present, use it only as optional reference context.
     - Write a scannable answer: one-sentence lead, then `##` headings, short paragraphs, and bullets. Do not open with a title-only first line or use code fences.
     - Output the answer alone, with no markers around it.

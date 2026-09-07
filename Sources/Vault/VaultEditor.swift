@@ -10,11 +10,18 @@ extension VaultView {
                 WorkspaceChromeBar {
                     TextField("Title", text: binding(for: note).title)
                         .textFieldStyle(.plain)
-                        .font(BeruType.section)
+                        .font(BeruType.heading3)
                         .foregroundStyle(BeruColor.textPrimary)
                         .lineLimit(1)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                    AppEditorModeControl(showingPreview: $showingPreview)
+                    SettingsSegmented(
+                        selection: $showingPreview,
+                        options: [
+                            SettingsPickerOption(value: false, title: "Edit"),
+                            SettingsPickerOption(value: true, title: "Preview"),
+                        ],
+                        accessibilityLabel: "Editor mode"
+                    )
                     SettingsIconButton(icon: "trash-2", help: "Delete note") {
                         pendingDeleteID = note.id
                     }
@@ -25,7 +32,8 @@ extension VaultView {
                         ScrollView {
                             MarkdownPreview(text: note.body)
                                 .padding(BeruMetrics.workspaceInspectorPadding)
-                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .frame(maxWidth: BeruMetrics.formMaxWidth, alignment: .leading)
+                                .frame(maxWidth: .infinity, alignment: .center)
                         }
                     } else {
                         TextEditor(text: binding(for: note).body)
@@ -34,6 +42,8 @@ extension VaultView {
                             .scrollContentBackground(.hidden)
                             .dashboardEditorCanvas()
                             .padding(BeruMetrics.workspaceInspectorPadding)
+                            .frame(maxWidth: BeruMetrics.formMaxWidth)
+                            .frame(maxWidth: .infinity)
                     }
                 }
             } footer: {
@@ -54,6 +64,7 @@ extension VaultView {
 
     func editorFooter(for note: VaultNote) -> some View {
         let hasBody = !note.body.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        let words = note.body.split { $0.isWhitespace }.count
         return WorkspaceChromeBar {
             SettingsPrimaryButton(
                 title: "Enhance this note",
@@ -71,6 +82,12 @@ extension VaultView {
                 showPin(pin)
             }
             Spacer(minLength: 0)
+            if hasBody {
+                Text("\(words) \(words == 1 ? "word" : "words")")
+                    .font(BeruType.footnote)
+                    .foregroundStyle(BeruColor.textSecondary)
+                    .lineLimit(1)
+            }
             Text(note.updatedAt, style: .relative)
                 .font(BeruType.footnote)
                 .foregroundStyle(BeruColor.textSecondary)

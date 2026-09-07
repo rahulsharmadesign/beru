@@ -12,12 +12,16 @@ struct HistorySettingsTab: View {
     @State private var showClearConfirmation = false
 
     var body: some View {
-        SettingsPage(title: "Data", subtitle: DashboardRoute.data.pageSubtitle) {
-            SettingsSection(title: "Savings", subtitle: "Token estimates from accepted panel results.") {
+        SettingsPage(
+            title: DashboardRoute.data.title,
+            subtitle: DashboardRoute.data.pageSubtitle,
+            icon: DashboardRoute.data.lucideIcon
+        ) {
+            SettingsSection(title: "Savings") {
                 SavingsSummaryView(style: .plain)
             }
 
-            SettingsSection(title: "Recording", subtitle: "Local usage history on this Mac.") {
+            SettingsSection(title: "Recording") {
                 SettingsRow(
                     title: "Record usage on this Mac",
                     caption: "Off until you turn it on. Saves input and results locally. API keys are never recorded."
@@ -28,55 +32,55 @@ struct HistorySettingsTab: View {
                     )
                 }
                 if let stats {
-                    SettingsRow(title: "Entries") {
-                        SettingsValue(text: "\(stats.entryCount)")
-                    }
-                    SettingsRow(title: "Size") {
-                        SettingsValue(
-                            text: ByteCountFormatter.string(fromByteCount: Int64(stats.totalBytes), countStyle: .file)
+                    WrapHStack(spacing: BeruSpace.sm) {
+                        SettingsStatChip(label: "Entries", value: "\(stats.entryCount)")
+                        SettingsStatChip(
+                            label: "Size",
+                            value: ByteCountFormatter.string(fromByteCount: Int64(stats.totalBytes), countStyle: .file)
                         )
-                    }
-                    if let oldest = stats.oldestDate {
-                        SettingsRow(title: "Oldest") {
-                            SettingsValue(text: oldest.formatted(date: .abbreviated, time: .omitted))
+                        if let oldest = stats.oldestDate {
+                            SettingsStatChip(
+                                label: "Oldest",
+                                value: oldest.formatted(date: .abbreviated, time: .omitted)
+                            )
                         }
                     }
                 }
             }
 
-            SettingsSection(title: "Retention", subtitle: "How long day-files are kept before deletion.") {
-                SettingsRow(title: "Keep for", caption: "Whole day-files are deleted past this window.") {
-                    Picker("", selection: $settings.historyRetentionDays) {
-                        Text("30 days").tag(30)
-                        Text("90 days").tag(90)
-                        Text("1 year").tag(365)
-                        Text("Forever").tag(36_500)
-                    }
-                    .labelsHidden()
-                    .accessibilityLabel("History retention")
-                    .pickerStyle(.menu)
-                    .fixedSize()
+            SettingsSection(title: "Retention") {
+                SettingsRow(title: "Keep for") {
+                    SettingsMenuPicker(
+                        selection: $settings.historyRetentionDays,
+                        options: [
+                            SettingsPickerOption(value: 30, title: "30 days"),
+                            SettingsPickerOption(value: 90, title: "90 days"),
+                            SettingsPickerOption(value: 365, title: "1 year"),
+                            SettingsPickerOption(value: 36_500, title: "Forever"),
+                        ],
+                        accessibilityLabel: "History retention"
+                    )
                 }
             }
 
-            SettingsSection(title: "Export", subtitle: "Browse or download recorded runs.") {
-                SettingsRow(title: "Reveal in Finder", caption: "Opens the local history folder.") {
-                    SettingsPillButton(title: "Reveal") {
+            SettingsSection(title: "Export") {
+                SettingsRow(title: "Reveal in Finder") {
+                    SettingsPillButton(title: "Reveal", leadingIcon: "folder") {
                         let url = UsageLogWriter.shared.directoryURL
                         try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
                         NSWorkspace.shared.activateFileViewerSelecting([url])
                     }
                 }
                 SettingsRow(title: "Export JSONL") {
-                    SettingsPillButton(title: "Export…", action: export)
+                    SettingsPillButton(title: "Export…", leadingIcon: "braces", action: export)
                 }
                 SettingsRow(title: "Export CSV") {
-                    SettingsPillButton(title: "Export…", action: exportCSV)
+                    SettingsPillButton(title: "Export…", leadingIcon: "table", action: exportCSV)
                 }
             }
 
-            SettingsSection(title: "Danger", subtitle: "Permanent actions that cannot be undone.") {
-                SettingsRow(title: "Clear history", caption: "Deletes every recorded run. Cannot be undone.") {
+            SettingsSection(title: "Danger", subtitle: "Permanent actions that cannot be undone.", tone: .danger) {
+                SettingsRow(title: "Clear history") {
                     SettingsPillButton(title: "Clear…", role: .destructive) {
                         showClearConfirmation = true
                     }

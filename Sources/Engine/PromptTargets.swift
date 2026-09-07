@@ -89,8 +89,8 @@ extension Prompts {
     static let targetChatGPT = """
     - The prompt goes to ChatGPT in a chat window with no repository or file access, so inline any data the model needs.
     - Lead with one sentence naming the role and the objective, then context, then the task.
-    - Structure it with short markdown-headed sections: Context, Task, Constraints, Output format.
-    - Pin the output shape exactly: format (prose, bullets, table, JSON), approximate length, and the audience or reading level.
+    - Match the size of the input. A simple or one-sentence request becomes one short natural-language prompt, not a sectioned spec. Use short markdown-headed sections (Context, Task, Constraints, Output format) only when the input itself carries several distinct asks or a real procedure; omit empty sections.
+    - Pin the output shape only as precisely as the input supports: format, approximate length, and audience or reading level when the input implies them, otherwise leave the shape open rather than filling it in.
     - Say what to leave out as well as what to include: no preamble, no restating the question, no closing offer to help further.
     - Describe the shape of the answer you want. Do not write a specimen of it: for a task that asks for names, taglines, copy, or ideas, a specimen is the answer, and supplying one does the work you are asking for and anchors the reader to your guess.
     """
@@ -128,10 +128,10 @@ extension Prompts {
     static let targetKimi = """
     - The prompt goes to Kimi (Moonshot), a long-context assistant often used bilingually in Chinese and English and strong at document extraction.
     - Keep the wording plain and literal. Avoid idiom, wordplay, and culture-specific references that translate badly.
-    - Number the requirements, one sentence each, with the most important as step 1.
+    - When the input states several requirements, number them one sentence each with the most important first; a simple request stays a single clean prompt, never a numbered list of one.
     - If long documents are supplied, say which parts to read, what to extract, and require a quoted source span for every claim.
     - State the output language explicitly (match the input language unless the task says otherwise).
-    - Define the output format concretely: a numbered list, a table with named columns, or strict JSON with named keys.
+    - Define the output format only as concretely as the input supports: a numbered list, a table with named columns, or strict JSON with named keys when the input implies one of them, otherwise leave the shape open rather than filling it in.
     - Ask for the answer only, with no restatement of the instructions.
     """
 

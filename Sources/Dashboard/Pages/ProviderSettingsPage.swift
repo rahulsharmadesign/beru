@@ -18,32 +18,30 @@ struct ProviderSettingsSections: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 32) {
-            SettingsSection(title: "Provider", subtitle: "Which backend Beru sends requests to.") {
+        VStack(alignment: .leading, spacing: BeruSpace.xxl) {
+            SettingsSection(title: "Provider") {
                 SettingsRow(
                     title: "Active provider",
                     caption: "Local Ollama stays on this Mac. Anthropic and API presets send requests to the host you configure."
                 ) {
-                    Picker("", selection: Binding(
-                        get: { settings.activeProvider },
-                        set: { settings.selectProvider($0) }
-                    )) {
-                        ForEach(ProviderKind.allCases, id: \.self) { kind in
-                            Text(kind.title).tag(kind)
-                        }
-                    }
-                    .labelsHidden()
-                    .accessibilityLabel("Active provider")
-                    .pickerStyle(.menu)
-                    .fixedSize()
+                    SettingsMenuPicker(
+                        selection: Binding(
+                            get: { settings.activeProvider },
+                            set: { settings.selectProvider($0) }
+                        ),
+                        options: ProviderKind.allCases.map {
+                            SettingsPickerOption(value: $0, title: $0.title)
+                        },
+                        accessibilityLabel: "Active provider"
+                    )
                 }
             }
 
-            SettingsSection(title: "Configuration", subtitle: "Host, credentials, and model ids for the active provider.") {
+            SettingsSection(title: "Configuration") {
                 configurationRows
             }
 
-            SettingsSection(title: "Connection", subtitle: "Verify the provider responds before you run.") {
+            SettingsSection(title: "Connection") {
                 SettingsRow(title: "Test connection", caption: testCaption) {
                     HStack(spacing: BeruSpace.sm) {
                         testStatusView
@@ -103,42 +101,40 @@ struct ProviderSettingsSections: View {
     private var configurationRows: some View {
         switch settings.activeProvider {
         case .ollama:
-            SettingsRow(title: "Base URL", caption: "Ollama or any compatible /v1 host.") {
-                SettingsField(placeholder: "http://127.0.0.1:11434/v1", text: $settings.ollamaBaseURL, width: 260)
+            SettingsRow(title: "Base URL") {
+                SettingsField(placeholder: "http://127.0.0.1:11434/v1", text: $settings.ollamaBaseURL, width: BeruMetrics.wideFieldWidth)
             }
-            SettingsRow(title: "Enhance model", caption: "Local Ollama tag used for Enhance Prompt.") {
+            SettingsRow(title: "Enhance model") {
                 OllamaModelIDPicker(selection: $settings.ollamaEnhanceModel, accessibilityLabel: "Enhance model")
             }
-            SettingsRow(title: "Grammar model", caption: "Local Ollama tag used for Grammar.") {
+            SettingsRow(title: "Grammar model") {
                 OllamaModelIDPicker(selection: $settings.ollamaGrammarModel, accessibilityLabel: "Grammar model")
             }
         case .anthropic:
             SettingsRow(title: "API key", caption: "Stored in the Keychain on this Mac.") {
-                SettingsSecretField(placeholder: "sk-ant-…", text: $anthropicKey, width: 260)
+                SettingsSecretField(placeholder: "sk-ant-…", text: $anthropicKey, width: BeruMetrics.wideFieldWidth)
             }
         case .custom:
             SettingsRow(
                 title: "Preset",
                 caption: "Groq, OpenAI, OpenRouter, LM Studio, or any OpenAI-compatible /v1 API."
             ) {
-                Picker("", selection: $apiPreset) {
-                    ForEach(CompatibleAPIPreset.allCases) { preset in
-                        Text(preset.title).tag(preset)
-                    }
-                }
-                .labelsHidden()
-                .accessibilityLabel("API preset")
-                .pickerStyle(.menu)
-                .fixedSize()
+                SettingsMenuPicker(
+                    selection: $apiPreset,
+                    options: CompatibleAPIPreset.allCases.map {
+                        SettingsPickerOption(value: $0, title: $0.title)
+                    },
+                    accessibilityLabel: "API preset"
+                )
                 .onChange(of: apiPreset) { _, preset in
                     applyAPIPreset(preset)
                 }
             }
             SettingsRow(title: "Base URL") {
-                SettingsField(placeholder: "https://api.example.com/v1", text: $settings.customBaseURL, width: 260)
+                SettingsField(placeholder: "https://api.example.com/v1", text: $settings.customBaseURL, width: BeruMetrics.wideFieldWidth)
             }
             SettingsRow(title: "API key", caption: "Stored in the Keychain on this Mac.") {
-                SettingsSecretField(placeholder: "sk-…", text: $customKey, width: 260)
+                SettingsSecretField(placeholder: "sk-…", text: $customKey, width: BeruMetrics.wideFieldWidth)
             }
             SettingsRow(title: "Model") {
                 SettingsField(placeholder: "Model id", text: $settings.customEnhanceModel)
@@ -180,13 +176,13 @@ struct ProviderSettingsSections: View {
         case .idle:
             EmptyView()
         case .testing:
-            ProgressView().controlSize(.small)
+            BeruLoader.compact(tint: BeruColor.accent)
         case .success:
-            BeruIcon(name: "circle-check", size: 16)
-                .foregroundStyle(SettingsTheme.active)
+            BeruIcon(name: "circle-check", size: BeruMetrics.iconSize)
+                .foregroundStyle(BeruColor.positive)
         case .failure:
-            BeruIcon(name: "circle-x", size: 16)
-                .foregroundStyle(SettingsTheme.textSecondary)
+            BeruIcon(name: "circle-x", size: BeruMetrics.iconSize)
+                .foregroundStyle(BeruColor.destructive)
         }
     }
 

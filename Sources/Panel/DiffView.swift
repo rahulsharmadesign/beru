@@ -42,8 +42,6 @@ struct DiffView: View {
         }
         .textSelection(.enabled)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, scrolls ? BeruSpace.md : 0)
-        .padding(.vertical, scrolls ? BeruSpace.md : 0)
     }
 
     private static func attributedString(from ops: [DiffOp]) -> AttributedString {

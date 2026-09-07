@@ -17,12 +17,12 @@ struct RationaleNote: View {
                 withAnimation(.easeOut(duration: 0.16)) { isExpanded.toggle() }
             } label: {
                 HStack(spacing: BeruSpace.xxs) {
-                    BeruIcon(name: "graduation-cap", size: 10, strokeWidth: 2)
+                    BeruIcon(name: "graduation-cap", size: BeruMetrics.iconSizeDense, strokeWidth: 2)
                     Text(isExpanded ? "Why" : text)
                         .font(BeruType.caption)
                         .lineLimit(1)
                         .truncationMode(.tail)
-                    BeruIcon(name: "chevron-down", size: 8, strokeWidth: 2.5)
+                    BeruIcon(name: "chevron-down", size: BeruMetrics.iconSizeDense, strokeWidth: 2)
                         .rotationEffect(.degrees(isExpanded ? 0 : -90))
                     Spacer(minLength: 0)
                 }
@@ -41,7 +41,6 @@ struct RationaleNote: View {
                     .transition(.opacity)
             }
         }
-        .padding(.horizontal, BeruSpace.md)
         .padding(.bottom, BeruSpace.xxs)
         .frame(maxWidth: .infinity, alignment: .leading)
     }

@@ -1,18 +1,44 @@
+import AppKit
 import SwiftUI
 
-/// SF Symbols used consistently across Beru. Stored ids may still be Lucide
-/// kebab-case, Material names, or SF Symbol names; `IconNames.system` maps them.
+/// Lucide glyphs first, SF Symbols as fallback. Stored ids stay Lucide
+/// kebab-case (or legacy Material names); vendored SVGs in Assets.xcassets
+/// render with template intent at their native 2px stroke, and anything
+/// without an asset resolves through `IconNames.system`.
+///
+/// Haze glyph is 16x16 across the app. Dense chips, cites, and kbd may use
+/// `BeruMetrics.iconSizeDense`.
 struct BeruIcon: View {
     let name: String
-    var size: CGFloat = 18
-    /// Kept so existing call sites compile. SF Symbols use font weight, not stroke.
+    var size: CGFloat = 16
+    /// Kept so existing call sites compile. SF Symbols use font weight, not
+    /// stroke; Lucide assets ignore it.
     var strokeWidth: CGFloat = 1.8
 
     var body: some View {
-        Image(systemName: IconNames.system(stored: name))
-            .font(.system(size: size, weight: strokeWidth >= 2.2 ? .semibold : .medium))
-            .frame(width: size, height: size)
-            .accessibilityHidden(true)
+        if Self.hasTemplateAsset(name) {
+            Image(name)
+                .resizable()
+                .scaledToFit()
+                .frame(width: size, height: size)
+                .accessibilityHidden(true)
+        } else {
+            Image(systemName: IconNames.system(stored: name))
+                .font(.system(size: size, weight: strokeWidth >= 2.2 ? .semibold : .medium))
+                .frame(width: size, height: size)
+                .accessibilityHidden(true)
+        }
+    }
+
+    /// Asset probe, cached per name. SF Symbols remain the fallback for
+    /// true-SF names and custom ids (`target-cursor`).
+    private static var templateCache: [String: Bool] = [:]
+
+    private static func hasTemplateAsset(_ name: String) -> Bool {
+        if let hit = templateCache[name] { return hit }
+        let found = NSImage(named: name) != nil
+        templateCache[name] = found
+        return found
     }
 }
 
@@ -97,6 +123,8 @@ enum IconNames {
         "info": "info.circle",
         "lock": "lock.fill",
         "database": "internaldrive",
+        // Lucide `braces` has no asset; the SF Symbol is `curlybraces`.
+        "braces": "curlybraces",
         // Material Symbols leftover in settings chrome
         "close": "xmark",
         "visibility": "eye",

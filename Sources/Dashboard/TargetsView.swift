@@ -19,7 +19,11 @@ struct TargetsView: View {
     }
 
     var body: some View {
-        SettingsWorkspace(title: "Targets", subtitle: DashboardRoute.targets.pageSubtitle) {
+        SettingsWorkspace(
+            title: DashboardRoute.targets.title,
+            subtitle: DashboardRoute.targets.pageSubtitle,
+            icon: DashboardRoute.targets.lucideIcon
+        ) {
             VStack(spacing: 0) {
                 filterBar
                 SettingsSplitView {
@@ -56,17 +60,19 @@ struct TargetsView: View {
     private var filterBar: some View {
         SettingsWorkspaceToolbar {
             SettingsSearchField(text: $query, placeholder: "Search targets")
-                .frame(maxWidth: 260)
-            SettingsOverflowMenu(title: "More") {
-                Button("Export custom targets…") { exportTargets() }
-                Button("Import custom targets…") { importTargets() }
+                .frame(maxWidth: BeruMetrics.toolbarSearchWidth)
+            Spacer(minLength: BeruSpace.md)
+            SettingsPillButton(title: "Import", leadingIcon: "square.and.arrow.down") {
+                importTargets()
+            }
+            SettingsPillButton(title: "Export", leadingIcon: "square.and.arrow.up") {
+                exportTargets()
             }
         }
     }
 
     private var list: some View {
         WorkspaceSourceList(
-            selection: $selection,
             isEmpty: filteredProfiles.isEmpty,
             emptyIcon: "search",
             emptyTitle: "No matches",
@@ -78,8 +84,7 @@ struct TargetsView: View {
                     subtitle: profile.isBuiltIn ? "Built-in" : "Custom",
                     icon: profile.icon
                 )
-                .tag(profile.id)
-                .workspaceSourceRow()
+                .workspaceRowSelection($selection, value: profile.id, isSelected: selection == profile.id)
                 .contextMenu {
                     if !profile.isBuiltIn {
                         Button("Delete", role: .destructive) {
@@ -109,7 +114,7 @@ struct TargetsView: View {
         if let profile = selected {
             ScrollView {
                 VStack(alignment: .leading, spacing: BeruSpace.lg) {
-                    SettingsSection(title: "Target", subtitle: "Name and icon shown in the panel picker.") {
+                    SettingsSection(title: "Target") {
                         SettingsRow(title: "Kind") {
                             SettingsValue(text: inspectorBadge(for: profile))
                         }
@@ -129,16 +134,15 @@ struct TargetsView: View {
 
                     SettingsSection(
                         title: "Conventions",
-                        subtitle: "Appended to Enhance Prompt for this environment. Leave empty for Generic."
+                        subtitle: "Appended to Enhance Prompt for this environment."
                     ) {
                         TextEditor(text: binding(for: profile).promptFragment)
                             .font(BeruType.mono)
                             .foregroundStyle(BeruColor.textPrimary)
                             .scrollContentBackground(.hidden)
-                            .frame(minWidth: 0, minHeight: 220)
+                            .frame(minWidth: 0, minHeight: BeruMetrics.editorMinHeight)
                             .frame(maxWidth: .infinity)
                             .dashboardEditorCanvas()
-                            .settingsEditorSurface()
                     }
 
                     if profile.isBuiltIn, registry.isModifiedFromDefault(id: profile.id) {

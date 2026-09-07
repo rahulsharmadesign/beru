@@ -4,6 +4,10 @@ import SwiftUI
 // Presenting, sizing and dismissing the panel window. Split from
 // FloatingPanel, which is the window itself.
 
+import os.log
+
+private let layoutLog = Logger(subsystem: "com.rahul.beru", category: "panel-layout")
+
 /// Owns the lifecycle of the floating panel and hosts the SwiftUI content.
 ///
 /// Height contract (frozen):
@@ -181,6 +185,7 @@ final class PanelController {
             appState.panelResultScrollHeight = scrollHeight
         }
 
+        layoutLog.debug("layout chrome=\(applied.chrome, format: .fixed(precision: 0)) result=\(applied.result, format: .fixed(precision: 0)) ideal=\(applied.chrome + applied.result, format: .fixed(precision: 0)) cap=\(self.maxPanelHeight(), format: .fixed(precision: 0)) scroll=\(scrollHeight ?? -1, format: .fixed(precision: 0))")
         let growing = target > (panel?.frame.height ?? 0) + 0.5
         if growing {
             pendingResize?.cancel()
@@ -251,7 +256,10 @@ final class PanelController {
     }
 
     private func applyContentHeight(_ height: CGFloat, animated: Bool = false) {
-        guard let panel, panel.isVisible, !isApplyingHeight else { return }
+        guard let panel, panel.isVisible, !isApplyingHeight else {
+            layoutLog.debug("applyContentHeight skipped visible=\(self.panel?.isVisible ?? false) applying=\(self.isApplyingHeight)")
+            return
+        }
         let targetWidgetHeight = min(height.rounded(), maxPanelHeight())
         let targetWindowHeight = PanelMetrics.windowHeight(for: targetWidgetHeight)
         let current = panel.frame.height

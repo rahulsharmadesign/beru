@@ -6,20 +6,20 @@ import SwiftUI
 extension PanelView {
     // MARK: - Toolbar (verbs + context)
 
-    /// Verb chips + quiet metadata. Context line always occupies height
-    /// (opacity only) so Search ↔ skill does not change toolbar size mid-frame
-    /// and crop the composer before the window can grow.
+    /// Verb chips + quiet metadata. The context line renders only when it
+    /// has content: reserving its height while hidden left a ~22pt phantom
+    /// gap above the result card in the AI Search tab. Tab switches resize
+    /// in the same frame per the frozen height contract, so no reservation
+    /// is needed.
     var toolbar: some View {
         VStack(alignment: .leading, spacing: BeruSpace.xs) {
             verbRow
-            contextLine
-                .opacity(showsContextLine ? 1 : 0)
-                .accessibilityHidden(!showsContextLine)
-                // Keep context from animating height; do not nil the chip row.
-                .animation(nil, value: appState.selectedActionID)
-                .animation(nil, value: appState.isQuickSearch)
+            if showsContextLine {
+                contextLine
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+        .animation(nil, value: showsContextLine)
     }
 
     var showsContextLine: Bool {
@@ -50,71 +50,85 @@ extension PanelView {
                             .id(action.id)
                     }
                 }
-                .coordinateSpace(name: "tabRow")
-                .background(alignment: .leading) {
-                    slidingTabPill
-                }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
             .frame(height: BeruMetrics.tabPillHeight)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .onPreferenceChange(TabChipFrameKey.self) { tabChipFrames = $0 }
             // Webpage → Summarize (and similar) land on a chip past the fold;
             // bring the active tab into view without a manual swipe.
-            .onAppear { scrollChipIntoView(proxy) }
+            .onAppear {
+                scrollChipIntoView(proxy)
+                // The appear-scroll can commit while first layout is still
+                // settling and silently miss. Re-assert after settle so a
+                // stale offset can never stick on default open.
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    scrollChipIntoView(proxy)
+                }
+            }
             .onChange(of: appState.selectedActionID) { _, _ in
                 scrollChipIntoView(proxy)
             }
             .onChange(of: appState.panelSessionID) { _, _ in
                 scrollChipIntoView(proxy)
             }
-        }
-    }
-
-    func scrollChipIntoView(_ proxy: ScrollViewProxy) {
-        let id = appState.selectedActionID
-        let animated = !a11y.reduceMotion
-        DispatchQueue.main.async {
-            withAnimation(animated ? .easeOut(duration: 0.2) : nil) {
-                proxy.scrollTo(id, anchor: .center)
+            // The panel host is reused across invocations, so a scrolled row
+            // can outlive the session that scrolled it. Re-center on every
+            // show — this is what left AI Search cropped on default open.
+            .onChange(of: appState.isPanelVisible) { _, visible in
+                if visible {
+                    scrollChipIntoView(proxy)
+                }
             }
         }
     }
 
-    /// CSS pill: `left`/`width` over 0.4s `cubic-bezier(0.65, 0, 0.35, 1)`.
-    /// Scoped to this overlay so the window does not re-layout.
-    var tabMorph: Animation {
-        a11y.reduceMotion
-            ? .easeOut(duration: 0.12)
-            : .timingCurve(0.65, 0, 0.35, 1, duration: 0.4)
+    func scrollChipIntoView(_ proxy: ScrollViewProxy) {
+        let tabs = panelTabs
+        let id = appState.selectedActionID
+        // Edge tabs pin to their edge: centering the first chip resolves to
+        // a negative offset that sticks as a crop instead of clamping to zero.
+        let anchor: UnitPoint =
+            id == tabs.first?.id ? .leading
+            : id == tabs.last?.id ? .trailing : .center
+        DispatchQueue.main.async {
+            // Instant scroll, never animated: wrapping scrollTo in
+            // withAnimation leaked an animated transaction onto the chip
+            // fills, fading unselected backgrounds and strokes mid-switch.
+            proxy.scrollTo(id, anchor: anchor)
+        }
     }
 
     func selectTab(_ actionID: String) {
         guard actionID != appState.selectedActionID else { return }
         // Do not wrap selectAction in withAnimation — that re-lays out chrome
-        // with the window. The sliding pill animates via `.animation(tabMorph)`.
+        // with the window. Selection cross-fades on each chip instead.
+        openMenuID = nil
         appState.selectAction(actionID)
-    }
-
-    /// One absolute pill. Position and width track the selected chip's frame,
-    /// same as setting `style.left` / `style.width` from `offsetLeft` / `offsetWidth`.
-    @ViewBuilder
-    var slidingTabPill: some View {
-        if let frame = tabChipFrames[appState.selectedActionID] {
-            Capsule()
-                .fill(BeruColor.accent)
-                .frame(width: frame.width, height: BeruMetrics.tabPillHeight)
-                .offset(x: frame.minX)
-                .allowsHitTesting(false)
-                .animation(tabMorph, value: appState.selectedActionID)
+        // One-shot pop: bounce out, then settle back to 1.00. Skipped under
+        // Reduce Motion, where selection is an instant swap.
+        if !a11y.reduceMotion {
+            chipPopID = actionID
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                if chipPopID == actionID {
+                    chipPopID = nil
+                }
+            }
         }
     }
 
+    /// Selection lives on the chip itself: a 0.25s ease melts the gradient
+    /// and text color while the chip bounces to 1.04 on a 0.5s overshoot
+    /// and settles back to the original 1.00 — the `.pill` CSS motion
+    /// (`0.34, 1.56, 0.64, 1`), mapped to the Haze gradient instead of
+    /// orange. Render-only: layout (and the frozen height contract) never
+    /// moves.
     func chip(for action: EnhancementAction) -> some View {
         let isSelected = appState.selectedActionID == action.id
         let label = BeruLabel(title: action.name, icon: action.icon, iconSize: 14, strokeWidth: 2)
             .labelStyle(.titleAndIcon)
             .font(BeruType.footnoteMedium)
             .foregroundStyle(isSelected ? BeruColor.onAccent : BeruColor.textPrimary)
+            .animation(chipColorEase, value: isSelected)
 
         return Button { selectTab(action.id) } label: {
             label
@@ -122,17 +136,25 @@ extension PanelView {
                 .frame(height: BeruMetrics.tabPillHeight)
                 .contentShape(Capsule())
                 .background {
+                    // Layered fills, not a conditional fill: SwiftUI cannot
+                    // interpolate a gradient into a solid color, so swapping
+                    // `.fill()` styles snapped instantly with no visible
+                    // transition. Fading the gradient layer's opacity melts
+                    // selection from chip to chip instead.
                     Capsule()
-                        .strokeBorder(isSelected ? Color.clear : BeruColor.border, lineWidth: 0.75)
+                        .fill(BeruColor.subtleFill)
+                        .overlay {
+                            Capsule()
+                                .fill(BeruColor.accentGradient)
+                                .opacity(isSelected ? 1 : 0)
+                                .animation(chipColorEase, value: isSelected)
+                        }
+                        .overlay {
+                            Capsule().strokeBorder(isSelected ? Color.clear : BeruColor.border, lineWidth: 1)
+                        }
                 }
-                .background {
-                    GeometryReader { geo in
-                        Color.clear.preference(
-                            key: TabChipFrameKey.self,
-                            value: [action.id: geo.frame(in: .named("tabRow"))]
-                        )
-                    }
-                }
+                .scaleEffect(chipPopID == action.id ? 1.04 : 1)
+                .animation(chipPopMorph, value: [chipPopID == action.id, isSelected])
         }
         .buttonStyle(.plain)
         .frame(height: BeruMetrics.tabPillHeight)
@@ -140,28 +162,30 @@ extension PanelView {
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
-    /// Context as caption text — not a second chip row competing with verbs.
+    /// Pill pop: overshoot scale on select, matching the `.pill` CSS
+    /// `transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)`.
+    var chipPopMorph: Animation {
+        a11y.reduceMotion
+            ? .easeOut(duration: 0.12)
+            : .timingCurve(0.34, 1.56, 0.64, 1, duration: 0.5)
+    }
+
+    /// Pill tint: gradient and text color over 0.25s ease, like the CSS
+    /// `background 0.25s ease, color 0.25s ease`.
+    var chipColorEase: Animation {
+        a11y.reduceMotion ? .easeOut(duration: 0.12) : .easeOut(duration: 0.25)
+    }
+
+    /// Character count only — the action name, host app, and clipboard
+    /// toggle used to crowd this line. Context as caption text, left aligned.
     var contextLine: some View {
-        HStack(spacing: BeruSpace.xs) {
-            Text(contextSummary)
+        HStack(spacing: BeruSpace.xxs) {
+            Text(characterCountSummary)
                 .font(BeruType.caption)
                 .foregroundStyle(BeruColor.textSecondary)
                 .lineLimit(1)
-            Spacer(minLength: BeruSpace.xs)
+            Spacer(minLength: 0)
             sessionContextChip
-            if appState.clipboardText != nil {
-                Button {
-                    appState.includeClipboard.toggle()
-                } label: {
-                    Text(appState.includeClipboard ? "Clipboard ✓" : "Clipboard")
-                        .font(BeruType.captionMedium)
-                        .foregroundStyle(appState.includeClipboard ? BeruColor.accent : BeruColor.textSecondary)
-                }
-                .buttonStyle(.plain)
-                .help(appState.includeClipboard
-                      ? "Clipboard will be sent as reference"
-                      : "Include clipboard as reference")
-            }
         }
     }
 
@@ -195,26 +219,8 @@ extension PanelView {
         return thread.turns(forBundleID: appState.hostBundleID).count
     }
 
-    var contextSummary: String {
-        let name = EnhancementAction.resolvedName(
-            actionID: appState.selectedActionID,
-            registryName: registry.action(withID: appState.selectedActionID)?.name
-        )
+    var characterCountSummary: String {
         let count = appState.capturedText.trimmingCharacters(in: .whitespacesAndNewlines).count
-        return EnhancementAction.contextSummary(
-            actionName: name,
-            hostAppName: appState.hostAppName,
-            characterCount: count
-        )
-    }
-}
-
-/// Chip frames in the tab row, used to slide the selection pill like CSS
-/// `offsetLeft` / `offsetWidth`.
-private struct TabChipFrameKey: PreferenceKey {
-    static var defaultValue: [String: CGRect] = [:]
-
-    static func reduce(value: inout [String: CGRect], nextValue: () -> [String: CGRect]) {
-        value.merge(nextValue(), uniquingKeysWith: { $1 })
+        return count == 1 ? "1 character" : "\(count) characters"
     }
 }

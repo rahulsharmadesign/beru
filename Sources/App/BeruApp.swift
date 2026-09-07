@@ -12,6 +12,15 @@ extension KeyboardShortcuts.Name {
 @main
 struct BeruApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
+
+    init() {
+        #if DEBUG
+        MainActor.assumeIsolated {
+            DesignSnapshot.runIfRequested()
+        }
+        #endif
+    }
+
     var body: some Scene {
         MenuBarExtra {
             MenuBarContent(coordinator: appDelegate.coordinator)
@@ -22,33 +31,25 @@ struct BeruApp: App {
     }
 }
 
-/// Status-item glyph. The asset is a black-on-clear template; AppKit tints it
-/// to match the menu bar. SwiftUI's resizable `Image` paints the literal black
-/// pixels instead, so load through `NSImage` with `isTemplate` set.
+/// Status-item glyph. Template intent comes from the asset catalog, so the
+/// system tints it for light, dark, and wallpaper-tinted menu bars. Do not
+/// route through `NSImage`: SwiftUI rasterizes those pixels literally and a
+/// dark glyph goes invisible on dark bars.
 private struct MenuBarStatusIcon: View {
     var body: some View {
-        Image(nsImage: Self.templateImage)
+        Image("MenuBarIcon")
             .accessibilityLabel("Beru")
     }
-
-    private static let templateImage: NSImage = {
-        guard let image = NSImage(named: "MenuBarIcon")?.copy() as? NSImage else {
-            preconditionFailure("MenuBarIcon asset missing from catalog")
-        }
-        image.isTemplate = true
-        return image
-    }()
 }
 
 struct MenuBarContent: View {
     let coordinator: AppCoordinator
     @Bindable private var settings = SettingsStore.shared
     @Bindable private var appearance = AppearanceObserver.shared
-    @Environment(\.colorScheme) private var colorScheme
     @Environment(\.dismiss) private var dismiss
 
-    private let rowHeight: CGFloat = 40
-    private let rowRadius = BeruRadius.md
+    /// Hero CTA height. Rows sit at the 32pt Haze pill height.
+    private let rowHeight: CGFloat = BeruMetrics.pillHeight
 
     var body: some View {
         // Observation only invalidates on values read while body runs, and
@@ -65,28 +66,31 @@ struct MenuBarContent: View {
                     openDashboard(.vault)
                 })
             }
-            providerRow
+            MenuProviderPicker()
             Divider()
             footer
         }
-        .padding(BeruSpace.md)
-        .frame(width: 320)
-        .background(colorScheme == .dark ? BeruColor.Dark.surface : BeruColor.Light.surface)
+        .padding(BeruSpace.sm)
+        .frame(width: BeruMetrics.menuDropdownWidth)
+        .background(BeruColor.panelSolid)
         .clipShape(BeruRadius.shape(BeruRadius.lg))
-        .shadow(color: .black.opacity(colorScheme == .dark ? 0.35 : 0.16), radius: BeruSpace.lg, y: BeruSpace.xs)
+        .overlay {
+            BeruRadius.shape(BeruRadius.lg)
+                .strokeBorder(BeruColor.border, lineWidth: 1)
+        }
+        .shadow(color: BeruColor.softShadow, radius: BeruSpace.lg, y: BeruSpace.xs)
         .tint(BeruColor.accent)
-    }
-
-    private var wellFill: Color {
-        colorScheme == .dark ? Color.white.opacity(0.08) : Color.black.opacity(0.05)
     }
 
     private var header: some View {
         HStack(spacing: BeruSpace.sm) {
-            Image("BrandMark").resizable().scaledToFit().frame(width: 30, height: 30)
+            Image("BrandMark")
+                .resizable()
+                .scaledToFit()
+                .frame(width: BeruMetrics.brandMark, height: BeruMetrics.brandMark)
                 .clipShape(BeruRadius.shape(BeruRadius.sm))
             VStack(alignment: .leading, spacing: 0) {
-                Text("Beru").font(BeruType.rowTitle).fontWeight(.semibold)
+                Text("Beru").font(BeruType.controlSemibold)
                 Text(headerStatus.text)
                     .font(BeruType.footnote)
                     .foregroundStyle(BeruColor.textSecondary)
@@ -114,22 +118,20 @@ struct MenuBarContent: View {
     private var primaryAction: some View {
         Button { coordinator.enhanceClipboard() } label: {
             HStack(spacing: BeruSpace.xs) {
-                BeruIcon(name: "sparkles", size: 15, strokeWidth: 2)
+                BeruIcon(name: "sparkles", size: BeruMetrics.iconSize, strokeWidth: 2)
                 Text("Enhance Clipboard")
-                    .font(BeruType.body)
-                    .fontWeight(.semibold)
+                    .font(BeruType.controlSemibold)
                     .lineLimit(1)
                 Spacer(minLength: BeruSpace.xs)
                 if let shortcut = KeyboardShortcuts.getShortcut(for: .invokeBeru) {
-                    Text(shortcut.description)
-                        .font(BeruType.footnoteMedium.monospaced())
-                        .opacity(0.72)
+                    BeruKbd(text: shortcut.description, tone: .onAccent)
+                        .opacity(0.85)
                 }
             }
             .foregroundStyle(BeruColor.onAccent)
-            .padding(.horizontal, BeruSpace.sm)
+            .padding(.horizontal, BeruSpace.md)
             .frame(maxWidth: .infinity, minHeight: rowHeight)
-            .background(BeruColor.accent, in: BeruRadius.shape(rowRadius))
+            .background(BeruColor.accentGradient, in: Capsule())
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Enhance Clipboard")
@@ -139,14 +141,17 @@ struct MenuBarContent: View {
     private func compactAction(_ title: String, symbol: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             HStack(spacing: BeruSpace.xs) {
-                BeruIcon(name: symbol, size: 15, strokeWidth: 2)
+                BeruIcon(name: symbol, size: BeruMetrics.iconSize, strokeWidth: 2)
                 Text(title)
-                    .font(BeruType.bodyMedium)
+                    .font(BeruType.controlMedium)
                     .lineLimit(1)
             }
             .foregroundStyle(BeruColor.textPrimary)
-            .frame(maxWidth: .infinity, minHeight: rowHeight)
-            .background(wellFill, in: BeruRadius.shape(rowRadius))
+            .frame(maxWidth: .infinity, minHeight: BeruMetrics.pillHeight)
+            .background(BeruColor.subtleFill, in: Capsule())
+            .overlay {
+                Capsule().strokeBorder(BeruColor.border, lineWidth: 1)
+            }
         }
         .buttonStyle(.plain)
         .frame(maxWidth: .infinity)
@@ -155,75 +160,26 @@ struct MenuBarContent: View {
 
     /// `NSMenu.popUp` works in a MenuBarExtra window. SwiftUI `Menu` as an
     /// overlay on a custom row does not receive clicks.
-    private var providerRow: some View {
-        Button {
-            presentProviderMenu()
-        } label: {
-            HStack(spacing: BeruSpace.xs) {
-                BeruIcon(name: "cpu", size: 15, strokeWidth: 2)
-                Text(settings.activeProvider.title)
-                    .font(BeruType.bodyMedium)
-                    .lineLimit(1)
-                Spacer(minLength: BeruSpace.xs)
-                BeruIcon(name: "chevrons-up-down", size: 14, strokeWidth: 2)
-                    .foregroundStyle(BeruColor.textSecondary)
-            }
-            .foregroundStyle(BeruColor.textPrimary)
-            .padding(.horizontal, BeruSpace.sm)
-            .frame(maxWidth: .infinity, minHeight: rowHeight, alignment: .leading)
-            .background(wellFill, in: BeruRadius.shape(rowRadius))
-            .contentShape(BeruRadius.shape(rowRadius))
-        }
-        .buttonStyle(.plain)
-        .help("Change the active provider")
-        .accessibilityLabel("Active provider, \(settings.activeProvider.title)")
-        .accessibilityHint("Choose which AI provider Beru sends requests to")
-    }
-
-    private func presentProviderMenu() {
-        let menu = NSMenu()
-        menu.autoenablesItems = false
-        let selected = settings.activeProvider
-        ProviderMenuRelay.shared.onPick = { kind in
-            settings.selectProvider(kind)
-        }
-        for kind in ProviderKind.allCases {
-            let item = NSMenuItem(
-                title: kind.title,
-                action: #selector(ProviderMenuRelay.pick(_:)),
-                keyEquivalent: ""
-            )
-            item.target = ProviderMenuRelay.shared
-            item.representedObject = kind.rawValue
-            item.state = kind == selected ? .on : .off
-            item.isEnabled = settings.isConfigured(kind)
-            menu.addItem(item)
-        }
-        menu.popUp(positioning: nil, at: NSEvent.mouseLocation, in: nil)
-    }
-
     private var footer: some View {
-        HStack {
-            Button { openDashboard(.general) } label: {
-                HStack(spacing: BeruSpace.xs) {
-                    BeruIcon(name: "settings", size: 14, strokeWidth: 2)
-                    Text("Settings")
-                }
+        HStack(spacing: BeruSpace.xxs) {
+            MenuFooterRow(icon: "settings", title: "Settings") {
+                openDashboard(.general)
             }
-            .buttonStyle(.plain)
-            Spacer(minLength: BeruSpace.xs)
-            Button("Quit") { NSApp.terminate(nil) }
-                .buttonStyle(.plain)
-                .foregroundStyle(BeruColor.textSecondary)
+            MenuFooterRow(title: "Quit", role: .destructive) {
+                NSApp.terminate(nil)
+            }
         }
-        .font(BeruType.body)
-        .foregroundStyle(BeruColor.textPrimary)
-        .padding(.top, BeruSpace.xxs)
     }
 
     private func openDashboard(_ route: DashboardRoute) {
-        closeMenuBarWindow()
-        coordinator.showDashboard(route: route)
+        // Defer past the MenuBarExtra tracking loop. Dismissing synchronously
+        // inside the click action gets overridden when tracking ends, which
+        // leaves the widget open under the dashboard. Closing after the loop
+        // unwinds gives the requested order: widget closes, settings appear.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.08) {
+            closeMenuBarWindow()
+            coordinator.showDashboard(route: route)
+        }
     }
 
     /// Window-style `MenuBarExtra` does not dismiss on its own when another
@@ -237,6 +193,44 @@ struct MenuBarContent: View {
         for window in NSApp.windows where window.className.contains("NSStatusBar") {
             window.orderOut(nil)
         }
+    }
+}
+
+/// Haze menu row for the footer. Transparent idle, surface fill on hover,
+/// destructive tint for Quit.
+private struct MenuFooterRow: View {
+    var icon: String? = nil
+    let title: String
+    var role: ButtonRole? = nil
+    let action: () -> Void
+
+    @State private var isHovered = false
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: BeruSpace.xs) {
+                if let icon {
+                    BeruIcon(name: icon, size: BeruMetrics.iconSize, strokeWidth: 2)
+                }
+                Text(title)
+                    .font(BeruType.controlMedium)
+                    .lineLimit(1)
+                Spacer(minLength: 0)
+            }
+            .foregroundStyle(role == .destructive ? BeruColor.destructive : BeruColor.textPrimary)
+            .padding(.horizontal, BeruSpace.sm)
+            .frame(maxWidth: .infinity, minHeight: BeruMetrics.pillHeight, alignment: .leading)
+            .background {
+                BeruRadius.shape(BeruRadius.sm)
+                    .fill(isHovered ? BeruColor.hoverFill : .clear)
+            }
+            .contentShape(BeruRadius.shape(BeruRadius.sm))
+        }
+        .buttonStyle(.plain)
+        .frame(maxWidth: .infinity)
+        .onHover { isHovered = $0 }
+.beruHoverEase(isHovered)
+        .accessibilityLabel(title)
     }
 }
 
@@ -311,14 +305,4 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 }
 
-/// Target of `NSMenuItem` actions. SwiftUI views cannot be `@objc` targets.
-private final class ProviderMenuRelay: NSObject {
-    static let shared = ProviderMenuRelay()
-    var onPick: ((ProviderKind) -> Void)?
 
-    @objc func pick(_ sender: NSMenuItem) {
-        guard let raw = sender.representedObject as? String,
-              let kind = ProviderKind(rawValue: raw) else { return }
-        onPick?(kind)
-    }
-}

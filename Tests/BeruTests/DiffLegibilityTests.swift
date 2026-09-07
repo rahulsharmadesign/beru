@@ -109,8 +109,14 @@ final class DiffLegibilityTests: XCTestCase {
         XCTAssertFalse(EnhancementAction.showsInlineDiff(for: EnhancementAction.describeID))
     }
 
+    func testEnhanceRendersPlainLikeTheVerbs() {
+        // Enhance rewrites a rough idea into a structured prompt — a new
+        // document that shares almost no wording with the input — so the
+        // interleaved diff read as corrupted output.
+        XCTAssertFalse(EnhancementAction.showsInlineDiff(for: EnhancementAction.enhanceID))
+    }
+
     func testEditActionsKeepInlineDiff() {
         XCTAssertTrue(EnhancementAction.showsInlineDiff(for: EnhancementAction.grammarID))
-        XCTAssertTrue(EnhancementAction.showsInlineDiff(for: EnhancementAction.enhanceID))
     }
 }

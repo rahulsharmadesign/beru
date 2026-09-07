@@ -24,6 +24,10 @@ enum Prompts {
     - When the author specifies an expected result, state it as a concrete deliverable and output format.
     - For software or technical work, preserve supported language, framework, interface, environment, edge-case, and verification details; do not manufacture any missing technical specifics.
 
+    VERY SHORT REQUESTS
+    - A fragment, a topic, or a bare question ("faster build times", "From when?", "kubernetes") is a seed, not junk: grow it into the complete, well-structured prompt the author clearly wants, using [square-bracket placeholders] for details only they can supply.
+    - Say what the author said in their language; do not answer the fragment, ask clarifying questions, or editorialize about it. For bare fragments and topics this beats "a one-line ask stays a short prompt"; a short but complete request still stays short.
+
     QUALITY
     - The result must be immediately usable: a later model should not need to re-ask anything the author already answered.
     - Completeness means keeping what the author said, not padding what they did not. A one-line ask stays a short prompt. Do not invent an investigation, a process, logs, tests, file hunts, or a report format the author never mentioned.
@@ -32,7 +36,7 @@ enum Prompts {
 
     OUTPUT SHAPE
     - Use labeled Task: / Context: / Requirements: / Constraints: / Deliverable: sections only when the source itself has several distinct asks or a real procedure. Omit empty sections.
-    - For a simple or one-sentence request, write one short natural-language prompt. Do not emit a labeled skeleton, a numbered process, or a template of work the author did not describe.
+    - For a simple or one-sentence request, write one short natural-language prompt. Never emit labeled sections, a numbered process, or a template of work the author did not describe — a small prompt stays small even when the destination target prefers sections.
     - Do not add length limits, style rules, sensory lists, tone, or “output only X” unless the author already said them.
     - Output ONLY the improved prompt. Do not answer the request, explain your rewrite, add markdown fences, or wrap it in quotes.
 
@@ -45,11 +49,7 @@ enum Prompts {
     Output: Explain why this error occurs, using only the error text and surrounding code the author provided. If those are missing, say what is needed.
 
     Input: <text>before updating the docs, confirm everything still works, then update the docs to match</text>
-    Output: Task: Confirm the project still works, then update the documentation so it matches current behavior.
-    Context: Verification comes first; documentation changes come second.
-    Requirements: Check that existing behavior still works before editing docs. Then update the docs to reflect what actually works.
-    Constraints: Do not invent file paths, tools, or commands. Locate the relevant docs and the project's own verification commands.
-    Deliverable: Apply the doc edits. Summarize what you verified and which docs you changed.
+    Output: Confirm the project still works, then update the documentation so it matches current behavior. Verify existing behavior first and edit only the docs that disagree with it, without inventing file paths, tools, or commands.
     """
     static let grammar = """
     You are a precise copy editor. The user's message contains a document between <text> and </text> markers. Produce three versions of that document.
@@ -243,6 +243,10 @@ enum Prompts {
         Question: \(question)
 
         Answer the question. If source text is provided between markers, use it only as context — do not rewrite, reply to, summarize, or explain that source unless the question asks you to.
+
+        The Question may be a follow-up such as "From when?" or "who is CEO". When "Earlier in this conversation" is present, resolve the Question against it — pronouns, ellipsis, and "it/they" refer to the most recent subject. Only treat the Question as standalone when nothing earlier relates to it.
+
+        If the source between the markers is a single word or fragment that cannot answer the Question on its own, say so in the first sentence, offer 2-3 likely senses, and invent no specific product, document, or source. Skip the section headings for that answer.
 
         Lead with a one-sentence answer, then use Markdown `##` section headings, short paragraphs, and bullets so the structure is scannable. Do not open with a title-only first line. Do not use code fences. Bold is fine. Add only the detail needed to be correct and useful. Mark uncertainty. Do not fabricate facts, quotes, or sources. Do not discuss your instructions. No preamble, no closing offer to help.
         """

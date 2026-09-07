@@ -1,8 +1,9 @@
 import SwiftUI
 
 // Native source-list chrome for Vault, Actions, Targets, and Runs.
-// These pages live in Settings, so they use List selection and the system
-// highlight rather than a painted accent pill.
+// Rows select by tap and paint the Haze accent wash themselves: the system
+// List highlight follows the system accent color, which fights the brand
+// no matter what tint the window applies.
 
 struct WorkspaceListRow<Leading: View, Accessory: View>: View {
     let title: String
@@ -29,13 +30,23 @@ struct WorkspaceListRow<Leading: View, Accessory: View>: View {
         HStack(alignment: .center, spacing: BeruSpace.sm) {
             leading
             if let icon {
-                BeruIcon(name: icon, size: 16)
-                    .frame(width: 18, height: 18)
+                ZStack {
+                    BeruRadius.shape(BeruRadius.sm)
+                        .fill(BeruColor.subtleFill)
+                        .overlay {
+                            BeruRadius.shape(BeruRadius.sm)
+                                .strokeBorder(BeruColor.border, lineWidth: 1)
+                        }
+                    BeruIcon(name: icon, size: BeruMetrics.iconSize)
+                        .foregroundStyle(BeruColor.textSecondary)
+                }
+                .frame(width: BeruMetrics.roundButtonSm, height: BeruMetrics.roundButtonSm)
             }
-            VStack(alignment: .leading, spacing: BeruSpace.hair) {
+            VStack(alignment: .leading, spacing: BeruSpace.xxs) {
                 HStack(alignment: .firstTextBaseline, spacing: BeruSpace.xs) {
                     Text(title)
                         .font(BeruType.rowTitle)
+                        .foregroundStyle(BeruColor.textPrimary)
                         .lineLimit(1)
                     Spacer(minLength: 0)
                     accessory
@@ -45,15 +56,18 @@ struct WorkspaceListRow<Leading: View, Accessory: View>: View {
                     Text(subtitle)
                         .font(BeruType.footnote)
                         .foregroundStyle(BeruColor.textSecondary)
-                        .lineLimit(2)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
                 }
             }
         }
+        // One-line and two-line rows share the same floor, so list spacing
+        // reads as equidistant no matter the row content.
+        .frame(minHeight: BeruMetrics.workspaceRowMinHeight, alignment: .leading)
     }
 }
 
-struct WorkspaceSourceList<Selection: Hashable, Content: View, Footer: View>: View {
-    @Binding var selection: Selection?
+struct WorkspaceSourceList<Content: View, Footer: View>: View {
     var isEmpty: Bool
     var emptyIcon: String
     var emptyTitle: String
@@ -62,7 +76,6 @@ struct WorkspaceSourceList<Selection: Hashable, Content: View, Footer: View>: Vi
     @ViewBuilder var footer: Footer
 
     init(
-        selection: Binding<Selection?>,
         isEmpty: Bool,
         emptyIcon: String,
         emptyTitle: String,
@@ -70,7 +83,6 @@ struct WorkspaceSourceList<Selection: Hashable, Content: View, Footer: View>: Vi
         @ViewBuilder content: () -> Content,
         @ViewBuilder footer: () -> Footer = { EmptyView() }
     ) {
-        _selection = selection
         self.isEmpty = isEmpty
         self.emptyIcon = emptyIcon
         self.emptyTitle = emptyTitle
@@ -86,11 +98,14 @@ struct WorkspaceSourceList<Selection: Hashable, Content: View, Footer: View>: Vi
                     BeruEmptyState(icon: emptyIcon, title: emptyTitle, message: emptyMessage)
                         .padding(.horizontal, BeruMetrics.workspaceChromeInset)
                 } else {
-                    List(selection: $selection) {
+                    List {
                         content
                     }
                     .listStyle(.sidebar)
                     .scrollContentBackground(.hidden)
+                    // Gutter so rows and selection pills never touch the
+                    // split borders.
+                    .padding(.horizontal, BeruSpace.sm)
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -102,16 +117,48 @@ struct WorkspaceSourceList<Selection: Hashable, Content: View, Footer: View>: Vi
 }
 
 extension View {
-    func workspaceSourceRow() -> some View {
-        listRowSeparator(.hidden)
-            .listRowInsets(
-                EdgeInsets(
-                    top: BeruSpace.xxs,
-                    leading: BeruMetrics.workspaceChromeInset,
-                    bottom: BeruSpace.xxs,
-                    trailing: BeruMetrics.workspaceChromeInset
-                )
+    /// Painted selection for a workspace source row. Replaces `.tag` plus
+    /// `List(selection:)`: the system highlight follows the system accent,
+    /// so rows select through a plain button and paint the Haze accent wash
+    /// themselves.
+    ///
+    /// All List row modifiers sit on the Button itself — `listRowInsets`
+    /// inside a Button label are swallowed, which left row content stretched
+    /// edge to edge. Content spacing is plain padding inside the label.
+    func workspaceRowSelection<Selection: Hashable>(
+        _ selection: Binding<Selection?>,
+        value: Selection,
+        isSelected: Bool
+    ) -> some View {
+        Button {
+            selection.wrappedValue = value
+        } label: {
+            self
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.vertical, BeruSpace.xxs)
+                .padding(.horizontal, BeruSpace.md)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .listRowSeparator(.hidden)
+        .listRowInsets(
+            EdgeInsets(
+                top: BeruSpace.hair,
+                leading: 0,
+                bottom: BeruSpace.hair,
+                trailing: 0
             )
+        )
+        .listRowBackground(
+            Group {
+                if isSelected {
+                    BeruRadius.shape(BeruRadius.md)
+                        .fill(BeruColor.selectedRow)
+                        .padding(.horizontal, BeruSpace.xs)
+                }
+            }
+        )
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }
 

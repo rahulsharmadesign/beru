@@ -48,33 +48,10 @@ extension PanelView {
             help: "Which of the six replies to insert",
             accessibilityLabel: "Reply tone, \(appState.selectedReplyTone.title)",
             accessibilityHint: "Choose which generated reply to insert or copy",
-            action: presentToneMenu
+            isOpen: openMenuID == PanelMenuID.tone,
+            action: { toggleMenu(PanelMenuID.tone) }
         )
-    }
-
-    func presentToneMenu() {
-        let menu = NSMenu()
-        menu.autoenablesItems = false
-        let selected = appState.selectedReplyTone
-        TargetMenuRelay.shared.onPick = { raw in
-            guard let tone = ReplyTone(rawValue: raw) else { return }
-            appState.selectedReplyTone = tone
-        }
-        for tone in ReplyTone.allCases {
-            let item = NSMenuItem(
-                title: tone.title,
-                action: #selector(TargetMenuRelay.pick(_:)),
-                keyEquivalent: ""
-            )
-            item.target = TargetMenuRelay.shared
-            item.representedObject = tone.rawValue
-            item.state = tone == selected ? .on : .off
-            if !appState.replySuggestions.isEmpty {
-                item.isEnabled = appState.replySuggestions.contains { $0.tone == tone }
-            }
-            menu.addItem(item)
-        }
-        menu.popUp(positioning: nil, at: NSEvent.mouseLocation, in: nil)
+        .menuAnchor(PanelMenuID.tone)
     }
 
     var isPromptBusy: Bool {
@@ -84,32 +61,78 @@ extension PanelView {
         }
     }
 
+    /// Fresh AI Search open: beam the composer as the "type here" affordance
+    /// until the first question runs.
+    var showsFirstRunBeam: Bool {
+        appState.selectedActionID == EnhancementAction.searchID
+            && appState.searchThread.isEmpty
+            && !isPromptBusy
+    }
+
+    /// The beam overlay for `showsFirstRunBeam`, scoped to this subtree so the
+    /// fade transition cannot leak onto chips (see PanelToolbar's leak note).
+    var firstRunBeamOverlay: some View {
+        Group {
+            if showsFirstRunBeam {
+                BorderBeam(
+                    shape: RoundedRectangle(
+                        cornerRadius: PanelMetrics.composerRadius,
+                        style: .continuous
+                    ),
+                    palette: .mono,
+                    loops: 1
+                )
+                .id(beamRunID)
+                .transition(.opacity)
+            }
+        }
+        .animation(.easeOut(duration: 0.2), value: showsFirstRunBeam)
+        .onChange(of: showsFirstRunBeam) { _, showing in
+            if showing { beamRunID = UUID() }
+        }
+        .onChange(of: appState.selectedActionID) { _, _ in
+            if showsFirstRunBeam { beamRunID = UUID() }
+        }
+    }
+
     var sendButton: some View {
         Button(action: submitIfReady) {
-            ZStack {
-                Circle()
-                    .fill(canSubmitDescribe ? BeruColor.accent : BeruColor.disabledFill)
-                if isPromptBusy {
-                    BeruLoader.compact(
-                        tint: canSubmitDescribe ? BeruColor.onAccent : BeruColor.textSecondary
-                    )
-                } else {
-                    BeruIcon(name: "arrow-up", size: 15, strokeWidth: 2.4)
+            Circle()
+                .fill(canSubmitDescribe ? AnyShapeStyle(BeruColor.accentGradient) : AnyShapeStyle(BeruColor.disabledFill))
+                .overlay {
+                    BeruIcon(name: "arrow-up", size: BeruMetrics.iconSize, strokeWidth: 2.4)
                         .foregroundStyle(canSubmitDescribe ? BeruColor.onAccent : BeruColor.textSecondary)
                 }
-            }
-            .frame(width: BeruMetrics.hitTarget, height: BeruMetrics.hitTarget)
-            .contentShape(Circle())
+                .frame(width: BeruMetrics.roundButton, height: BeruMetrics.roundButton)
+                .contentShape(Circle())
         }
         .buttonStyle(.plain)
         .disabled(isPromptBusy)
-        .help("Run this intent")
-        .accessibilityLabel(isPromptBusy ? "Loading" : "Run this intent")
+        .help(isPromptBusy ? "Working…" : "Run this intent")
+        .accessibilityLabel(isPromptBusy ? "Working" : "Run this intent")
         .accessibilityHint("Send the instruction to Beru")
     }
 
     func submitIfReady() {
         guard canSubmitDescribe, !isPromptBusy else { return }
         submitDescribe()
+    }
+}
+
+extension ProviderKind {
+    var composerTitle: String {
+        switch self {
+        case .ollama: return "Ollama"
+        case .anthropic: return "Anthropic"
+        case .custom: return "API"
+        }
+    }
+
+    var composerIcon: String {
+        switch self {
+        case .ollama: return "cpu"
+        case .anthropic: return "sparkle"
+        case .custom: return "cloud"
+        }
     }
 }

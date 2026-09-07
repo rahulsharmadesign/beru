@@ -10,6 +10,10 @@ enum UsageEventKind: String, Codable, Sendable {
     case replaced
     case copied
     case dismissed
+    /// A like/dislike vote on a search answer. Persisted training signal;
+    /// per-line decoding keeps old readers safe (unknown lines drop).
+    case liked
+    case disliked
 }
 
 /// One line of the local usage history. Events from a single panel session

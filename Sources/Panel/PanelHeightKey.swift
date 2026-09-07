@@ -1,4 +1,15 @@
 import SwiftUI
+import os.log
+
+private let bandLog = Logger(subsystem: "com.rahul.beru", category: "panel-layout")
+
+/// Trace hook for band preference delivery, callable from PanelView.
+enum PanelControllerTrace {
+    @MainActor
+    static func band(_ text: String) {
+        bandLog.debug("\(text, privacy: .public)")
+    }
+}
 
 /// Ideal panel layout heights. Window size uses `ideal` until the 75% viewport
 /// cap; past that only the result band scrolls and chrome stays pinned.

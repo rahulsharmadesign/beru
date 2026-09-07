@@ -111,9 +111,9 @@ final class InvokeActionTests: XCTestCase {
         }
     }
 
-    /// Web selections land on Summarize whatever their length. Only an
+    /// Web selections land on Enhance Prompt whatever their length. Only an
     /// Instagram / YouTube / X context routes to Smart Reply.
-    func testGenericWebSelectionAlwaysOpensSummarize() {
+    func testGenericWebSelectionAlwaysOpensEnhancePrompt() {
         let comment = String(repeating: "Is this still available? ", count: 5)
         XCTAssertTrue(comment.count <= 280)
         XCTAssertEqual(
@@ -121,7 +121,7 @@ final class InvokeActionTests: XCTestCase {
                 openOnSearch: false, needsSetup: false, host: chrome,
                 hasCapture: true, capturedText: comment, source: "hotkey"
             ),
-            EnhancementAction.summarizeID
+            EnhancementAction.enhanceID
         )
         let article = String(repeating: "word ", count: 80)
         XCTAssertGreaterThan(article.count, 280)
@@ -130,7 +130,7 @@ final class InvokeActionTests: XCTestCase {
                 openOnSearch: false, needsSetup: false, host: chrome,
                 hasCapture: true, capturedText: article, source: "hotkey"
             ),
-            EnhancementAction.summarizeID
+            EnhancementAction.enhanceID
         )
     }
 
@@ -206,7 +206,7 @@ final class InvokeActionTests: XCTestCase {
                 openOnSearch: false, needsSetup: false, host: chrome,
                 hasCapture: true, capturedText: "Is this still available?", source: nil
             ),
-            EnhancementAction.summarizeID
+            EnhancementAction.enhanceID
         )
     }
 
@@ -228,5 +228,95 @@ final class InvokeActionTests: XCTestCase {
             AppCoordinator.isSocialFeedSelection(bundleID: nil, windowTitle: "Home / X")
         )
         XCTAssertFalse(AppCoordinator.isSocialFeedSelection(bundleID: nil, windowTitle: nil))
+    }
+}
+
+/// The outcome strip must survive a Regenerate without unmounting: tearing
+/// it down shrinks the chrome, bounces the composer to the middle for a few
+/// milliseconds, then regrows everything when the answer lands.
+@MainActor
+final class ReloadFooterTests: XCTestCase {
+    private let actionID = "action-unknown-test"
+
+    private func engine(on state: AppState) -> PanelEngine {
+        PanelEngine(appState: state, onDismiss: {})
+    }
+
+    func testShowsFooterForDoneOrReloadingOnly() {
+        let state = AppState()
+        XCTAssertFalse(state.showsFooter(for: actionID))
+        state.setResult(.loading, for: actionID)
+        XCTAssertFalse(state.showsFooter(for: actionID))
+        state.reloadingActions.insert(actionID)
+        XCTAssertTrue(state.showsFooter(for: actionID))
+        state.setResult(.done("new"), for: actionID)
+        XCTAssertTrue(state.showsFooter(for: actionID))
+        XCTAssertTrue(state.reloadingActions.isEmpty, "a terminal state clears the reload flag")
+    }
+
+    func testErrorAndIdleClearReloadingAndHideTheFooter() {
+        for terminal: ResultState in [.error("boom"), .idle] {
+            let state = AppState()
+            state.reloadingActions.insert(actionID)
+            state.setResult(terminal, for: actionID)
+            XCTAssertTrue(state.reloadingActions.isEmpty)
+            XCTAssertFalse(state.showsFooter(for: actionID))
+        }
+    }
+
+    func testResetAndDismissClearReloading() {
+        let resetState = AppState()
+        resetState.reloadingActions.insert(actionID)
+        resetState.reset(withCapturedText: "")
+        XCTAssertTrue(resetState.reloadingActions.isEmpty)
+
+        let dismissedState = AppState()
+        dismissedState.reloadingActions.insert(actionID)
+        dismissedState.dismiss()
+        XCTAssertTrue(dismissedState.reloadingActions.isEmpty)
+    }
+
+    func testRetryWhileStreamingIsANoOp() {
+        let state = AppState()
+        let engine = engine(on: state)
+        state.setResult(.loading, for: actionID)
+        engine.retry(actionID: actionID)
+        XCTAssertTrue(state.reloadingActions.isEmpty)
+        XCTAssertTrue(engine.attempts.isEmpty, "no run may start under the live one")
+    }
+
+    func testRetryFromDoneMarksReloadingWithoutStartingUnknownRuns() {
+        let state = AppState()
+        let engine = engine(on: state)
+        state.setResult(.done("old"), for: actionID)
+        engine.retry(actionID: actionID)
+        XCTAssertEqual(state.reloadingActions, [actionID])
+        XCTAssertTrue(engine.attempts.isEmpty, "an unknown action must not start a run")
+        XCTAssertTrue(state.showsFooter(for: actionID))
+    }
+
+    func testRowTabsHaveNoFooter() {
+        let state = AppState()
+        state.setResult(.done("old"), for: EnhancementAction.searchID)
+        XCTAssertFalse(state.showsFooter(for: EnhancementAction.searchID))
+        state.setResult(.done("old"), for: EnhancementAction.grammarID)
+        XCTAssertFalse(
+            state.showsFooter(for: EnhancementAction.grammarID),
+            "rows own every outcome; the strip is gone"
+        )
+        state.setResult(.done("old"), for: EnhancementAction.replyID)
+        XCTAssertFalse(state.showsFooter(for: EnhancementAction.replyID))
+    }
+
+    func testGrammarReplyShellMountsOnlyForRowlessInfo() {
+        let state = AppState()
+        state.setResult(.done("old"), for: EnhancementAction.grammarID)
+        state.replacedFeedback = "Replaced in Notes"
+        XCTAssertTrue(
+            state.showsFooter(for: EnhancementAction.grammarID),
+            "the write-back toast has no row home"
+        )
+        state.replacedFeedback = nil
+        XCTAssertFalse(state.showsFooter(for: EnhancementAction.grammarID))
     }
 }

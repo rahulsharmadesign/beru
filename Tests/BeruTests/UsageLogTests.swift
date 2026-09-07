@@ -26,6 +26,13 @@ final class UsageLogTests: XCTestCase {
         }
     }
 
+    func testVoteKindsRoundTrip() throws {
+        for kind in [UsageEventKind.liked, UsageEventKind.disliked] {
+            let data = try JSONEncoder().encode(kind)
+            XCTAssertEqual(try JSONDecoder().decode(UsageEventKind.self, from: data), kind)
+        }
+    }
+
     func testEventWithEmbeddedNewlinesStaysOnOneLine() async throws {
         let writer = UsageLogWriter(directory: tempDirectory)
         var event = UsageEvent(invocationID: UUID(), kind: .invoked)

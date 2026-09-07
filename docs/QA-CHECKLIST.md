@@ -14,9 +14,9 @@ the window height fits the content:
 
 - [ ] Idle, with Accessibility granted (text selected, before running)
 - [ ] Idle, with Accessibility **not** granted (the placeholder card)
-- [ ] Loading / streaming: 32pt accent ring spinner in the result (selected primary, 50% track, 0.8s spin); send / Replace use a compact ring
-- [ ] Long result: window grows up to **75%** of the visible screen; close disc, chips, and composer (Replace / Copy / Pin) stay visible; only the result scrolls
-- [ ] Copy: icon pops to a green check, label reads Copied, then the panel closes after ~1.4s
+- [ ] Loading / streaming: dashed accent spinner in the result; send uses a compact ring
+- [ ] Long result: window grows up to **75%** of the visible screen; close disc, chips, outcome icons, and composer stay visible; only the result scrolls
+- [ ] Copy: icon morphs to a green check, then the panel closes after ~1.4s
 - [ ] Result with a diff, and result long enough to scroll
 - [ ] Error, with Retry visible
 - [ ] Error from an unknown model, with Retry **and** Connect to model
@@ -26,11 +26,13 @@ the window height fits the content:
 - [ ] Open the panel and switch Search ↔ Enhance: inset does not collapse then snap; composer never crops
 - [ ] In Cursor with a selection: context line reads “Enhance Prompt · Cursor · N characters”; switching to Grammar updates the skill name; no selection after switching: “Grammar · Cursor” (not “No text selected” on that line)
 - [ ] Replace: footer shows “Replaced in [app]” for ~2s, then the panel closes and the host text updates; a second click during the toast does nothing; Escape during the toast still writes
-- [ ] Select text on a webpage and invoke: **Summarize** is selected and already visible in the chip row (no horizontal swipe)
-- [ ] AI Search: ask twice — both Q&As stack; window grows to 75% then scrolls; thread clears when the panel closes
+- [ ] Select text on a webpage and invoke: **Enhance Prompt** is selected and already visible in the chip row (no horizontal swipe)
+- [ ] AI Search: ask twice — both Q&As stack plateless with a dotted rule between; window grows to 75% then scrolls; thread clears when the panel closes
+- [ ] Each answered turn shows copy / regenerate / like / dislike / pin icons; votes persist for the session and log as training signal; pin flashes a check without dismissing
 - [ ] AI Search regenerate rewrites only the latest answer; earlier turns stay
 - [ ] AI Search answers use `##` headings and body that read as distinct (size, weight, spacing)
-- [ ] AI Search result footer is **Copy** and **Pin** only — no Replace, no token chip; composer does not crop; switching to Enhance Prompt brings Replace and the token chip back without jumping height
+- [ ] AI Search has no footer — turns own every outcome; turn copy never dismisses (close disc / Escape close instead); switching to Enhance Prompt brings the icon row and the token chip back without jumping height
+- [ ] Outcome row lives only on Enhance and the verb tabs: plain leading icons (copy, retry, like, dislike, write-back, pin) plus token pill; Grammar and Reply rows own all six each, and their tabs have no footer; row votes teach that row's tone/kind even when another is selected
 
 ## Get Started
 
@@ -115,15 +117,15 @@ Highlight a message in another app, invoke, then tap **Smart Reply**:
 
 - [ ] Funny and Witty mention a concrete detail from the selected message; Formal stays non-jokey
 - [ ] Tone pill jumps the highlight; clicking a card does the same; neither re-runs the model
-- [ ] Copy / Insert send only the selected card, not the tagged blob; icon-only copy on a card copies that card
+- [ ] Copy / Insert send only the selected card, not the tagged blob; every card owns copy / regenerate / like / dislike / write-back / pin on its own row, left-aligned; no footer on the tab
 - [ ] Hotkey with a comment selected in Chrome/Safari opens **Smart Reply** automatically
 - [ ] Roman Hinglish comment → all six replies stay in Roman/Latin (not Devanagari or German)
 - [ ] If the model mixes languages across cards, a language notice appears — try Regenerate
 - [ ] No selection on Grammar: idle says “Type or paste text”; composer matches; not “ask instead”. Type a sentence, Return → Grammar result; context line shows character count; composer is empty optional extras
 - [ ] With a selection, Grammar still auto-runs; composer stays optional extras; Replace unchanged
 - [ ] Type on Search with no selection, then click Enhance: Enhance runs on that text without a second Return
-- [ ] Grammar shows Corrected / Clearer / Tighter as stacked cards like Smart Reply; selected card has the accent border; icon-only copy sits bottom-right on each card; clicking a card selects it without re-running; Replace / footer Copy send the selected body; no token savings pill
-- [ ] Switching tabs slides the accent pill left/width over 0.4s (cubic-bezier 0.65, 0, 0.35, 1), not the window; close disc and composer move with the window immediately
+- [ ] Grammar shows Corrected / Clearer / Tighter as borderless rows like Smart Reply; selected row has the accent wash and edge; every row owns copy / regenerate / like / dislike / replace / pin, left-aligned; clicking a row selects it without re-running; row Replace sends that row's body; no footer and no token savings pill
+- [ ] Switching tabs cross-fades the accent fill on the chips in place (no traveling pill); unselected pills keep their background and stroke throughout; close disc and composer move with the window immediately
 
 ## Before release only
 

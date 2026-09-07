@@ -8,13 +8,17 @@ struct RunsView: View {
     @State private var model = RunsModel()
 
     var body: some View {
-        SettingsWorkspace(title: "Runs", subtitle: DashboardRoute.runs.pageSubtitle) {
+        SettingsWorkspace(
+            title: DashboardRoute.runs.title,
+            subtitle: DashboardRoute.runs.pageSubtitle,
+            icon: DashboardRoute.runs.lucideIcon
+        ) {
             Group {
                 if model.isRecordingDisabled {
                     recordingOff
                 } else if !model.hasLoaded {
                     VStack(spacing: BeruSpace.sm) {
-                        ProgressView()
+                        BeruLoader()
                         Text("Loading runs…")
                             .font(BeruType.footnote)
                             .foregroundStyle(BeruColor.textSecondary)
@@ -66,38 +70,35 @@ struct RunsView: View {
     private var filterBar: some View {
         SettingsWorkspaceToolbar {
             SettingsSearchField(text: $model.query, placeholder: "Search runs")
-                .frame(maxWidth: 260)
+                .frame(maxWidth: BeruMetrics.toolbarSearchWidth)
 
             if !model.knownActions.isEmpty {
                 SettingsMenuPill(
-                    selection: Binding(
-                        get: { model.actionFilter ?? "" },
-                        set: { model.actionFilter = $0.isEmpty ? nil : $0 }
-                    ),
-                    label: model.knownActions.first { $0.id == model.actionFilter }?.name ?? "Any action"
-                ) {
-                    Button("Any action") { model.actionFilter = nil }
-                    ForEach(model.knownActions, id: \.id) { action in
-                        Button(action.name) { model.actionFilter = action.id }
-                    }
-                }
-                .accessibilityLabel("Action")
+                    label: model.knownActions.first { $0.id == model.actionFilter }?.name ?? "Any action",
+                    items: [DropdownItem(title: "Any action", isOn: model.actionFilter == nil) {
+                        model.actionFilter = nil
+                    }]
+                        + model.knownActions.map { action in
+                            DropdownItem(
+                                title: action.name,
+                                isOn: model.actionFilter == action.id
+                            ) { model.actionFilter = action.id }
+                        },
+                    accessibilityLabel: "Action"
+                )
             }
 
             if !model.knownApps.isEmpty {
                 SettingsMenuPill(
-                    selection: Binding(
-                        get: { model.appFilter ?? "" },
-                        set: { model.appFilter = $0.isEmpty ? nil : $0 }
-                    ),
-                    label: model.appFilter ?? "Any app"
-                ) {
-                    Button("Any app") { model.appFilter = nil }
-                    ForEach(model.knownApps, id: \.self) { app in
-                        Button(app) { model.appFilter = app }
-                    }
-                }
-                .accessibilityLabel("App")
+                    label: model.appFilter ?? "Any app",
+                    items: [DropdownItem(title: "Any app", isOn: model.appFilter == nil) {
+                        model.appFilter = nil
+                    }]
+                        + model.knownApps.map { app in
+                            DropdownItem(title: app, isOn: model.appFilter == app) { model.appFilter = app }
+                        },
+                    accessibilityLabel: "App"
+                )
             }
 
             SettingsTogglePill(title: "Accepted only", isOn: $model.acceptedOnly)
@@ -125,7 +126,6 @@ struct RunsView: View {
                 .background(DashboardChrome.sidebarSurface)
             } else {
                 WorkspaceSourceList(
-                    selection: $model.selection,
                     isEmpty: false,
                     emptyIcon: "search",
                     emptyTitle: "No matches",
@@ -135,8 +135,7 @@ struct RunsView: View {
                         Section(section.title) {
                             ForEach(section.runs) { run in
                                 RunRow(run: run)
-                                    .tag(run.id)
-                                    .workspaceSourceRow()
+                                    .workspaceRowSelection($model.selection, value: run.id, isSelected: model.selection == run.id)
                             }
                         }
                     }

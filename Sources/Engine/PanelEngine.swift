@@ -33,7 +33,8 @@ final class PanelEngine {
         onRequestProviderSetup?(preferLocal)
     }
 
-    /// Opens Settings → General. The panel stays up so an in-flight run is not killed.
+    /// Opens Settings → General. The panel is dismissed first, so the widget
+    /// never sits under the settings window.
     var onOpenSettings: (() -> Void)?
 
     func openSettings() {
@@ -123,6 +124,18 @@ final class PanelEngine {
         // take" — pass the previous output so the model must diverge from it.
         // Retry after an error is a plain re-attempt.
         // Search / describe need the last question even if the composer was cleared.
+        //
+        // While a stream is in flight the footer stays mounted (dimmed) so
+        // the chrome does not collapse and bounce the composer — and a tap
+        // there must not restart the run under itself.
+        switch appState.resultState(for: actionID) {
+        case .loading, .thinking, .streaming:
+            return
+        case .done:
+            appState.reloadingActions.insert(actionID)
+        default:
+            break
+        }
         let instruction: String? = {
             if actionID == EnhancementAction.searchID || actionID == EnhancementAction.describeID {
                 let live = appState.describeInstruction.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -170,6 +183,24 @@ final class PanelEngine {
             appState.selectAction(actionID)
         }
         start(actionID: actionID, instruction: trimmed)
+    }
+
+    /// Regenerates one search turn from its row. The latest turn rewrites in
+    /// place (the composer's Regenerate path); an older turn re-asks as a
+    /// fresh turn so answered history is never destroyed.
+    func regenerateSearchTurn(id: UUID) {
+        guard let index = appState.searchThread.firstIndex(where: { $0.id == id }),
+              case .done(let previous) = appState.searchThread[index].answer
+        else { return }
+        let question = appState.searchThread[index].question
+        if index == appState.searchThread.count - 1 {
+            // In-place rewrite of a finished answer: same reload semantics
+            // as retry — the footer stays mounted while the new answer streams.
+            appState.reloadingActions.insert(EnhancementAction.searchID)
+            start(actionID: EnhancementAction.searchID, previousResult: previous, instruction: question)
+        } else {
+            runQuickSearch(query: question)
+        }
     }
 
     /// Runs a question through Beru’s selected AI provider on the AI Search tab.

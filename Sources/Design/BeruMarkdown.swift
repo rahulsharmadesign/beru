@@ -96,9 +96,18 @@ struct BeruMarkdown: View {
                 interpretedSyntax: .inlineOnlyPreservingWhitespace
             )
         )) ?? AttributedString(content)
-        for run in attributed.runs where run.link != nil {
-            attributed[run.range].foregroundColor = BeruColor.link
-            attributed[run.range].underlineStyle = .single
+        for run in attributed.runs {
+            if run.link != nil {
+                attributed[run.range].foregroundColor = BeruColor.link
+                attributed[run.range].underlineStyle = .single
+            }
+            // Inline code reads as a Haze chip: mono glyphs on a subtle
+            // well instead of body text that happens to be monospace.
+            if run.inlinePresentationIntent?.contains(.code) == true {
+                attributed[run.range].font = BeruType.mono
+                attributed[run.range].foregroundColor = BeruColor.textPrimary
+                attributed[run.range].backgroundColor = BeruColor.subtleFill
+            }
         }
         return attributed
     }

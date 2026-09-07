@@ -147,6 +147,19 @@ final class SessionThreadTests: XCTestCase {
         XCTAssertTrue(turn!.output.hasSuffix("…"))
     }
 
+    func testSearchOutputIsStoredWhole() {
+        let long = String(repeating: "answer word ", count: 500)
+        record(long, actionID: EnhancementAction.searchID)
+        let turn = thread.turns(forBundleID: "com.apple.mail").first
+        XCTAssertEqual(turn?.output, long.trimmingCharacters(in: .whitespacesAndNewlines))
+    }
+
+    func testSearchOutputKeepsItsNewlines() {
+        record("first line\nsecond line", actionID: EnhancementAction.searchID)
+        let turn = thread.turns(forBundleID: "com.apple.mail").first
+        XCTAssertEqual(turn?.output, "first line\nsecond line")
+    }
+
     func testInputDigestIsTruncatedToBudget() {
         record("output", input: String(repeating: "sentence ", count: 200))
         let turn = thread.turns(forBundleID: "com.apple.mail").first
@@ -199,10 +212,57 @@ final class SessionThreadTests: XCTestCase {
     }
 
     func testThreadScopeMatchesWhatIsRecorded() {
+        // Enhance and Describe read the system-side thread block. Search is
+        // still recorded, but its context rides the Q&A transcript in the
+        // user message instead (see PanelEngineRun) — so it is excluded here.
         XCTAssertTrue(Prompts.threadApplies(actionID: EnhancementAction.enhanceID))
         XCTAssertTrue(Prompts.threadApplies(actionID: EnhancementAction.describeID))
-        XCTAssertTrue(Prompts.threadApplies(actionID: EnhancementAction.searchID))
+        XCTAssertFalse(Prompts.threadApplies(actionID: EnhancementAction.searchID))
         XCTAssertFalse(Prompts.threadApplies(actionID: EnhancementAction.grammarID))
         XCTAssertFalse(Prompts.threadApplies(actionID: "action-custom-1234"))
+    }
+
+    // MARK: - The search transcript
+
+    private func searchTurn(question: String, answer: String) -> SessionThread.Turn {
+        SessionThread.Turn(
+            actionID: EnhancementAction.searchID,
+            actionName: "Search",
+            instruction: question,
+            inputDigest: "",
+            output: answer,
+            at: Date()
+        )
+    }
+
+    func testSearchTranscriptKeepsEarlyTurns() {
+        for i in 1...6 {
+            record("answer \(i)", actionID: EnhancementAction.searchID, instruction: "question \(i)")
+        }
+        let turns = thread.turns(forBundleID: "com.apple.mail")
+        XCTAssertEqual(turns.count, 6)
+        let transcript = PanelEngine.searchTranscript(turns: turns)
+        XCTAssertTrue(transcript.contains("question 1"), "turn 1 must survive to turn 6")
+        XCTAssertTrue(transcript.contains("answer 1"))
+        XCTAssertTrue(transcript.contains("question 6"))
+        XCTAssertLessThan(
+            transcript.range(of: "question 1")!.lowerBound,
+            transcript.range(of: "question 6")!.lowerBound,
+            "oldest first so the conversation reads in order"
+        )
+    }
+
+    func testSearchTranscriptSkipsTurnsWithNoAnswer() {
+        let turns = [
+            searchTurn(question: "answered", answer: "here"),
+            searchTurn(question: "unanswered", answer: ""),
+        ]
+        let transcript = PanelEngine.searchTranscript(turns: turns)
+        XCTAssertTrue(transcript.contains("answered"))
+        XCTAssertFalse(transcript.contains("unanswered"))
+    }
+
+    func testSearchTranscriptOfNothingIsEmpty() {
+        XCTAssertEqual(PanelEngine.searchTranscript(turns: []), "")
     }
 }

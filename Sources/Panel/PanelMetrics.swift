@@ -19,9 +19,10 @@ enum PanelMetrics {
     /// result area scrolls and chrome (close / chips / composer) stays pinned.
     /// Freeze: do not change without updating PanelViewportCapTests + QA.
     static let maxViewportFraction: CGFloat = 0.75
-    /// Outer window. Layer radius is the source of truth — do not use a
-    /// stretchable mask, which inflates this into a capsule.
-    static let cornerRadius: CGFloat = 20
+    /// Outer window. Haze panel radius 28 on macOS. Layer radius is the
+    /// source of truth — do not use a stretchable mask, which inflates
+    /// this into a capsule.
+    static let cornerRadius: CGFloat = 28
     /// SwiftUI fills the glass slab. Inner padding is `moduleInset` on the
     /// SwiftUI root — not AppKit (`windowInset` / `shadowInset` stay 0).
     static let windowInset: CGFloat = 0
@@ -49,24 +50,30 @@ enum PanelMetrics {
     static var minimumChromeHeight: CGFloat {
         moduleInset * 2 + closeStripHeight + composerMinHeight + moduleSpacing * 2
     }
-    /// All four inner cards share this outer radius.
-    static var moduleRadius: CGFloat { 10 }
+    /// All four inner cards share this outer radius. Haze card radius.
+    static var moduleRadius: CGFloat { BeruRadius.md }
     static var moduleShape: RoundedRectangle {
         BeruRadius.shape(moduleRadius)
     }
-    /// Horizontal chip row. Matches the iOS 26 compact toolbar pill.
-    static var chipRowHeight: CGFloat { BeruMetrics.tabPillHeight }
+    /// Horizontal chip row. Haze pill height.
+    static var chipRowHeight: CGFloat { BeruMetrics.pillHeight }
     /// Footer (regenerate / dismiss) refuses to compress below this.
-    static let footerMinHeight: CGFloat = 36
-    /// Composer, including its internal padding. Two-row field + chrome.
+    /// Haze pill height.
+    static let footerMinHeight: CGFloat = 32
+    /// Composer, including its internal padding. Must stay below the real
+    /// idle composer height — the window floors to this when a band report
+    /// is incomplete, and anything taller leaves a gap under the composer.
     static let composerMinHeight: CGFloat = 76
     /// Height reserved by the result area while a request is in flight.
     static let resultPlaceholderHeight: CGFloat = 120
-    /// Idle result card floor so Search ↔ Enhance placeholder copy does not
-    /// change the print-area height and crop the composer on tab switch.
-    static let resultIdleMinHeight: CGFloat = 72
+    /// Idle result band floor. Tall enough that the opening widget breathes;
+    /// placeholder copy stays vertically centered in it. Search ↔ Enhance
+    /// placeholder swaps never change this height, so tab switches cannot
+    /// crop the composer.
+    static let resultIdleMinHeight: CGFloat = 172
     /// Composer card only — toolbar and result stay on `moduleRadius`.
-    static let composerRadius: CGFloat = 16
+    /// Haze composer radius.
+    static let composerRadius: CGFloat = 22
     /// How far the outcome strip tucks under the composer.
     static let composerOverlap: CGFloat = 12
     static let screenInset: CGFloat = 8

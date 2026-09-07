@@ -67,7 +67,9 @@ struct EnhancementAction: Identifiable, Codable, Equatable {
     /// source; Search and Instruction stay a question / instruction.
     static func composerPlaceholder(actionID: String, hasCapture: Bool, isQuickSearch: Bool) -> String {
         if isQuickSearch || actionID == searchID {
-            return "Ask anything — no selection needed"
+            // Selection-aware: the quoted source block above the thread shows
+            // what the question attaches to, and the hint must agree with it.
+            return hasCapture ? "Ask about the selected text…" : "Ask anything — no selection needed"
         }
         if actionID == describeID {
             return "Type what you want Beru to do"
@@ -134,10 +136,13 @@ struct EnhancementAction: Identifiable, Codable, Equatable {
     /// Reply / Summarize / Explain produce a *new* document. Diffing that against
     /// the source reuses shared nouns as `.equal` and interleaves the rest —
     /// `Manage- yourManage` garble that looks like a failed run even when the
-    /// summary is fine. Grammar and Enhance stay on the diff path (with the
-    /// retention floor in `PanelEngine.computeDiff`).
+    /// summary is fine. Enhance also produces a new document: rewriting a rough
+    /// idea into a structured prompt shares almost no wording with the input,
+    /// and the retention floor in `PanelEngine.computeDiff` did not hold in
+    /// practice, so Enhance renders plain like the verbs. Grammar is a true
+    /// edit of the selection and keeps the diff.
     static func showsInlineDiff(for actionID: String) -> Bool {
-        !isShippedVerb(actionID) && actionID != describeID && actionID != searchID
+        actionID == grammarID
     }
 
     /// Search and one-off instructions can run from the composer alone.

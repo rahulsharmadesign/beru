@@ -236,6 +236,21 @@ final class DocumentFramingTests: XCTestCase {
         XCTAssertFalse(composed.contains("Do not use Markdown headings"))
     }
 
+    func testSearchAbstainsOnASingleWordSource() {
+        // "scaffolding." + "What is this?" came back as confident Zcode AI
+        // framework documentation. A thin source must abstain with senses,
+        // not pattern-complete to a specific product — and must skip the
+        // section shape that rewards a confident multi-section answer.
+        let composed = Prompts.composeWithFraming(
+            Prompts.quickSearch(question: "What is this?", userName: ""),
+            framing: Prompts.framing(actionID: EnhancementAction.searchID, usesBuiltInPrompt: true)
+        )
+        XCTAssertTrue(composed.contains("single word or fragment"))
+        XCTAssertTrue(composed.contains("do not guess a specific product"))
+        XCTAssertTrue(composed.contains("invent no specific product"))
+        XCTAssertTrue(composed.contains("Skip the section"))
+    }
+
     func testResolvedVerbPromptPrefersLiveText() {
         let stale = EnhancementAction(
             id: EnhancementAction.replyID,

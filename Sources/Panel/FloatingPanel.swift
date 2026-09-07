@@ -72,6 +72,10 @@ final class FloatingPanel: NSPanel {
         hasShadow = true
         hidesOnDeactivate = false
         isReleasedWhenClosed = false
+        // Never restored: AppKit window restoration would rebuild the panel at
+        // launch without its controller wiring, and the half-hosted SwiftUI
+        // content crashes the process on its first layout pass.
+        isRestorable = false
         isOpaque = false
         backgroundColor = .clear
         observeMaterial()

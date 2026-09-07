@@ -19,7 +19,11 @@ struct ActionsView: View {
     }
 
     var body: some View {
-        SettingsWorkspace(title: "Actions", subtitle: DashboardRoute.actions.pageSubtitle) {
+        SettingsWorkspace(
+            title: DashboardRoute.actions.title,
+            subtitle: DashboardRoute.actions.pageSubtitle,
+            icon: DashboardRoute.actions.lucideIcon
+        ) {
             VStack(spacing: 0) {
                 filterBar
                 SettingsSplitView {
@@ -56,17 +60,19 @@ struct ActionsView: View {
     private var filterBar: some View {
         SettingsWorkspaceToolbar {
             SettingsSearchField(text: $query, placeholder: "Search actions")
-                .frame(maxWidth: 260)
-            SettingsOverflowMenu(title: "More") {
-                Button("Export custom actions…") { exportActions() }
-                Button("Import custom actions…") { importActions() }
+                .frame(maxWidth: BeruMetrics.toolbarSearchWidth)
+            Spacer(minLength: BeruSpace.md)
+            SettingsPillButton(title: "Import", leadingIcon: "square.and.arrow.down") {
+                importActions()
+            }
+            SettingsPillButton(title: "Export", leadingIcon: "square.and.arrow.up") {
+                exportActions()
             }
         }
     }
 
     private var list: some View {
         WorkspaceSourceList(
-            selection: $selection,
             isEmpty: filteredActions.isEmpty,
             emptyIcon: "search",
             emptyTitle: "No matches",
@@ -78,8 +84,7 @@ struct ActionsView: View {
                     subtitle: action.summary,
                     icon: action.icon
                 )
-                .tag(action.id)
-                .workspaceSourceRow()
+                .workspaceRowSelection($selection, value: action.id, isSelected: selection == action.id)
                 .contextMenu {
                     if !action.isBuiltIn {
                         Button("Delete", role: .destructive) {
@@ -134,10 +139,7 @@ struct ActionsView: View {
     @ViewBuilder
     private func actionEditorSections(_ action: EnhancementAction) -> some View {
         if action.isBuiltIn {
-            SettingsSection(
-                title: "Action",
-                subtitle: "Built-in prompts stay shipped so the chip matches the label."
-            ) {
+            SettingsSection(title: "Action") {
                 SettingsRow(title: "Kind") {
                     SettingsValue(text: "Built-in")
                 }
@@ -149,17 +151,16 @@ struct ActionsView: View {
                 }
             }
 
-            SettingsSection(title: "Prompt", subtitle: "System prompt sent to the model.") {
+            SettingsSection(title: "Prompt") {
                 Text(EnhancementAction.resolvedSystemPrompt(for: action))
                     .font(BeruType.mono)
                     .foregroundStyle(BeruColor.textPrimary)
                     .textSelection(.enabled)
                     .fixedSize(horizontal: false, vertical: true)
-                    .frame(maxWidth: .infinity, minHeight: 180, alignment: .topLeading)
-                    .settingsEditorSurface()
+                    .frame(maxWidth: .infinity, minHeight: BeruMetrics.previewMinHeight, alignment: .topLeading)
             }
         } else {
-            SettingsSection(title: "Action", subtitle: "Name and icon shown on the panel chip.") {
+            SettingsSection(title: "Action") {
                 SettingsRow(title: "Kind") {
                     SettingsValue(text: "Custom")
                 }
@@ -177,15 +178,14 @@ struct ActionsView: View {
                 }
             }
 
-            SettingsSection(title: "Prompt", subtitle: "Shown as a verb chip in the panel.") {
+            SettingsSection(title: "Prompt") {
                 TextEditor(text: customPromptBinding(for: action))
                     .font(BeruType.mono)
                     .foregroundStyle(BeruColor.textPrimary)
                     .scrollContentBackground(.hidden)
-                    .frame(minWidth: 0, minHeight: 220)
+                    .frame(minWidth: 0, minHeight: BeruMetrics.editorMinHeight)
                     .frame(maxWidth: .infinity)
                     .dashboardEditorCanvas()
-                    .settingsEditorSurface()
                 SettingsPillButton(title: "Insert Tone Preset") {
                     var updated = action
                     updated.systemPrompt = Prompts.toneRewrite(

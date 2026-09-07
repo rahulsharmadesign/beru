@@ -185,7 +185,8 @@ actor UsageLogReader {
         switch kind {
         case .replaced, .copied, .dismissed, .generationCancelled, .generationFailed, .emptySelection:
             return true
-        case .invoked, .generationStarted, .generationFinished:
+        case .invoked, .generationStarted, .generationFinished, .liked, .disliked:
+            // Votes land mid-session while the panel stays open.
             return false
         }
     }

@@ -20,9 +20,11 @@ extension PanelView {
         }
         // Inset inside clipShape so placeholder copy is not sheared by the
         // card radius. Height is intrinsic — the window sizes to the stack.
+        // Every tab renders plateless on the panel wash: idle text, threads,
+        // diffs, and errors alike. No outer card anywhere.
         .padding(PanelMetrics.moduleInset)
         .frame(maxWidth: .infinity, alignment: .topLeading)
-        .glassModule(scrim: .content)
+        .glassModule(scrim: .chrome)
     }
 
     @ViewBuilder
@@ -40,8 +42,14 @@ extension PanelView {
                         suggestions: appState.replySuggestions,
                         selected: appState.selectedReplyTone,
                         copied: appState.copiedFeedback,
+                        votes: appState.replyVote,
+                        pinnedRow: appState.pinnedRow,
                         onSelect: { appState.selectedReplyTone = $0 },
-                        onCopy: { copyReplyTone($0) }
+                        onCopy: { copyReplyTone($0) },
+                        onRegenerate: { engine.retry(actionID: EnhancementAction.replyID) },
+                        onVote: { setReplyVote($0, liked: $1) },
+                        onReplace: { replaceReplyTone($0) },
+                        onPin: { pinReplyTone($0) }
                     )
                 }
             } else if appState.selectedActionID == EnhancementAction.grammarID,
@@ -57,11 +65,20 @@ extension PanelView {
                         suggestions: appState.grammarSuggestions,
                         selected: appState.selectedGrammarKind,
                         copied: appState.copiedFeedback,
+                        votes: appState.grammarVote,
+                        pinnedRow: appState.pinnedRow,
                         onSelect: { engine.applyGrammarKind($0) },
-                        onCopy: { copyGrammarKind($0) }
+                        onCopy: { copyGrammarKind($0) },
+                        onRegenerate: { engine.retry(actionID: EnhancementAction.grammarID) },
+                        onVote: { setGrammarVote($0, liked: $1) },
+                        onReplace: { replaceGrammarKind($0) },
+                        onPin: { pinGrammarKind($0) }
                     )
                 }
             } else if appState.selectedActionID == EnhancementAction.searchID {
+                if hasCapturedText {
+                    SelectedSourceQuote(text: appState.capturedText)
+                }
                 if appState.searchThread.isEmpty {
                     idlePlaceholder
                 } else {
@@ -96,18 +113,21 @@ extension PanelView {
                 ResultView(state: state, usesMarkdown: usesSearchMarkdown)
             }
         }
-        .frame(maxWidth: .infinity, minHeight: PanelMetrics.resultIdleMinHeight)
+        // Short content hugs the top of the idle-tall band instead of
+        // floating centered in it.
+        .frame(maxWidth: .infinity, minHeight: PanelMetrics.resultIdleMinHeight, alignment: .topLeading)
         // Do not `.id` the tab or animate this swap: that scaled the result
         // copy and, with the window animator, sheared the close strip and composer.
         .animation(nil, value: appState.selectedActionID)
     }
 
-    /// Stacked Search Q&As for this panel open. Window grows to the 75% cap;
-    /// then `panelResultScrollHeight` scrolls this list — chrome stays pinned.
+    /// Stacked Search Q&As for this panel open, split by dotted rules.
+    /// Window grows to the 75% cap; then `panelResultScrollHeight` scrolls
+    /// this list — chrome stays pinned.
     var searchThreadList: some View {
         VStack(alignment: .leading, spacing: BeruSpace.lg) {
             ForEach(appState.searchThread) { turn in
-                VStack(alignment: .leading, spacing: BeruSpace.xs) {
+                VStack(alignment: .leading, spacing: BeruSpace.xxs) {
                     Text(turn.question)
                         .font(BeruType.footnoteMedium)
                         .foregroundStyle(BeruColor.textSecondary)
@@ -115,8 +135,14 @@ extension PanelView {
                         .textSelection(.enabled)
                     ResultView(state: turn.answer, usesMarkdown: true)
                         .frame(maxWidth: .infinity, alignment: .leading)
+                    if case .done(let text) = turn.answer, !text.isEmpty {
+                        searchTurnActions(turn: turn, text: text)
+                    }
                 }
                 .id(turn.id)
+                if turn.id != appState.searchThread.last?.id {
+                    DottedDivider()
+                }
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -211,7 +237,6 @@ extension PanelView {
         Text("Selection was truncated to \(PanelEngine.maxCapturedLength) characters")
             .font(BeruType.caption)
             .foregroundStyle(BeruColor.textSecondary)
-            .padding(.horizontal, BeruSpace.sm)
             .padding(.bottom, BeruSpace.xs)
             .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -225,7 +250,6 @@ extension PanelView {
             .font(BeruType.caption)
             .foregroundStyle(BeruColor.textSecondary)
             .fixedSize(horizontal: false, vertical: true)
-            .padding(.horizontal, BeruSpace.md)
             .padding(.top, BeruSpace.xxs)
             .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -251,10 +275,12 @@ extension PanelView {
         let showConnectCTA = appState.errorNeedsModelSetup.contains(actionID)
         return VStack(spacing: BeruSpace.sm) {
             Text(message)
-                .font(BeruType.body)
+                .font(BeruType.resultBody)
                 .foregroundStyle(BeruColor.textSecondary)
                 .multilineTextAlignment(.center)
-            HStack(spacing: BeruSpace.xs) {
+            // Retry rows wrap: with fallbacks plus Connect to model the row
+            // can outgrow the 420pt panel, and clipped actions are dead ends.
+            WrapHStack(spacing: BeruSpace.xs, lineSpacing: BeruSpace.xs) {
                 BeruButton(title: "Retry", size: .compact) {
                     engine.retry(actionID: actionID)
                 }
@@ -275,9 +301,10 @@ extension PanelView {
                     }
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
         .frame(maxWidth: .infinity)
-        .padding(BeruSpace.lg)
+        .padding(.vertical, BeruSpace.sm)
         // The retry row can wrap onto a second line once a fallback provider
         // and Connect to model are both present, so the window has to be told.
     }
@@ -292,6 +319,20 @@ extension PanelView {
         engine.applyGrammarKind(kind)
         guard let text = GrammarSuggestions.body(in: appState.grammarSuggestions, matching: kind) else { return }
         engine.copy(text: text)
+    }
+
+    /// Pins without dismissing and flashes the row check for the same beat
+    /// the footer label used to show. Shared by search turns and both
+    /// suggestion rows.
+    func pinRowFlash(key: String, text: String?) {
+        guard let text else { return }
+        engine.pin(text: text)
+        appState.pinnedRow = key
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.9) {
+            if appState.pinnedRow == key {
+                appState.pinnedRow = nil
+            }
+        }
     }
 
     /// Short label for the "Try with [X]" button. Takes the first word of the

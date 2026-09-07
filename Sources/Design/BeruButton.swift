@@ -1,42 +1,24 @@
 import SwiftUI
 
-private struct BeruUsesGlassButtonsKey: EnvironmentKey {
-    static let defaultValue = false
-}
-
-extension EnvironmentValues {
-    /// Panel and Settings chrome use system Liquid Glass button styles. Capsule
-    /// pills stay for non-primary actions so the dashboard does not grow a
-    /// second system.
-    var beruUsesGlassButtons: Bool {
-        get { self[BeruUsesGlassButtonsKey.self] }
-        set { self[BeruUsesGlassButtonsKey.self] = newValue }
-    }
-}
-
-/// The button system.
-///
-/// Beru shipped four button languages at once: capsule pills in Settings,
-/// system `.borderedProminent` in the panel, rounded rectangles in the menu
-/// bar, and hand-rolled circles for send and dictation. Two shapes now cover
-/// every case — this capsule/text button and `BeruIconButton`. On the panel,
-/// compact primary actions use `.glassProminent`. Copy / Pin stay outline pills.
+/// The button system. Haze pill-first: 32 default, 28 small, no large.
+/// Primary is the 170° accent gradient; default is the surface-2 hairline
+/// pill; inline is text only. One slab only — no Liquid Glass refraction.
 struct BeruButton: View {
     enum Variant {
-        /// Filled with the accent. One per view, for the primary action.
+        /// Filled with the accent gradient. One per view, for the primary action.
         case primary
-        /// Bordered capsule. The default.
+        /// Hairline pill. The default.
         case pill
         /// Text only, for actions packed into a tight row.
         case inline
     }
 
     enum Size {
-        /// Onboarding, where one CTA carries the step.
+        /// Capped at 32. Former onboarding large maps to the Haze default.
         case large
-        /// Settings and dashboard.
+        /// Settings and dashboard. 32.
         case regular
-        /// The panel, where a 420pt width has to hold several actions.
+        /// The panel, where a 420pt width has to hold several actions. 28.
         case compact
     }
 
@@ -53,52 +35,15 @@ struct BeruButton: View {
     let action: () -> Void
 
     @State private var isHovered = false
-    @Environment(\.beruUsesGlassButtons) private var usesGlassButtons
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
     var body: some View {
-        Group {
-            if usesSystemGlass {
-                glassButton
-            } else {
-                plainButton
-            }
-        }
-        .disabled(!enabled)
-        .fixedSize()
-        .opacity(enabled ? 1 : 0.45)
-        .onHover { isHovered = $0 }
-    }
-
-    private var usesSystemGlass: Bool {
-        usesGlassButtons && variant == .primary && !reduceTransparency
-    }
-
-    @ViewBuilder
-    private var glassButton: some View {
-        Button(role: role, action: action) { glassLabel }
-            .buttonStyle(.glassProminent)
-            .buttonBorderShape(.capsule)
-            .controlSize(.small)
-    }
-
-    private var plainButton: some View {
         Button(role: role, action: action) { label }
             .buttonStyle(.plain)
-    }
-
-    private var glassLabel: some View {
-        HStack(spacing: BeruSpace.xxs) {
-            if let leadingIcon {
-                BeruIcon(name: leadingIcon, size: iconSize)
-            }
-            Text(title)
-                .font(font)
-                .lineLimit(1)
-            if let trailingIcon {
-                BeruIcon(name: trailingIcon, size: iconSize)
-            }
-        }
+            .disabled(!enabled)
+            .fixedSize()
+            .opacity(enabled ? 1 : 0.45)
+            .onHover { isHovered = $0 }
+.beruHoverEase(isHovered)
     }
 
     @ViewBuilder
@@ -131,9 +76,9 @@ struct BeruButton: View {
                 BeruIcon(name: trailingIcon, size: iconSize)
             }
         }
-        .foregroundStyle(isFilled ? BeruColor.onAccent : BeruColor.textPrimary)
+        .foregroundStyle(isFilled ? BeruColor.onAccent : foreground)
+        .frame(height: height)
         .padding(.horizontal, horizontalPadding)
-        .padding(.vertical, verticalPadding)
         .background {
             Capsule()
                 .fill(fill)
@@ -147,12 +92,18 @@ struct BeruButton: View {
 
     private var isFilled: Bool { variant == .primary || isActive }
 
-    private var fill: Color {
-        guard isFilled else {
-            return isHovered && enabled ? BeruColor.hoverFill : .clear
+    private var foreground: Color {
+        if role == .destructive { return BeruColor.destructive }
+        return BeruColor.textPrimary
+    }
+
+    private var fill: AnyShapeStyle {
+        if isFilled {
+            if !enabled { return AnyShapeStyle(BeruColor.accent.opacity(0.45)) }
+            return AnyShapeStyle(BeruColor.accentGradient)
         }
-        if !enabled { return BeruColor.accent.opacity(0.45) }
-        return isHovered ? BeruColor.accent.opacity(0.88) : BeruColor.accent
+        if isHovered && enabled { return AnyShapeStyle(BeruColor.hoverFill) }
+        return AnyShapeStyle(BeruColor.subtleFill)
     }
 
     private var font: Font {
@@ -163,26 +114,27 @@ struct BeruButton: View {
         }
     }
 
+    /// Haze pill height. 32 default, 28 compact, large capped at 32.
+    private var height: CGFloat {
+        switch size {
+        case .large, .regular: return BeruMetrics.pillHeight
+        case .compact: return BeruMetrics.pillHeightSm
+        }
+    }
+
+    /// 16 across the app; 14 inside the dense 28pt compact pill.
     private var iconSize: CGFloat {
         switch size {
-        case .large, .regular: return 14
-        case .compact: return 12
+        case .large, .regular: return BeruMetrics.iconSize
+        case .compact: return 14
         }
     }
 
     private var horizontalPadding: CGFloat {
         switch size {
-        case .large: return BeruSpace.xl
+        case .large: return BeruSpace.lg
         case .regular: return BeruSpace.md
         case .compact: return BeruSpace.sm
-        }
-    }
-
-    private var verticalPadding: CGFloat {
-        switch size {
-        case .large: return BeruSpace.sm
-        case .regular: return BeruSpace.xs
-        case .compact: return BeruSpace.xxs
         }
     }
 }
@@ -218,5 +170,6 @@ struct BeruIconButton: View {
         .help(help)
         .accessibilityLabel(help)
         .onHover { isHovered = $0 }
+.beruHoverEase(isHovered)
     }
 }

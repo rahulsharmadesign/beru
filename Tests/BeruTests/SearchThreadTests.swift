@@ -34,4 +34,42 @@ final class SearchThreadTests: XCTestCase {
         state.dismiss()
         XCTAssertTrue(state.searchThread.isEmpty)
     }
+
+    func testDismissAndResetClearSearchFeedback() {
+        let state = AppState()
+        state.beginSearchTurn(question: "Q", regenerating: false)
+        let id = state.searchThread[0].id
+        state.searchFeedback[id] = true
+        state.dismiss()
+        XCTAssertTrue(state.searchFeedback.isEmpty)
+
+        state.beginSearchTurn(question: "Q", regenerating: false)
+        let id2 = state.searchThread[0].id
+        state.searchFeedback[id2] = false
+        state.reset(withCapturedText: "")
+        XCTAssertTrue(state.searchFeedback.isEmpty)
+    }
+
+    func testDismissAndResetClearResultFeedback() {
+        let state = AppState()
+        state.resultFeedback["grammar"] = true
+        state.dismiss()
+        XCTAssertTrue(state.resultFeedback.isEmpty)
+
+        state.resultFeedback["grammar"] = false
+        state.reset(withCapturedText: "")
+        XCTAssertTrue(state.resultFeedback.isEmpty)
+    }
+
+    func testQuotePreviewTrimsWhitespace() {
+        XCTAssertEqual(SelectedSourceQuote.preview("  scaffolding.  "), "scaffolding.")
+        XCTAssertEqual(SelectedSourceQuote.preview(""), "")
+    }
+
+    func testQuotePreviewCapsLongSelections() {
+        let long = String(repeating: "word ", count: 500)
+        let preview = SelectedSourceQuote.preview(long)
+        XCTAssertLessThanOrEqual(preview.count, SelectedSourceQuote.collapsedCharCap + 1)
+        XCTAssertTrue(preview.hasSuffix("…"))
+    }
 }

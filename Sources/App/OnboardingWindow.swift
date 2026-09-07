@@ -10,7 +10,12 @@ final class OnboardingWindowController: NSWindowController, NSWindowDelegate {
 
     convenience init(onOpenPanel: @escaping () -> Void = {}) {
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 420, height: 520),
+            contentRect: NSRect(
+                x: 0,
+                y: 0,
+                width: BeruMetrics.onboardingWidth,
+                height: BeruMetrics.onboardingHeight
+            ),
             styleMask: [.titled, .closable, .fullSizeContentView],
             backing: .buffered,
             defer: false
@@ -139,7 +144,7 @@ struct GetStartedView: View {
             stepDots
                 .padding(.bottom, BeruSpace.lg)
         }
-        .frame(width: 420, height: 520)
+        .frame(width: BeruMetrics.onboardingWidth, height: BeruMetrics.onboardingHeight)
         .background(BeruColor.canvas)
         .animation(motion, value: step)
         .animation(motion, value: isTrusted)
@@ -152,11 +157,11 @@ struct GetStartedView: View {
     }
 
     private var motion: Animation? {
-        a11y.reduceMotion ? nil : .easeInOut(duration: 0.22)
+        a11y.reduceMotion ? nil : .easeInOut(duration: BeruMotion.stepCrossfade)
     }
 
     private var stepTransition: AnyTransition {
-        a11y.reduceMotion ? .opacity : .opacity
+        .opacity
     }
 
     private var stepDots: some View {
@@ -164,7 +169,13 @@ struct GetStartedView: View {
             ForEach(GetStartedStep.allCases, id: \.rawValue) { item in
                 Capsule()
                     .fill(item == step ? BeruColor.accent : BeruColor.textSecondary.opacity(0.28))
-                    .frame(width: item == step ? 18 : 6, height: 6)
+                    .frame(
+                        width: item == step
+                            ? BeruMetrics.onboardingDotWidth
+                            : BeruMetrics.onboardingDotHeight,
+                        height: BeruMetrics.onboardingDotHeight
+                    )
+                    .animation(motion, value: item == step)
             }
         }
         .accessibilityElement(children: .ignore)
@@ -176,7 +187,14 @@ struct GetStartedView: View {
             title: "Get started with Beru",
             body: "Beru lives in your menu bar. Select text in any app, press the shortcut, and improve it instantly. Fix grammar, refine prompts, write replies, or ask questions."
         ) {
-            OnboardContinueButton("Continue") { step = .accessibility }
+            VStack(spacing: BeruSpace.lg) {
+                HStack(spacing: BeruSpace.xs) {
+                    BeruChip(icon: "wand-sparkles", title: "Fix grammar")
+                    BeruChip(icon: "sparkles", title: "Refine prompts")
+                    BeruChip(icon: "messages-square", title: "Write replies")
+                }
+                OnboardContinueButton("Continue") { step = .accessibility }
+            }
         }
     }
 
@@ -185,14 +203,22 @@ struct GetStartedView: View {
             title: "Allow Accessibility",
             body: "Beru needs Accessibility access to read and replace selected text in other apps. You can enable it from System Settings."
         ) {
-            VStack(spacing: 12) {
-                if !isTrusted {
-                    OnboardContinueButton("Open System Settings", prominent: false) {
+            VStack(spacing: BeruSpace.sm) {
+                if isTrusted {
+                    SettingsStatusBadge(title: "Accessibility is on", isPositive: true)
+                    OnboardContinueButton("Continue") { step = .startBeru }
+                } else {
+                    OnboardContinueButton("Open System Settings") {
                         Permissions.requestAccessibilityIfNeeded()
                         Permissions.openAccessibilitySettings()
                     }
+                    BeruButton(title: "Continue", variant: .pill, size: .regular) {
+                        step = .startBeru
+                    }
+                    Text("You can continue now and grant access later.")
+                        .font(BeruType.footnote)
+                        .foregroundStyle(BeruColor.textTertiary)
                 }
-                OnboardContinueButton("Continue") { step = .startBeru }
             }
         }
     }
@@ -202,8 +228,11 @@ struct GetStartedView: View {
             title: "Start Beru",
             body: "Press the shortcut to open Beru anytime, right from the app you're working in."
         ) {
-            OnboardContinueButton("Press \(shortcutLabel)") {
-                controller?.finishAndOpenPanel()
+            VStack(spacing: BeruSpace.sm) {
+                BeruKbd(text: shortcutLabel)
+                OnboardContinueButton("Start Beru") {
+                    controller?.finishAndOpenPanel()
+                }
             }
         }
     }
@@ -223,7 +252,7 @@ struct GetStartedView: View {
                 Image("BrandMark")
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 72, height: 72)
+                    .frame(width: BeruMetrics.brandOnboarding, height: BeruMetrics.brandOnboarding)
                     .clipShape(BeruRadius.shape(BeruRadius.lg))
                     .accessibilityHidden(true)
                 Text(title)
@@ -235,7 +264,7 @@ struct GetStartedView: View {
                     .foregroundStyle(BeruColor.textSecondary)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
-                    .frame(maxWidth: 320)
+                    .frame(maxWidth: BeruMetrics.onboardingBodyWidth)
                 footer()
                     .padding(.top, BeruSpace.xxs)
             }

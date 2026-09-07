@@ -21,7 +21,11 @@ struct ModelsView: View {
     }
 
     var body: some View {
-        SettingsPage(title: "Models", subtitle: DashboardRoute.models.pageSubtitle) {
+        SettingsPage(
+            title: DashboardRoute.models.title,
+            subtitle: DashboardRoute.models.pageSubtitle,
+            icon: DashboardRoute.models.lucideIcon
+        ) {
             if settings.activeProvider == .ollama {
                 localSection
                 installSection
@@ -45,11 +49,11 @@ struct ModelsView: View {
 
     @ViewBuilder
     private var localSection: some View {
-        SettingsSection(title: "On this Mac", subtitle: "Models installed on the local Ollama server.") {
+        SettingsSection(title: "On this Mac") {
             switch listState {
             case .loading:
                 SettingsRow(title: "Installed models", caption: "Looking for models on the local server.") {
-                    ProgressView().controlSize(.small)
+                    BeruLoader.compact()
                 }
             case .notOllama:
                 SettingsRow(
@@ -82,26 +86,27 @@ struct ModelsView: View {
                                 .joined(separator: " · ")
                             : rolesUsing(model.name).joined(separator: ", ")
                     ) {
-                        Menu {
-                            Button("Enhance") { settings.ollamaEnhanceModel = model.name }
-                            Button("Grammar") { settings.ollamaGrammarModel = model.name }
-                            Button("Both") {
-                                settings.ollamaEnhanceModel = model.name
-                                settings.ollamaGrammarModel = model.name
-                            }
-                        } label: {
-                            Text("Use for")
-                                .font(BeruSans.control)
-                                .padding(.horizontal, BeruSpace.md)
-                                .padding(.vertical, BeruSpace.xs)
-                                .background {
-                                    Capsule()
-                                        .strokeBorder(SettingsTheme.border, lineWidth: 1)
-                                        .background(Capsule().fill(Color.primary.opacity(0.03)))
-                                }
-                        }
-                        .menuStyle(.borderlessButton)
-                        .fixedSize()
+                        SettingsOverflowMenu(
+                            title: "Use for",
+                            items: [
+                                DropdownItem(
+                                    title: "Enhance",
+                                    isOn: settings.ollamaEnhanceModel == model.name
+                                ) { settings.ollamaEnhanceModel = model.name },
+                                DropdownItem(
+                                    title: "Grammar",
+                                    isOn: settings.ollamaGrammarModel == model.name
+                                ) { settings.ollamaGrammarModel = model.name },
+                                DropdownItem(
+                                    title: "Both",
+                                    isOn: settings.ollamaEnhanceModel == model.name
+                                        && settings.ollamaGrammarModel == model.name
+                                ) {
+                                    settings.ollamaEnhanceModel = model.name
+                                    settings.ollamaGrammarModel = model.name
+                                },
+                            ]
+                        )
                     }
                 }
             }
@@ -110,7 +115,7 @@ struct ModelsView: View {
 
     @ViewBuilder
     private var installSection: some View {
-        SettingsSection(title: "Install a model", subtitle: "Recommended downloads for local inference.") {
+        SettingsSection(title: "Install a model") {
             SettingsRow(title: "Ollama", caption: setupCaption) {
                 switch setupState {
                 case .notInstalled:

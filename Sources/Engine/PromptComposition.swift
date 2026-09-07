@@ -34,10 +34,12 @@ extension Prompts {
     /// mechanical and has one right answer, so prior turns can only pull it
     /// toward rewriting. Custom actions are excluded because their prompt is
     /// already the user's own and history would give one call two voices.
+    /// Search is excluded: its follow-up context rides the user message as a
+    /// visible Q&A transcript instead (see PanelEngineRun), which small models
+    /// resolve far better than a system-side history block.
     static func threadApplies(actionID: String) -> Bool {
         actionID == EnhancementAction.enhanceID
             || actionID == EnhancementAction.describeID
-            || actionID == EnhancementAction.searchID
     }
 
     /// Folds recent turns into the **system** prompt, deliberately not the user

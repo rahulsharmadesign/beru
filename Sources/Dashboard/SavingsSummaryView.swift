@@ -27,13 +27,13 @@ struct SavingsSummaryView: View {
     }
 
     private var standardBody: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: BeruSpace.xs) {
             HStack(alignment: .firstTextBaseline, spacing: BeruSpace.xs) {
                 Text(headline)
-                    .font(BeruSans.rowTitle)
-                    .foregroundStyle(SettingsTheme.textPrimary)
+                    .font(BeruType.rowTitle)
+                    .foregroundStyle(BeruColor.textPrimary)
                     .monospacedDigit()
-                Spacer(minLength: 8)
+                Spacer(minLength: BeruSpace.xs)
                 if savings.hasData {
                     SettingsPillButton(title: "Reset") { showResetConfirmation = true }
                 }
@@ -42,13 +42,13 @@ struct SavingsSummaryView: View {
             if savings.hasData {
                 meter
                 Text(subtitle)
-                    .font(BeruSans.footnote)
-                    .foregroundStyle(SettingsTheme.textSecondary)
+                    .font(BeruType.footnote)
+                    .foregroundStyle(BeruColor.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             } else {
                 Text("Replace or Copy a result and the savings land here.")
-                    .font(BeruSans.footnote)
-                    .foregroundStyle(SettingsTheme.textSecondary)
+                    .font(BeruType.footnote)
+                    .foregroundStyle(BeruColor.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
@@ -57,7 +57,7 @@ struct SavingsSummaryView: View {
         .background {
             if style == .card {
                 BeruRadius.shape()
-                    .fill(SettingsTheme.badgeBg)
+                    .fill(BeruColor.badge)
             }
         }
     }
@@ -91,22 +91,22 @@ struct SavingsSummaryView: View {
                     ? min(1, Double(savings.totalOutputTokens) / Double(savings.totalInputTokens))
                     : 1
                 Capsule()
-                    .fill(SettingsTheme.border)
+                    .fill(BeruColor.border)
                     .overlay(alignment: .leading) {
                         Capsule()
-                            .fill(SettingsTheme.active)
+                            .fill(BeruColor.accent)
                             .frame(width: max(3, geometry.size.width * share))
                     }
             }
-            .frame(height: 5)
+            .frame(height: BeruMetrics.meterHeight)
 
             HStack {
                 Text("\(Self.number(savings.totalInputTokens)) in")
                 Spacer()
                 Text("\(Self.number(savings.totalOutputTokens)) out")
             }
-            .font(BeruSans.footnote)
-            .foregroundStyle(SettingsTheme.textSecondary)
+            .font(BeruType.footnote)
+            .foregroundStyle(BeruColor.textSecondary)
             .monospacedDigit()
         }
     }

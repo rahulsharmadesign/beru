@@ -17,10 +17,10 @@ struct SavingsPill: View {
 
     @Environment(\.colorScheme) private var colorScheme
 
-    /// An opaque-enough surface that whatever is behind the glass cannot bleed
-    /// through far enough to swallow 11pt text.
+    /// Opaque plate so whatever is behind the panel cannot bleed through far
+    /// enough to swallow 11pt text. Haze metapill fill with a hairline.
     private var surface: Color {
-        BeruColor.canvas.opacity(0.9)
+        BeruColor.panelSolid
     }
 
     /// Contrast-tuned per appearance; see `BeruColor.Status`.
@@ -44,7 +44,7 @@ struct SavingsPill: View {
 
     var body: some View {
         HStack(spacing: BeruSpace.xxs) {
-            BeruIcon(name: icon, size: 9, strokeWidth: 2.5)
+            BeruIcon(name: icon, size: BeruMetrics.iconSizeDense, strokeWidth: 2)
             Text(savings.shortLabel)
                 .font(BeruType.captionMedium)
                 .monospacedDigit()
@@ -57,11 +57,12 @@ struct SavingsPill: View {
         }
         .foregroundStyle(accent)
         .padding(.horizontal, BeruSpace.xs)
-        .padding(.vertical, BeruSpace.hair)
+        .frame(height: BeruMetrics.metapillHeight)
         .background(
             Capsule()
                 .fill(surface)
                 .overlay(Capsule().fill(accent.opacity(colorScheme == .dark ? 0.16 : 0.10)))
+                .overlay(Capsule().strokeBorder(BeruColor.border, lineWidth: 1))
         )
         // Never let the footer's other controls compress this pill below its
         // intrinsic width; it always keeps room for the number and "tok".
@@ -77,11 +78,14 @@ struct SavingsPill: View {
     private var meter: some View {
         Capsule()
             .fill(accent.opacity(0.25))
-            .frame(width: 20, height: 3)
+            .frame(width: BeruMetrics.savingsMeterWidth, height: BeruMetrics.savingsMeterHeight)
             .overlay(alignment: .leading) {
                 Capsule()
                     .fill(accent)
-                    .frame(width: max(2, 20 * savings.outputShare), height: 3)
+                    .frame(
+                        width: max(BeruSpace.hair, BeruMetrics.savingsMeterWidth * savings.outputShare),
+                        height: BeruMetrics.savingsMeterHeight
+                    )
             }
     }
 }

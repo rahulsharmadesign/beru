@@ -1,23 +1,24 @@
 import SwiftUI
 
-/// Overlay language for modules sitting on a single glass slab.
+/// Overlay language for modules sitting on the Haze panel plate.
 ///
-/// Inner cards are not Liquid Glass — Apple forbids stacking glass on glass.
-/// Chrome sits on the window material with no fill. Reduce Transparency still
-/// paints a surface so text stays readable.
+/// Inner cards are fills and hairlines, not a second blur. Reduce Transparency
+/// still paints a surface so text stays readable.
 struct GlassModule: ViewModifier {
     var radius: CGFloat = BeruRadius.md
     var focusRing: Bool = false
     var scrim: ScrimWeight = .chrome
-    /// When nil, only `.content` modules draw a border.
+    /// When nil, wells and content draw a hairline.
     var bordered: Bool? = nil
 
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
     enum ScrimWeight {
         case base
         case chrome
+        /// Result band: a light surface so markdown sits on a card, not the wash.
         case content
+        /// Composer well: opaque plate, hairline, focus halo.
+        case well
     }
 
     private var shape: RoundedRectangle {
@@ -25,19 +26,20 @@ struct GlassModule: ViewModifier {
     }
 
     private var fill: Color {
-        reduceTransparency && scrim == .content ? BeruColor.surface : Color.clear
+        switch scrim {
+        case .base, .chrome: return Color.clear
+        case .content: return BeruColor.surface
+        case .well: return BeruColor.panelSolid
+        }
     }
 
     private var border: Color {
-        switch scrim {
-        case .base, .chrome: BeruColor.border
-        case .content: BeruColor.border.opacity(0.78)
-        }
+        BeruColor.border
     }
 
     private var showsBorder: Bool {
         if let bordered { return bordered }
-        return scrim == .content
+        return scrim == .well || scrim == .content
     }
 
     func body(content: Content) -> some View {
@@ -49,24 +51,39 @@ struct GlassModule: ViewModifier {
                 if showsBorder {
                     filled
                         .clipShape(shape)
-                        .overlay { shape.strokeBorder(border, lineWidth: 0.75) }
+                        .overlay { shape.strokeBorder(border, lineWidth: 1) }
                 } else {
                     filled.clipShape(shape)
                 }
             } else if showsBorder {
-                filled.overlay { shape.strokeBorder(border, lineWidth: 0.75) }
+                filled.overlay { shape.strokeBorder(border, lineWidth: 1) }
             } else {
                 filled
             }
         }
         .overlay(focusEdge)
         .animation(nil, value: focusRing)
+        // Resting Haze e2 lift on the composer well only: contact shadow
+        // plus soft lift. Render-only, never measured. Chrome and result
+        // cards stay flat on the plate.
+        .shadow(color: wellShadow(BeruColor.liftShadow), radius: BeruSpace.lg, y: BeruSpace.xs)
+        .shadow(color: wellShadow(BeruColor.contactShadow), radius: BeruSpace.hair, y: 1)
     }
+
+    /// Wells are the only modules that float. Anything else returns clear.
+    private func wellShadow(_ color: Color) -> Color {
+        scrim == .well ? color : .clear
+    }
+
+    private var liftOpacity: Double { 0.35 }
+    private var contactOpacity: Double { 0.30 }
 
     @ViewBuilder
     private var focusEdge: some View {
         if focusRing {
-            shape.strokeBorder(BeruColor.accent, lineWidth: 1.5)
+            shape
+                .strokeBorder(BeruColor.accent, lineWidth: 1)
+                .shadow(color: BeruColor.focusGlow, radius: BeruMetrics.focusHalo)
         }
     }
 }

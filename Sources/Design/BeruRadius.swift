@@ -2,18 +2,18 @@ import SwiftUI
 
 /// The corner radius scale, and the one curve style.
 ///
-/// Radius 10 used to be declared in six separate places and the panel drew its
-/// cards with `.circular` while Settings drew the same metaphor with
-/// `.continuous`, so identical cards had visibly different corners.
+/// Haze is pill-first: 8 / 12 / 16 / 22 / 28, panel 28 on macOS.
 enum BeruRadius {
-    /// Icon buttons, inline chips, small badges.
-    static let sm: CGFloat = 6
+    /// Chips, kbd, small badges, menu rows.
+    static let sm: CGFloat = 8
+    /// Menu floats, inputs in square mode.
+    static let sm2: CGFloat = 12
     /// The default. Rows, cards, wells, panel modules.
-    static let md: CGFloat = 10
-    /// Composer and other content-bearing containers.
-    static let lg: CGFloat = 16
-    /// The panel window itself.
-    static let xl: CGFloat = 20
+    static let md: CGFloat = 16
+    /// Composer and other content-bearing containers, floats.
+    static let lg: CGFloat = 22
+    /// The panel window and dialogs.
+    static let xl: CGFloat = 28
 
     /// Always `.continuous`. Do not pass `.circular`.
     static func shape(_ radius: CGFloat = md) -> RoundedRectangle {
