@@ -117,14 +117,14 @@ Highlight a message in another app, invoke, then tap **Smart Reply**:
 
 - [ ] Funny and Witty mention a concrete detail from the selected message; Formal stays non-jokey
 - [ ] Tone pill jumps the highlight; clicking a card does the same; neither re-runs the model
-- [ ] Copy / Insert send only the selected card, not the tagged blob; every card owns copy / regenerate / like / dislike / write-back / pin on its own row, left-aligned; no footer on the tab
+- [ ] Copy / Insert send only the selected card, not the tagged blob; every card owns primary Insert first, then copy / regenerate / like / dislike / pin on its own row, left-aligned; no footer on the tab
 - [ ] Hotkey with a comment selected in Chrome/Safari opens **Smart Reply** automatically
 - [ ] Roman Hinglish comment → all six replies stay in Roman/Latin (not Devanagari or German)
 - [ ] If the model mixes languages across cards, a language notice appears — try Regenerate
 - [ ] No selection on Grammar: idle says “Type or paste text”; composer matches; not “ask instead”. Type a sentence, Return → Grammar result; context line shows character count; composer is empty optional extras
 - [ ] With a selection, Grammar still auto-runs; composer stays optional extras; Replace unchanged
 - [ ] Type on Search with no selection, then click Enhance: Enhance runs on that text without a second Return
-- [ ] Grammar shows Corrected / Clearer / Tighter as borderless rows like Smart Reply; selected row has the accent wash and edge; every row owns copy / regenerate / like / dislike / replace / pin, left-aligned; clicking a row selects it without re-running; row Replace sends that row's body; no footer and no token savings pill
+- [ ] Grammar shows Corrected / Clearer / Tighter as borderless rows like Smart Reply; selected row has the accent wash and edge; every row owns primary Replace first, then copy / regenerate / like / dislike / pin, left-aligned; clicking a row selects it without re-running; row Replace sends that row's body; no footer and no token savings pill
 - [ ] Switching tabs cross-fades the accent fill on the chips in place (no traveling pill); unselected pills keep their background and stroke throughout; close disc and composer move with the window immediately
 
 ## Before release only

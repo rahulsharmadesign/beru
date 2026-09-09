@@ -5,8 +5,9 @@ import SwiftUI
 /// rows are borderless — transparent idle, surface on hover, accent wash
 /// with an accent edge when selected.
 ///
-/// Grammar opts into a left-aligned action strip (copy, regenerate,
-/// like, dislike) under the body; Reply keeps the single trailing copy.
+/// Grammar opts into a left-aligned action strip (primary write-back,
+/// then copy, regenerate, like, dislike, pin) under the body; Reply keeps
+/// the same strip with Insert as its primary.
 /// The strip is a sibling of the select control, not an overlay on the
 /// `Button`: nesting buttons plus `textSelection` inside the label crashed
 /// AttributeGraph (`Array.==` during layout compare).
@@ -18,12 +19,14 @@ struct SuggestionOptionCard: View {
     let accessibilityLabel: String
     let onSelect: () -> Void
     let onCopy: () -> Void
-    /// Opt-in action strip under the body: copy, regenerate, like,
-    /// dislike, write-back, pin. Grammar and Reply rows show it; the tab
-    /// footers there are gone, so the rows own every outcome.
+    /// Opt-in action strip under the body: primary write-back first and
+    /// left-aligned, then copy, regenerate, like, dislike, pin. Grammar
+    /// and Reply rows show it; the tab footers there are gone, so the rows
+    /// own every outcome.
     var showActions: Bool = false
     var vote: Bool? = nil
     var pinned: Bool = false
+    var writeTitle: String = "Replace"
     var writeHelp: String = "Replace with this"
     var onRegenerate: () -> Void = {}
     var onVote: (Bool) -> Void = { _ in }
@@ -54,40 +57,49 @@ struct SuggestionOptionCard: View {
             .accessibilityAddTraits(isSelected ? .isSelected : [])
 
             if showActions {
-                HStack(spacing: BeruSpace.hair) {
-                    SearchActionButton(
-                        icon: copied ? "check" : "copy",
-                        help: copied ? "Copied" : "Copy \(title)",
-                        tint: copied ? BeruColor.positive : nil
+                HStack(spacing: BeruSpace.xs) {
+                    BeruButton(
+                        title: writeTitle,
+                        variant: .primary,
+                        size: .compact,
+                        leadingIcon: "replace"
                     ) {
-                        onCopy()
-                    }
-                    SearchActionButton(icon: "rotate-cw", help: "Check again — rewrites all the options") {
-                        onRegenerate()
-                    }
-                    SearchActionButton(
-                        icon: "thumbs-up",
-                        help: "Good \(title.lowercased()) — helps Beru learn",
-                        active: vote == true
-                    ) {
-                        onVote(true)
-                    }
-                    SearchActionButton(
-                        icon: "thumbs-down",
-                        help: "Bad \(title.lowercased()) — helps Beru learn",
-                        active: vote == false
-                    ) {
-                        onVote(false)
-                    }
-                    SearchActionButton(icon: "replace", help: "\(writeHelp) — \(title.lowercased())") {
                         onReplace()
                     }
-                    SearchActionButton(
-                        icon: pinned ? "check" : "pin",
-                        help: pinned ? "Pinned" : "Pin \(title.lowercased())",
-                        tint: pinned ? BeruColor.positive : nil
-                    ) {
-                        onPin()
+                    .help("\(writeHelp) — \(title.lowercased())")
+                    .accessibilityHint(writeHelp)
+                    HStack(spacing: BeruSpace.hair) {
+                        SearchActionButton(
+                            icon: copied ? "check" : "copy",
+                            help: copied ? "Copied" : "Copy \(title)",
+                            tint: copied ? BeruColor.positive : nil
+                        ) {
+                            onCopy()
+                        }
+                        SearchActionButton(icon: "rotate-cw", help: "Check again — rewrites all the options") {
+                            onRegenerate()
+                        }
+                        SearchActionButton(
+                            icon: "thumbs-up",
+                            help: "Good \(title.lowercased()) — helps Beru learn",
+                            active: vote == true
+                        ) {
+                            onVote(true)
+                        }
+                        SearchActionButton(
+                            icon: "thumbs-down",
+                            help: "Bad \(title.lowercased()) — helps Beru learn",
+                            active: vote == false
+                        ) {
+                            onVote(false)
+                        }
+                        SearchActionButton(
+                            icon: pinned ? "check" : "pin",
+                            help: pinned ? "Pinned" : "Pin \(title.lowercased())",
+                            tint: pinned ? BeruColor.positive : nil
+                        ) {
+                            onPin()
+                        }
                     }
                 }
             } else {

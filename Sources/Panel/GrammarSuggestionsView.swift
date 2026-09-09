@@ -33,6 +33,7 @@ struct GrammarSuggestionsView: View {
                     showActions: true,
                     vote: votes[item.kind],
                     pinned: pinnedRow == item.kind.rawValue,
+                    writeTitle: "Replace",
                     writeHelp: "Replace with this",
                     onRegenerate: onRegenerate,
                     onVote: { onVote(item.kind, $0) },

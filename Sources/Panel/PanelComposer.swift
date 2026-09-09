@@ -57,14 +57,16 @@ extension PanelView {
 
     var footer: some View {
         HStack(spacing: BeruSpace.xs) {
-            if showsTokenSavings, let savings = appState.savings[appState.selectedActionID] {
-                SavingsPill(savings: savings)
-                    .transition(.opacity)
-            }
+            footerPrimaryAction
 
             footerActions
 
             Spacer(minLength: 0)
+
+            if showsTokenSavings, let savings = appState.savings[appState.selectedActionID] {
+                SavingsPill(savings: savings)
+                    .transition(.opacity)
+            }
 
             if let provenance = contextProvenance {
                 Text(provenance)
@@ -95,6 +97,34 @@ extension PanelView {
         .padding(.bottom, BeruSpace.xxs)
         .frame(minHeight: PanelMetrics.footerMinHeight, alignment: .center)
         .frame(maxWidth: .infinity)
+    }
+
+    /// Primary write-back first and left-aligned: Replace (Insert on Reply,
+    /// Apply on a vault note) is the main action, so it owns the primary
+    /// pill with its icon. The token pill sits far right as a side note.
+    /// Clicks travel through `PanelHitCapsule`: window-drag swallows plain
+    /// buttons here.
+    @ViewBuilder
+    var footerPrimaryAction: some View {
+        if !isSearchTab && !isGrammar && !isSmartReply && showsHostWriteAction {
+            PanelHitCapsule(help: primaryFooterHelp, accessibilityLabel: primaryFooterTitle) {
+                performReplace()
+            } label: {
+                ZStack {
+                    BeruButton(
+                        title: primaryFooterTitle,
+                        variant: .primary,
+                        size: .compact,
+                        leadingIcon: "replace"
+                    ) {}
+                    .opacity(appState.replacedFeedback != nil ? 0 : 1)
+                    BeruLoader.compact()
+                        .frame(width: BeruMetrics.roundButtonSm, height: BeruMetrics.roundButtonSm)
+                        .opacity(appState.replacedFeedback != nil ? 1 : 0)
+                }
+                .animation(.easeOut(duration: 0.15), value: appState.replacedFeedback != nil)
+            }
+        }
     }
 
     /// Icon-only outcome row. Only Enhance and the verb tabs have one:
@@ -139,20 +169,6 @@ extension PanelView {
                 setResultVoteFooter(liked: false)
             } label: {
                 SearchActionButton(icon: "thumbs-down", help: "Dislike", active: vote == false) {}
-            }
-            if showsHostWriteAction {
-                PanelHitCapsule(help: primaryFooterHelp, accessibilityLabel: primaryFooterTitle) {
-                    performReplace()
-                } label: {
-                    ZStack {
-                        SearchActionButton(icon: "replace", help: primaryFooterTitle) {}
-                            .opacity(appState.replacedFeedback != nil ? 0 : 1)
-                        BeruLoader.compact()
-                            .frame(width: BeruMetrics.roundButtonSm, height: BeruMetrics.roundButtonSm)
-                            .opacity(appState.replacedFeedback != nil ? 1 : 0)
-                    }
-                    .animation(.easeOut(duration: 0.15), value: appState.replacedFeedback != nil)
-                }
             }
             PanelHitCapsule(
                 help: appState.pinnedFeedback ? "Pinned" : "Save this result in the vault",

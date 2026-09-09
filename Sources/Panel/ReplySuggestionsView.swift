@@ -33,6 +33,7 @@ struct ReplySuggestionsView: View {
                     showActions: true,
                     vote: votes[item.tone],
                     pinned: pinnedRow == item.tone.rawValue,
+                    writeTitle: "Insert",
                     writeHelp: "Insert this reply",
                     onRegenerate: onRegenerate,
                     onVote: { onVote(item.tone, $0) },

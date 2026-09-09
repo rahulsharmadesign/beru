@@ -2,9 +2,9 @@ import SwiftUI
 
 /// Per-run token accounting, shown on the outcome strip once a result lands.
 ///
-/// Deliberately quiet. It sits to the left of Replace as a side note, not as a
-/// badge competing with the result text — this is a number you glance at, and
-/// the panel is on screen for a couple of seconds at a time.
+/// Deliberately quiet. It sits far right of the footer as a side note,
+/// not as a badge competing with the result text — this is a number you
+/// glance at, and the panel is on screen for a couple of seconds at a time.
 ///
 /// Legibility is not left to chance. The panel floats over arbitrary content, so
 /// the frosted backdrop behind this pill can be anything from white paper to
