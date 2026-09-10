@@ -76,6 +76,10 @@ struct DashboardView: View {
                 sidebarNoMatches
                 Spacer(minLength: 0)
             } else {
+                // Custom rows, not a List: AppKit draws List selection with
+                // the system accent (blue) and ignores SwiftUI tint, so the
+                // selected row could never follow Beru's accent. Buttons
+                // with an accent pill do, and stay accessible.
                 ScrollView {
                     VStack(alignment: .leading, spacing: BeruSpace.xs) {
                         sidebarGroup(title: "Settings", routes: settingsMenu)
@@ -106,6 +110,11 @@ struct DashboardView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        // Inset panel: 4pt of glass around the sidebar, clipped to the same
+        // rounded enclosure as the window so rows and selection never bleed
+        // square to the edge.
+        .padding(BeruSpace.xxs)
+        .clipShape(BeruRadius.shape(BeruRadius.sm))
     }
 
     @ViewBuilder
@@ -135,19 +144,10 @@ struct DashboardView: View {
     private func sidebarRow(_ route: DashboardRoute) -> some View {
         let selected = model.route == route
         return HStack(spacing: BeruSpace.sm) {
-            ZStack {
-                BeruRadius.shape(BeruRadius.sm)
-                    .fill(selected ? BeruColor.onAccent.opacity(0.22) : BeruColor.subtleFill)
-                    .overlay {
-                        if !selected {
-                            BeruRadius.shape(BeruRadius.sm)
-                                .strokeBorder(BeruColor.border, lineWidth: 1)
-                        }
-                    }
-                BeruIcon(name: route.lucideIcon, size: BeruMetrics.iconSize)
-                    .foregroundStyle(selected ? BeruColor.onAccent : BeruColor.textSecondary)
-            }
-            .frame(width: BeruMetrics.roundButtonSm, height: BeruMetrics.roundButtonSm)
+            BeruIcon(name: route.systemImage, size: BeruMetrics.sidebarTileGlyph)
+                .foregroundStyle(.white)
+                .frame(width: BeruMetrics.sidebarTileBox, height: BeruMetrics.sidebarTileBox)
+                .background(BeruRadius.shape(BeruMetrics.sidebarTileRadius).fill(route.sidebarTileColor))
             Text(route.title)
                 .font(selected ? BeruType.sidebarSelected : BeruType.sidebar)
             Spacer(minLength: 0)

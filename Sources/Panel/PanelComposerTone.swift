@@ -48,10 +48,30 @@ extension PanelView {
             help: "Which of the six replies to insert",
             accessibilityLabel: "Reply tone, \(appState.selectedReplyTone.title)",
             accessibilityHint: "Choose which generated reply to insert or copy",
-            isOpen: openMenuID == PanelMenuID.tone,
-            action: { toggleMenu(PanelMenuID.tone) }
+            anchor: toneAnchor,
+            onTap: presentToneMenu
         )
-        .menuAnchor(PanelMenuID.tone)
+    }
+
+    func presentToneMenu() {
+        let selected = appState.selectedReplyTone
+        presentNativeMenu(
+            from: toneAnchor,
+            items: ReplyTone.allCases.map { tone in
+                NativeMenuItem(
+                    id: tone.rawValue,
+                    title: tone.title,
+                    isSelected: tone == selected,
+                    isEnabled: appState.replySuggestions.isEmpty
+                        || appState.replySuggestions.contains { $0.tone == tone }
+                )
+            },
+            onSelect: { id in
+                if let tone = ReplyTone(rawValue: id) {
+                    appState.selectedReplyTone = tone
+                }
+            }
+        )
     }
 
     var isPromptBusy: Bool {

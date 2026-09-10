@@ -1,4 +1,4 @@
-import Foundation
+import SwiftUI
 
 /// A destination in the dashboard sidebar.
 enum DashboardRoute: String, Identifiable, CaseIterable, Hashable {
@@ -78,6 +78,22 @@ enum DashboardRoute: String, Identifiable, CaseIterable, Hashable {
         case .actions: return "sparkles"
         case .targets: return "target"
         case .about: return "info.circle"
+        }
+    }
+
+    /// System Settings-style icon tile: white glyph on a colored squircle.
+    /// System colors only, so the tile stays correct in both appearances.
+    var sidebarTileColor: Color {
+        switch self {
+        case .general: return .gray
+        case .models: return .purple
+        case .permissions: return .blue
+        case .data: return .green
+        case .vault: return .orange
+        case .runs: return .teal
+        case .actions: return .pink
+        case .targets: return .red
+        case .about: return .gray
         }
     }
 

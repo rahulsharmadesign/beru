@@ -10,7 +10,7 @@ Select a rough idea, press a hotkey, and Beru turns it into a prompt your LLM wi
 ![Swift 5.10](https://img.shields.io/badge/Swift-5.10-orange)
 ![License: MIT](https://img.shields.io/badge/license-MIT-green)
 
-Beru lives in the menu bar. It does not take over the app you are writing in. On macOS 26 it floats as **Liquid Glass**: one HUD slab over the host app, not a frosted card and not a second window you live in. Settings uses the same system window material, with Vault, Actions, Targets, and Runs as native source lists.
+Beru lives in the menu bar. It does not take over the app you are writing in. Every surface is native **Liquid Glass**: the panel floats as one refractive slab, the composer is a real glass field, the menu-bar extra sits on system glass, and Settings is a glass window with an accent-tinted sidebar. No custom frosted cards, no painted-over blur.
 
 ## How it works
 
@@ -26,13 +26,29 @@ With no selection, the panel opens on **AI Search**. Type a one-off ask into the
 
 On Search the result footer is **Copy** and **Pin** — no Replace, no token chip. Smart Reply keeps **Insert** but also hides the token chip (an answer, not a tighter prompt). Grammar hides it too (a copy-edit, not a cheaper prompt). On Enhance Prompt, Summarize, Explain, and Instruction it is **⌘↩ Replace**, **Copy**, **Pin**, and the token chip. A bare Return never overwrites the host selection. Enhance a vault note and **Apply** writes back into that note.
 
+Confirmations ("Replaced in …", "Pinned") float over the composer and never move the layout.
+
+## Pick a model that can do the job
+
+Beru's prompts are demanding instruction sets — tagged multi-output formats, layered constraints, strict output shapes. A vision or embedding model will give weak replies, ignore bans, and echo prompt vocabulary. **Use a text instruct model.**
+
+Settings → Models warns you when Enhance or Grammar runs on a vision, embedding, speech, or filter model, and offers a one-tap switch to the first installed text model. Good local choices:
+
+| Model | Size | Note |
+|---|---|---|
+| **Qwen 2.5 7B** | ~4.7 GB | Default. No reasoning pass; faster first token. |
+| **Qwen 3 8B** | ~5 GB | Strongest local pick. Reasoning suppressed automatically. |
+| **Gemma 3 1B** | ~815 MB | Lightweight. Works, but expect simpler output. |
+
+Cloud providers (Groq, Anthropic, …) sidestep this entirely — any current chat model follows the formats.
+
 ## Install
 
 macOS 26+ only.
 
 ### Download (recommended)
 
-1. Download **Beru-1.1.12.dmg** from [Releases](https://github.com/rahulsharmadesign/beru/releases).
+1. Download **Beru-1.1.14.dmg** from [Releases](https://github.com/rahulsharmadesign/beru/releases). Only the latest release is kept; older versions and their downloads are removed.
 2. Open the DMG and drag **Beru** into **Applications**.
 3. macOS will block it (unsigned). Allow it once:
 
@@ -46,7 +62,7 @@ No Xcode, Homebrew, or Apple Developer account. Dependencies are inside the app.
 
 No Terminal? Control-click Beru → **Open**.
 
-**Optional:** if you use the **Ollama** provider, install [Ollama](https://ollama.com) separately and pull a model. Cloud providers (Groq, Anthropic, etc.) only need an API key in Settings.
+**Optional:** if you use the **Ollama** provider, install [Ollama](https://ollama.com) separately and pull a model (see above for which). Cloud providers (Groq, Anthropic, etc.) only need an API key in Settings.
 
 ### Build from source (developers)
 
@@ -75,7 +91,7 @@ Then open **Settings** from the menu bar and choose a provider (Ollama with a pu
 
 Microphone and Speech Recognition are optional. The system prompt appears the first time you press the mic or **⌃⌥⌘L**, not during Get Started. Speech is recognized on this Mac.
 
-**Reduce Transparency** (System Settings → Accessibility → Display) swaps the glass panel for an opaque card without relaunching.
+**Reduce Transparency** (System Settings → Accessibility → Display) swaps every glass surface for an opaque card without relaunching.
 
 ## Providers
 
@@ -123,7 +139,7 @@ Name (greetings on this Mac only), accent color, **Open Beru** and **Dictate** s
 
 ### Models
 
-Active provider (Ollama, Anthropic, or a custom `/v1` host such as Groq), base URL, API key, Enhance and Grammar model ids, and **Test connection**. Pull a local model here; the download continues if you leave the page.
+Active provider (Ollama, Anthropic, or a custom `/v1` host such as Groq), base URL, API key, Enhance and Grammar model ids, and **Test connection**. A fit warning appears if a role runs on a vision, embedding, speech, or filter model, with a one-tap switch to a text model. Pull a local model here; the download continues if you leave the page.
 
 ### Permissions
 
@@ -194,6 +210,8 @@ brew install xcodegen
 ./scripts/install.sh
 ./scripts/qa.sh
 ```
+
+The QA gate (`./scripts/qa.sh`) is the definition of done: static guards, codegen, build, tests, then a manual checklist.
 
 ## License
 

@@ -40,8 +40,57 @@ extension PanelView {
                 .fixedSize(horizontal: false, vertical: true)
                 .zIndex(1)
         }
+        .overlay(alignment: .bottom) {
+            toastFallbackOverlay
+        }
         .animation(nil, value: hasFinishedResult)
         .animation(nil, value: appState.selectedActionID)
+    }
+
+    /// Transient confirmations ("Replaced in …", "Pinned") never resize the
+    /// chrome. Tabs with a footer show the text inline while the icon row
+    /// and savings hide for the 2s confirmation (that chrome is dead — the
+    /// panel dismisses when the toast clears). Grammar/Reply have no
+    /// footer, so the toast floats over the composer spacer zone instead,
+    /// ignoring clicks so the pill and mic stay usable beneath it.
+    @ViewBuilder
+    var toastFallbackOverlay: some View {
+        Group {
+            if toastVisible && !showsFooter {
+                toastText
+                    .padding(.horizontal, BeruSpace.sm)
+                    .padding(.vertical, BeruSpace.xxs)
+                    .background {
+                        Capsule()
+                            .fill(BeruColor.subtleFill)
+                            .overlay(Capsule().strokeBorder(BeruColor.border, lineWidth: 1))
+                    }
+                    .padding(.bottom, BeruSpace.xl)
+                    .transition(.opacity)
+            }
+        }
+        .allowsHitTesting(false)
+        .animation(.easeOut(duration: 0.15), value: toastVisible)
+    }
+
+    @ViewBuilder
+    var toastText: some View {
+        if let replaced = appState.replacedFeedback {
+            Text(replaced)
+                .font(BeruType.footnote)
+                .foregroundStyle(BeruColor.textSecondary)
+                .lineLimit(1)
+                .accessibilityAddTraits(.updatesFrequently)
+        } else if appState.pinnedFeedback {
+            Text("Pinned")
+                .font(BeruType.footnote)
+                .foregroundStyle(BeruColor.textSecondary)
+                .lineLimit(1)
+        }
+    }
+
+    var toastVisible: Bool {
+        appState.replacedFeedback != nil || appState.pinnedFeedback
     }
 
     var showsFooter: Bool {
@@ -59,37 +108,28 @@ extension PanelView {
         HStack(spacing: BeruSpace.xs) {
             footerPrimaryAction
 
-            footerActions
+            if !toastVisible {
+                footerActions
+            }
 
             Spacer(minLength: 0)
 
-            if showsTokenSavings, let savings = appState.savings[appState.selectedActionID] {
-                SavingsPill(savings: savings)
+            if toastVisible {
+                toastText
                     .transition(.opacity)
-            }
+            } else {
+                if showsTokenSavings, let savings = appState.savings[appState.selectedActionID] {
+                    SavingsPill(savings: savings)
+                        .transition(.opacity)
+                }
 
-            if let provenance = contextProvenance {
-                Text(provenance)
-                    .font(BeruType.captionMedium)
-                    .foregroundStyle(BeruColor.textSecondary)
-                    .lineLimit(1)
-                    .help("Local context applied to this result")
-            }
-
-            if let replaced = appState.replacedFeedback {
-                Text(replaced)
-                    .font(BeruType.footnote)
-                    .foregroundStyle(BeruColor.textSecondary)
-                    .lineLimit(1)
-                    .transition(.opacity)
-                    .accessibilityAddTraits(.updatesFrequently)
-            }
-
-            if appState.pinnedFeedback {
-                Text("Pinned")
-                    .font(BeruType.footnote)
-                    .foregroundStyle(BeruColor.textSecondary)
-                    .transition(.opacity)
+                if let provenance = contextProvenance {
+                    Text(provenance)
+                        .font(BeruType.captionMedium)
+                        .foregroundStyle(BeruColor.textSecondary)
+                        .lineLimit(1)
+                        .help("Local context applied to this result")
+                }
             }
         }
         .padding(.horizontal, PanelMetrics.moduleInset)
@@ -97,6 +137,7 @@ extension PanelView {
         .padding(.bottom, BeruSpace.xxs)
         .frame(minHeight: PanelMetrics.footerMinHeight, alignment: .center)
         .frame(maxWidth: .infinity)
+        .animation(.easeOut(duration: 0.15), value: toastVisible)
     }
 
     /// Primary write-back first and left-aligned: Replace (Insert on Reply,
@@ -300,74 +341,6 @@ extension PanelView {
         return Prompts.targetApplies(
             actionID: action.id, role: action.role, usesBuiltInPrompt: action.isBuiltIn
         )
-    }
-
-    var targetMenu: some View {
-        let active = targetRegistry.profile(withID: appState.selectedTargetID)
-        return composerPickerPill(
-            icon: active?.icon ?? "circle-dashed",
-            title: active?.name ?? "Generic",
-            help: "Which AI this prompt is written for",
-            accessibilityLabel: "Target, \(active?.name ?? "Generic")",
-            accessibilityHint: "Choose which AI this prompt is written for",
-            isOpen: openMenuID == PanelMenuID.target,
-            action: { toggleMenu(PanelMenuID.target) }
-        )
-        .menuAnchor(PanelMenuID.target)
-    }
-
-    var providerMenu: some View {
-        let kind = SettingsStore.shared.activeProvider
-        return composerPickerPill(
-            icon: kind.composerIcon,
-            title: kind.composerTitle,
-            help: "Change the active provider",
-            accessibilityLabel: "Active provider, \(kind.title)",
-            accessibilityHint: "Choose which AI provider Beru sends requests to",
-            isOpen: openMenuID == PanelMenuID.provider,
-            action: { toggleMenu(PanelMenuID.provider) }
-        )
-        .menuAnchor(PanelMenuID.provider)
-    }
-
-    func composerPickerPill(
-        icon: String,
-        title: String,
-        help: String,
-        accessibilityLabel: String,
-        accessibilityHint: String,
-        isOpen: Bool = false,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button(action: action) {
-            HStack(spacing: BeruSpace.xxs) {
-                BeruIcon(name: icon, size: 14, strokeWidth: 2)
-                    .foregroundStyle(BeruColor.accent)
-                Text(title)
-                    .font(BeruType.footnoteMedium)
-                    .foregroundStyle(BeruColor.textPrimary)
-                    .lineLimit(1)
-                BeruIcon(name: "chevron-down", size: BeruMetrics.iconSizeDense, strokeWidth: 2)
-                    .foregroundStyle(BeruColor.textSecondary)
-                    .rotationEffect(.degrees(isOpen ? 180 : 0))
-            }
-            .padding(.horizontal, BeruSpace.sm)
-            .frame(height: BeruMetrics.chipHeight)
-            .background {
-                Capsule()
-                    .fill(BeruColor.subtleFill)
-                    .overlay(Capsule().strokeBorder(BeruColor.border, lineWidth: 1))
-            }
-            .contentShape(Capsule())
-            .animation(.easeOut(duration: 0.15), value: isOpen)
-        }
-        .buttonStyle(.plain)
-        .fixedSize()
-        .help(help)
-        .accessibilityLabel(accessibilityLabel)
-        .accessibilityHint(accessibilityHint)
-        .accessibilityValue(title)
-        .accessibilityAddTraits(isOpen ? .isSelected : [])
     }
 
     func selectTarget(_ targetID: String) {

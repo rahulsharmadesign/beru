@@ -292,14 +292,15 @@ final class AppState {
     /// and bounce the composer mid-refresh.
     ///
     /// Search, Grammar, and Reply have no footer: their rows own every
-    /// action. The shell mounts there only for result-level info with no
-    /// row home (write-back toast, applied context).
+    /// action. The shell mounts there only for applied context, which has
+    /// no row home. Write-back confirmations float over the composer
+    /// instead of mounting anything, so Replace never resizes the chrome.
     func showsFooter(for actionID: String) -> Bool {
         switch actionID {
         case EnhancementAction.searchID:
             return false
         case EnhancementAction.grammarID, EnhancementAction.replyID:
-            return replacedFeedback != nil || contextApplications[actionID] != nil
+            return contextApplications[actionID] != nil
         default:
             if case .done = resultState(for: actionID) { return true }
             return reloadingActions.contains(actionID)

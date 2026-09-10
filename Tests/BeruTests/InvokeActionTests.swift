@@ -308,15 +308,19 @@ final class ReloadFooterTests: XCTestCase {
         XCTAssertFalse(state.showsFooter(for: EnhancementAction.replyID))
     }
 
-    func testGrammarReplyShellMountsOnlyForRowlessInfo() {
+    func testGrammarReplyShellMountsOnlyForAppliedContext() {
         let state = AppState()
         state.setResult(.done("old"), for: EnhancementAction.grammarID)
         state.replacedFeedback = "Replaced in Notes"
-        XCTAssertTrue(
+        XCTAssertFalse(
             state.showsFooter(for: EnhancementAction.grammarID),
-            "the write-back toast has no row home"
+            "the write-back toast floats and must not mount the strip"
         )
         state.replacedFeedback = nil
-        XCTAssertFalse(state.showsFooter(for: EnhancementAction.grammarID))
+        state.contextApplications[EnhancementAction.grammarID] = .empty
+        XCTAssertTrue(
+            state.showsFooter(for: EnhancementAction.grammarID),
+            "applied context has no row home"
+        )
     }
 }

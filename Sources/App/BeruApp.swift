@@ -72,13 +72,9 @@ struct MenuBarContent: View {
         }
         .padding(BeruSpace.sm)
         .frame(width: BeruMetrics.menuDropdownWidth)
-        .background(BeruColor.panelSolid)
-        .clipShape(BeruRadius.shape(BeruRadius.lg))
-        .overlay {
-            BeruRadius.shape(BeruRadius.lg)
-                .strokeBorder(BeruColor.border, lineWidth: 1)
-        }
-        .shadow(color: BeruColor.softShadow, radius: BeruSpace.lg, y: BeruSpace.xs)
+        // No card fill, stroke, or shadow: the MenuBarExtra window is
+        // already system glass. Painting an opaque plate over it is what
+        // made the dropdown read as a grey card.
         .tint(BeruColor.accent)
     }
 
@@ -165,7 +161,8 @@ struct MenuBarContent: View {
             MenuFooterRow(icon: "settings", title: "Settings") {
                 openDashboard(.general)
             }
-            MenuFooterRow(title: "Quit", role: .destructive) {
+            Spacer(minLength: 0)
+            MenuFooterRow(title: "Quit", role: .destructive, compact: true) {
                 NSApp.terminate(nil)
             }
         }
@@ -202,6 +199,9 @@ private struct MenuFooterRow: View {
     var icon: String? = nil
     let title: String
     var role: ButtonRole? = nil
+    /// Compact rows hug the trailing edge at intrinsic width instead of
+    /// stretching to fill the row.
+    var compact: Bool = false
     let action: () -> Void
 
     @State private var isHovered = false
@@ -215,11 +215,13 @@ private struct MenuFooterRow: View {
                 Text(title)
                     .font(BeruType.controlMedium)
                     .lineLimit(1)
-                Spacer(minLength: 0)
+                if !compact {
+                    Spacer(minLength: 0)
+                }
             }
             .foregroundStyle(role == .destructive ? BeruColor.destructive : BeruColor.textPrimary)
             .padding(.horizontal, BeruSpace.sm)
-            .frame(maxWidth: .infinity, minHeight: BeruMetrics.pillHeight, alignment: .leading)
+            .frame(maxWidth: compact ? nil : .infinity, minHeight: BeruMetrics.pillHeight, alignment: .leading)
             .background {
                 BeruRadius.shape(BeruRadius.sm)
                     .fill(isHovered ? BeruColor.hoverFill : .clear)
@@ -227,7 +229,7 @@ private struct MenuFooterRow: View {
             .contentShape(BeruRadius.shape(BeruRadius.sm))
         }
         .buttonStyle(.plain)
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: compact ? nil : .infinity)
         .onHover { isHovered = $0 }
 .beruHoverEase(isHovered)
         .accessibilityLabel(title)

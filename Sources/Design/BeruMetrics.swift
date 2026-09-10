@@ -15,6 +15,12 @@ enum BeruMetrics {
 
     /// Navigation sidebar in the settings window.
     static let sidebarWidth: CGFloat = 240
+    /// Settings sidebar icon tile. Mirrors macOS Settings tile metrics at
+    /// Beru's sidebar density: 20pt box, 16pt glyph, 5pt radius. Off the
+    /// 4pt grid on purpose — the OS tile geometry, not Beru spacing.
+    static let sidebarTileBox: CGFloat = 20
+    static let sidebarTileGlyph: CGFloat = 16
+    static let sidebarTileRadius: CGFloat = 5
     /// Secondary list column inside a workspace page (Actions, Targets, Vault).
     static let workspaceListWidth: CGFloat = 280
     static let workspaceListInset = BeruSpace.md

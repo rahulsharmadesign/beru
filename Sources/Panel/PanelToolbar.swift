@@ -101,27 +101,15 @@ extension PanelView {
     func selectTab(_ actionID: String) {
         guard actionID != appState.selectedActionID else { return }
         // Do not wrap selectAction in withAnimation — that re-lays out chrome
-        // with the window. Selection cross-fades on each chip instead.
-        openMenuID = nil
+        // with the window. Selection cross-dissolves on each chip instead.
         appState.selectAction(actionID)
-        // One-shot pop: bounce out, then settle back to 1.00. Skipped under
-        // Reduce Motion, where selection is an instant swap.
-        if !a11y.reduceMotion {
-            chipPopID = actionID
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
-                if chipPopID == actionID {
-                    chipPopID = nil
-                }
-            }
-        }
     }
 
-    /// Selection lives on the chip itself: a 0.25s ease melts the gradient
-    /// and text color while the chip bounces to 1.04 on a 0.5s overshoot
-    /// and settles back to the original 1.00 — the `.pill` CSS motion
-    /// (`0.34, 1.56, 0.64, 1`), mapped to the Haze gradient instead of
-    /// orange. Render-only: layout (and the frozen height contract) never
-    /// moves.
+    /// Selection lives on the chip itself: a 0.3s ease melts the gradient
+    /// and text color in place — smooth dissolve, no bounce, no scale, no
+    /// traveling pill. Render-only: layout (and the frozen height contract)
+    /// never moves. (System glass lenses were tried here and flood/misrender
+    /// in this row, so the chips stay translucent pills over the glass slab.)
     func chip(for action: EnhancementAction) -> some View {
         let isSelected = appState.selectedActionID == action.id
         let label = BeruLabel(title: action.name, icon: action.icon, iconSize: 14, strokeWidth: 2)
@@ -153,8 +141,6 @@ extension PanelView {
                             Capsule().strokeBorder(isSelected ? Color.clear : BeruColor.border, lineWidth: 1)
                         }
                 }
-                .scaleEffect(chipPopID == action.id ? 1.04 : 1)
-                .animation(chipPopMorph, value: [chipPopID == action.id, isSelected])
         }
         .buttonStyle(.plain)
         .frame(height: BeruMetrics.tabPillHeight)
@@ -162,18 +148,10 @@ extension PanelView {
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
-    /// Pill pop: overshoot scale on select, matching the `.pill` CSS
-    /// `transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)`.
-    var chipPopMorph: Animation {
-        a11y.reduceMotion
-            ? .easeOut(duration: 0.12)
-            : .timingCurve(0.34, 1.56, 0.64, 1, duration: 0.5)
-    }
-
-    /// Pill tint: gradient and text color over 0.25s ease, like the CSS
-    /// `background 0.25s ease, color 0.25s ease`.
+    /// Chip tint: lens and text color over 0.3s ease. No overshoot — the
+    /// glass container owns the motion.
     var chipColorEase: Animation {
-        a11y.reduceMotion ? .easeOut(duration: 0.12) : .easeOut(duration: 0.25)
+        a11y.reduceMotion ? .easeOut(duration: 0.12) : .easeOut(duration: 0.3)
     }
 
     /// Character count only — the action name, host app, and clipboard

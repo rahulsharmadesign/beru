@@ -125,7 +125,7 @@ Highlight a message in another app, invoke, then tap **Smart Reply**:
 - [ ] With a selection, Grammar still auto-runs; composer stays optional extras; Replace unchanged
 - [ ] Type on Search with no selection, then click Enhance: Enhance runs on that text without a second Return
 - [ ] Grammar shows Corrected / Clearer / Tighter as borderless rows like Smart Reply; selected row has the accent wash and edge; every row owns primary Replace first, then copy / regenerate / like / dislike / pin, left-aligned; clicking a row selects it without re-running; row Replace sends that row's body; no footer and no token savings pill
-- [ ] Switching tabs cross-fades the accent fill on the chips in place (no traveling pill); unselected pills keep their background and stroke throughout; close disc and composer move with the window immediately
+- [ ] Switching tabs dissolves selection between chips in place (no bounce, no traveling pill); close disc and composer move with the window immediately
 
 ## Before release only
 

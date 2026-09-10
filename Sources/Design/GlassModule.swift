@@ -45,8 +45,46 @@ struct GlassModule: ViewModifier {
     func body(content: Content) -> some View {
         // Chrome modules must not clipShape their content: a short card plus
         // an inner radius inside the window mask shears top/bottom padding.
-        let filled = content.background { shape.fill(fill) }
         Group {
+            if scrim == .well {
+                // The composer is a real glass control (Spotlight-field
+                // style), not an opaque plate: refraction, specular edge,
+                // and the system transparency / Reduce Transparency
+                // fallbacks all come from the platform. Depth comes from
+                // the glass itself, so no custom lift shadows here.
+                content
+                    .glassEffect(.regular.interactive(), in: shape)
+                    .overlay {
+                        if showsBorder {
+                            shape.strokeBorder(border, lineWidth: 1)
+                        }
+                    }
+            } else {
+                filledChrome(content)
+            }
+        }
+        .overlay(focusEdge)
+        .animation(nil, value: focusRing)
+        // Resting Haze e2 lift on the composer well only: contact shadow
+        // plus soft lift. Render-only, never measured. Chrome and result
+        // cards stay flat on the plate.
+        .shadow(color: wellShadow(BeruColor.liftShadow), radius: BeruSpace.lg, y: BeruSpace.xs)
+        .shadow(color: wellShadow(BeruColor.contactShadow), radius: BeruSpace.hair, y: 1)
+    }
+
+    /// Wells are the only modules that float. Anything else returns clear.
+    private func wellShadow(_ color: Color) -> Color {
+        // The well is glass now and carries its own depth; custom shadows
+        // would double-draw under the refraction.
+        .clear
+    }
+
+    private var liftOpacity: Double { 0.35 }
+    private var contactOpacity: Double { 0.30 }
+
+    private func filledChrome(_ content: Content) -> some View {
+        let filled = content.background { shape.fill(fill) }
+        return Group {
             if scrim == .content {
                 if showsBorder {
                     filled
@@ -61,22 +99,7 @@ struct GlassModule: ViewModifier {
                 filled
             }
         }
-        .overlay(focusEdge)
-        .animation(nil, value: focusRing)
-        // Resting Haze e2 lift on the composer well only: contact shadow
-        // plus soft lift. Render-only, never measured. Chrome and result
-        // cards stay flat on the plate.
-        .shadow(color: wellShadow(BeruColor.liftShadow), radius: BeruSpace.lg, y: BeruSpace.xs)
-        .shadow(color: wellShadow(BeruColor.contactShadow), radius: BeruSpace.hair, y: 1)
     }
-
-    /// Wells are the only modules that float. Anything else returns clear.
-    private func wellShadow(_ color: Color) -> Color {
-        scrim == .well ? color : .clear
-    }
-
-    private var liftOpacity: Double { 0.35 }
-    private var contactOpacity: Double { 0.30 }
 
     @ViewBuilder
     private var focusEdge: some View {

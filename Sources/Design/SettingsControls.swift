@@ -2,7 +2,8 @@ import SwiftUI
 
 // Reusable dashboard buttons, toggles, and badges. Fields live in
 // SettingsFields.swift, pickers and menus in SettingsPickers.swift.
-// Native switch, checkbox, and bordered buttons stay out.
+// The on/off switch is Apple's own: a native `Toggle` renders the Liquid
+// Glass switch on Tahoe and later, including Reduce Transparency handling.
 
 struct SettingsPillButton: View {
     let title: String
@@ -162,37 +163,20 @@ struct SettingsStatusBadge: View {
     }
 }
 
-/// Haze toggle: 40×24 track, 18pt thumb, accent gradient when on.
-/// Replaces `.switch`.
+/// Apple switch. A native `Toggle` renders the Liquid Glass control on
+/// Tahoe and later (tinted with the Beru accent when on) and adapts to
+/// Reduce Transparency and Increase Contrast on its own.
 struct SettingsSwitch: View {
     @Binding var isOn: Bool
     var accessibilityLabel: String = "Toggle"
 
     var body: some View {
-        Button {
-            isOn.toggle()
-        } label: {
-            ZStack(alignment: isOn ? .trailing : .leading) {
-                Capsule()
-                    .fill(isOn ? AnyShapeStyle(BeruColor.accentGradient) : AnyShapeStyle(BeruColor.subtleFill))
-                    .overlay {
-                        if !isOn {
-                            Capsule().strokeBorder(BeruColor.border, lineWidth: 1)
-                        }
-                    }
-                Circle()
-                    .fill(isOn ? BeruColor.onAccent : BeruColor.panelSolid)
-                    .frame(width: BeruMetrics.toggleThumb, height: BeruMetrics.toggleThumb)
-                    // (24pt track − 18pt thumb) / 2.
-                    .padding(3)
-            }
-            .frame(width: BeruMetrics.toggleWidth, height: BeruMetrics.toggleHeight)
-            .contentShape(Capsule())
+        Toggle(isOn: $isOn) {
+            Text(accessibilityLabel)
         }
-        .buttonStyle(.plain)
-        .animation(.easeOut(duration: 0.15), value: isOn)
+        .toggleStyle(.switch)
+        .labelsHidden()
+        .tint(BeruColor.accent)
         .accessibilityLabel(accessibilityLabel)
-        .accessibilityValue(isOn ? "On" : "Off")
-        .accessibilityAddTraits(isOn ? .isSelected : [])
     }
 }

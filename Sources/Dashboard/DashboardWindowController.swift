@@ -44,7 +44,7 @@ final class DashboardModel {
 final class DashboardWindowController: NSWindowController, NSWindowDelegate {
     private let model: DashboardModel
     private var hostedView: NSView?
-    private var blurView: NSVisualEffectView?
+    private var glassView: NSGlassEffectView?
     private var opaqueView: DashboardCanvasView?
     private var usingOpaqueMaterial = false
     private var hasInstalledMaterial = false
@@ -110,11 +110,13 @@ final class DashboardWindowController: NSWindowController, NSWindowDelegate {
         fatalError("init(coder:) is not used; the dashboard is created in code")
     }
 
-    /// Seats the SwiftUI host on a soft `NSVisualEffectView` blur — Haze
-    /// translucency, not Liquid Glass refraction. Reduce Transparency swaps
-    /// to an opaque canvas. SwiftUI's `.containerBackground(for: .window)`
-    /// does not reach an AppKit-hosted window, so the material has to live
-    /// here.
+    /// Seats the SwiftUI host on a window-level `NSGlassEffectView` slab —
+    /// the same AppKit path as the floating panel, so Settings refracts
+    /// instead of going transparent (a titled window has no material of its
+    /// own in the content area; seating the host directly left Cursor
+    /// showing through). Reduce Transparency swaps to an opaque canvas.
+    /// SwiftUI's `.containerBackground(for: .window)` does not reach an
+    /// AppKit-hosted window, so the material choice has to live here.
     private func attachHost(_ view: NSView) {
         hostedView = view
         view.translatesAutoresizingMaskIntoConstraints = true
@@ -129,8 +131,8 @@ final class DashboardWindowController: NSWindowController, NSWindowDelegate {
         hasInstalledMaterial = true
 
         hostedView?.removeFromSuperview()
-        blurView?.removeFromSuperview()
-        blurView = nil
+        glassView?.contentView = nil
+        glassView = nil
         opaqueView = nil
 
         guard let host = hostedView, let window else { return }
@@ -148,18 +150,16 @@ final class DashboardWindowController: NSWindowController, NSWindowDelegate {
             canvas.addSubview(host)
             canvas.refreshColors()
         } else {
-            let blur = NSVisualEffectView(frame: bounds)
-            blur.material = .windowBackground
-            blur.blendingMode = .behindWindow
-            blur.state = .active
-            blur.autoresizingMask = [.width, .height]
-            blurView = blur
-            window.contentView = blur
+            let glass = NSGlassEffectView(frame: bounds)
+            glass.style = .regular
+            glass.autoresizingMask = [.width, .height]
+            glassView = glass
+            window.contentView = glass
             window.isOpaque = false
             usingOpaqueMaterial = false
             window.backgroundColor = .clear
-            host.frame = blur.bounds
-            blur.addSubview(host)
+            host.frame = glass.bounds
+            glass.contentView = host
         }
     }
 

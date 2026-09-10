@@ -49,6 +49,9 @@ struct ModelsView: View {
 
     @ViewBuilder
     private var localSection: some View {
+        if settings.activeProvider == .ollama, listState == .ready {
+            modelFitBanner
+        }
         SettingsSection(title: "On this Mac") {
             switch listState {
             case .loading:
@@ -80,11 +83,7 @@ struct ModelsView: View {
                 ForEach(installed) { model in
                     SettingsRow(
                         title: model.name,
-                        caption: model.bytes > 0
-                            ? [model.sizeDescription, rolesUsing(model.name).joined(separator: ", ")]
-                                .filter { !$0.isEmpty }
-                                .joined(separator: " · ")
-                            : rolesUsing(model.name).joined(separator: ", ")
+                        caption: modelCaption(model)
                     ) {
                         SettingsOverflowMenu(
                             title: "Use for",
@@ -111,6 +110,58 @@ struct ModelsView: View {
                 }
             }
         }
+    }
+
+    /// Warns when a text role runs on a vision/embedding/speech model, with a
+    /// one-tap move to the first installed text model. Nothing renders when
+    /// both roles are well served.
+    @ViewBuilder
+    private var modelFitBanner: some View {
+        let weakRoles = OllamaModelFit.weakRoles(
+            enhanceModel: settings.ollamaEnhanceModel,
+            grammarModel: settings.ollamaGrammarModel
+        )
+        if !weakRoles.isEmpty {
+            let offender = settings.ollamaEnhanceModel.isEmpty
+                ? settings.ollamaGrammarModel
+                : settings.ollamaEnhanceModel
+            let noun = OllamaModelFit.fit(for: offender).articleNoun ?? "a weak model for text"
+            SettingsStatusCard(
+                icon: "info",
+                title: "Weak model for \(weakRoles.joined(separator: " + "))",
+                badgeTitle: "Check",
+                isPositive: false,
+                message: "\(offender) is \(noun), so replies, corrections, and enhanced prompts will be poor."
+            ) {
+                if let suggestion = suggestedTextModel {
+                    SettingsPillButton(title: "Use \(suggestion) for Both") {
+                        settings.ollamaEnhanceModel = suggestion
+                        settings.ollamaGrammarModel = suggestion
+                    }
+                }
+            }
+        }
+    }
+
+    /// First installed model fit for text roles, if it is not already serving
+    /// both of them.
+    private var suggestedTextModel: String? {
+        installed.first {
+            OllamaModelFit.fit(for: $0.name) == .good
+                && (settings.ollamaEnhanceModel != $0.name
+                    || settings.ollamaGrammarModel != $0.name)
+        }?.name
+    }
+
+    private func modelCaption(_ model: OllamaAdmin.Model) -> String {
+        var parts: [String] = []
+        if model.bytes > 0 { parts.append(model.sizeDescription) }
+        let roles = rolesUsing(model.name)
+        if !roles.isEmpty { parts.append(roles.joined(separator: ", ")) }
+        if let warning = OllamaModelFit.fit(for: model.name).warning {
+            parts.append(warning)
+        }
+        return parts.joined(separator: " · ")
     }
 
     @ViewBuilder
