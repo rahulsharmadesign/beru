@@ -31,13 +31,16 @@ struct BeruApp: App {
     }
 }
 
-/// Status-item glyph. Template intent comes from the asset catalog, so the
-/// system tints it for light, dark, and wallpaper-tinted menu bars. Do not
-/// route through `NSImage`: SwiftUI rasterizes those pixels literally and a
-/// dark glyph goes invisible on dark bars.
+/// Status-item glyph. Template artwork tinted with the Beru accent so the
+/// bee keeps its brand color in light, dark, and wallpaper-tinted menu
+/// bars instead of falling back to black. Do not route through `NSImage`:
+/// SwiftUI rasterizes those pixels literally and a dark glyph goes
+/// invisible on dark bars.
 private struct MenuBarStatusIcon: View {
     var body: some View {
         Image("MenuBarIcon")
+            .renderingMode(.template)
+            .foregroundStyle(BeruColor.accent)
             .accessibilityLabel("Beru")
     }
 }

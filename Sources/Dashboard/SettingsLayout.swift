@@ -263,7 +263,6 @@ struct SettingsRow<Control: View>: View {
                 Text(caption)
                     .font(BeruType.footnote)
                     .foregroundStyle(BeruColor.textSecondary)
-                    .lineSpacing(BeruSpace.hair)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }

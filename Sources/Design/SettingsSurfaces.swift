@@ -89,7 +89,6 @@ struct SettingsStatusCard<Action: View>: View {
                 Text(message)
                     .font(BeruType.footnote)
                     .foregroundStyle(BeruColor.textSecondary)
-                    .lineSpacing(BeruSpace.hair)
                     .fixedSize(horizontal: false, vertical: true)
             }
             Spacer(minLength: BeruSpace.sm)

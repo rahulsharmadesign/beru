@@ -183,6 +183,14 @@ final class PanelEngine {
             appState.selectAction(actionID)
         }
         start(actionID: actionID, instruction: trimmed)
+        // The question is consumed: clear the field at submit so it is ready
+        // for the next input. Retry and regenerate fall back to
+        // lastDescribeInstruction, and rewrite extras (a selection is
+        // present) stay put for tweaking. The end-of-stream clear in
+        // runStream is now just a safety net.
+        if actionID == EnhancementAction.searchID || actionID == EnhancementAction.describeID {
+            appState.describeInstruction = ""
+        }
     }
 
     /// Regenerates one search turn from its row. The latest turn rewrites in
@@ -204,11 +212,14 @@ final class PanelEngine {
     }
 
     /// Runs a question through Beru’s selected AI provider on the AI Search tab.
+    /// Clears the composer at submit: the question is snapshotted above, and
+    /// retry falls back to lastDescribeInstruction.
     func runQuickSearch(query: String) {
         let question = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !question.isEmpty else { return }
         appState.selectAction(EnhancementAction.searchID)
         start(actionID: EnhancementAction.searchID, instruction: question)
+        appState.describeInstruction = ""
     }
 
     /// Minimum interval between streaming UI publishes. Local models can emit

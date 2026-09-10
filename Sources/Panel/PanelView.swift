@@ -142,6 +142,12 @@ struct PanelView: View {
                 .scrollBounceBehavior(.basedOnSize)
                 .frame(height: scrollHeight)
                 .frame(maxWidth: .infinity)
+                // Cap touchdown mounts a fresh ScrollView at offset zero —
+                // without this the thread flashes its first turn ("jump to
+                // the top") until the next chunk scrolls down. Pin instantly.
+                .onAppear {
+                    scrollSearchThreadToLatest(proxy, animated: false)
+                }
                 .onChange(of: appState.searchThread.count) { _, _ in
                     scrollSearchThreadToLatest(proxy)
                 }
@@ -156,11 +162,12 @@ struct PanelView: View {
         }
     }
 
-    func scrollSearchThreadToLatest(_ proxy: ScrollViewProxy) {
+    func scrollSearchThreadToLatest(_ proxy: ScrollViewProxy, animated: Bool = true) {
         guard appState.selectedActionID == EnhancementAction.searchID,
               let last = appState.searchThread.last else { return }
+        let animation: Animation? = (animated && !a11y.reduceMotion) ? .easeOut(duration: 0.15) : nil
         DispatchQueue.main.async {
-            withAnimation(a11y.reduceMotion ? nil : .easeOut(duration: 0.15)) {
+            withAnimation(animation) {
                 proxy.scrollTo(last.id, anchor: .bottom)
             }
         }
