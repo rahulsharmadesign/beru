@@ -8,8 +8,10 @@ struct GlassModule: ViewModifier {
     var radius: CGFloat = BeruRadius.md
     var focusRing: Bool = false
     var scrim: ScrimWeight = .chrome
-    /// When nil, wells and content draw a hairline.
+    /// When nil, content draws a hairline. Wells always get a light hairline
+    /// so the composer reads as its own surface on the slab.
     var bordered: Bool? = nil
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
 
     enum ScrimWeight {
@@ -17,7 +19,8 @@ struct GlassModule: ViewModifier {
         case chrome
         /// Result band: a light surface so markdown sits on a card, not the wash.
         case content
-        /// Composer well: opaque plate, hairline, focus halo.
+        /// Composer well: appearance-matched wash plus a light hairline.
+        /// Not Liquid Glass — `NSGlassEffectView` has no opacity control.
         case well
     }
 
@@ -27,10 +30,13 @@ struct GlassModule: ViewModifier {
 
     private var fill: Color {
         switch scrim {
-        case .base, .chrome: return Color.clear
+        case .base, .chrome, .well: return Color.clear
         case .content: return BeruColor.surface
-        case .well: return BeruColor.panelSolid
         }
+    }
+
+    private var wellFill: Color {
+        reduceTransparency ? BeruColor.panelSolid : BeruColor.composerWell
     }
 
     private var border: Color {
@@ -38,8 +44,9 @@ struct GlassModule: ViewModifier {
     }
 
     private var showsBorder: Bool {
+        if scrim == .well { return true }
         if let bordered { return bordered }
-        return scrim == .well || scrim == .content
+        return scrim == .content
     }
 
     func body(content: Content) -> some View {
@@ -47,17 +54,14 @@ struct GlassModule: ViewModifier {
         // an inner radius inside the window mask shears top/bottom padding.
         Group {
             if scrim == .well {
-                // The composer is a real glass control (Spotlight-field
-                // style), not an opaque plate: refraction, specular edge,
-                // and the system transparency / Reduce Transparency
-                // fallbacks all come from the platform. Depth comes from
-                // the glass itself, so no custom lift shadows here.
                 content
-                    .glassEffect(.regular.interactive(), in: shape)
+                    .frame(maxWidth: .infinity)
+                    .background {
+                        shape.fill(wellFill)
+                    }
+                    .clipShape(shape)
                     .overlay {
-                        if showsBorder {
-                            shape.strokeBorder(border, lineWidth: 1)
-                        }
+                        shape.strokeBorder(BeruColor.border, lineWidth: BeruMetrics.hairline)
                     }
             } else {
                 filledChrome(content)
@@ -74,8 +78,7 @@ struct GlassModule: ViewModifier {
 
     /// Wells are the only modules that float. Anything else returns clear.
     private func wellShadow(_ color: Color) -> Color {
-        // The well is glass now and carries its own depth; custom shadows
-        // would double-draw under the refraction.
+        // Fill-only well: a 10% wash has no refraction to lift against.
         .clear
     }
 
@@ -89,12 +92,12 @@ struct GlassModule: ViewModifier {
                 if showsBorder {
                     filled
                         .clipShape(shape)
-                        .overlay { shape.strokeBorder(border, lineWidth: 1) }
+                        .overlay { shape.strokeBorder(border, lineWidth: BeruMetrics.hairline) }
                 } else {
                     filled.clipShape(shape)
                 }
             } else if showsBorder {
-                filled.overlay { shape.strokeBorder(border, lineWidth: 1) }
+                filled.overlay { shape.strokeBorder(border, lineWidth: BeruMetrics.hairline) }
             } else {
                 filled
             }
@@ -105,7 +108,7 @@ struct GlassModule: ViewModifier {
     private var focusEdge: some View {
         if focusRing {
             shape
-                .strokeBorder(BeruColor.accent, lineWidth: 1)
+                .strokeBorder(BeruColor.accent, lineWidth: BeruMetrics.hairline)
                 .shadow(color: BeruColor.focusGlow, radius: BeruMetrics.focusHalo)
         }
     }

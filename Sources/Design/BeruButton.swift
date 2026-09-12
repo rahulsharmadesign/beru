@@ -1,8 +1,9 @@
 import SwiftUI
 
-/// The button system. Haze pill-first: 32 default, 28 small, no large.
-/// Primary is the 170° accent gradient; default is the surface-2 hairline
-/// pill; inline is text only. One slab only — no Liquid Glass refraction.
+/// The button system. Pill-first: 32 default, 28 small, no large.
+/// Primary is the 170° accent gradient; default is an outlined hairline
+/// pill (no gray fill); inline is text only. One slab only — no Liquid
+/// Glass refraction.
 struct BeruButton: View {
     enum Variant {
         /// Filled with the accent gradient. One per view, for the primary action.
@@ -32,6 +33,9 @@ struct BeruButton: View {
     var isActive: Bool = false
     var enabled: Bool = true
     var role: ButtonRole?
+    /// Full-width pill for the menu-bar extra. Off by default so Settings
+    /// and onboarding keep hugging their label.
+    var expands: Bool = false
     let action: () -> Void
 
     @State private var isHovered = false
@@ -40,7 +44,8 @@ struct BeruButton: View {
         Button(role: role, action: action) { label }
             .buttonStyle(.plain)
             .disabled(!enabled)
-            .fixedSize()
+            .fixedSize(horizontal: !expands, vertical: true)
+            .frame(maxWidth: expands ? .infinity : nil)
             .opacity(enabled ? 1 : 0.45)
             .onHover { isHovered = $0 }
 .beruHoverEase(isHovered)
@@ -77,14 +82,15 @@ struct BeruButton: View {
             }
         }
         .foregroundStyle(isFilled ? BeruColor.onAccent : foreground)
-        .frame(height: height)
         .padding(.horizontal, horizontalPadding)
+        .frame(maxWidth: expands ? .infinity : nil)
+        .frame(height: height)
         .background {
             Capsule()
                 .fill(fill)
                 .overlay {
                     if !isFilled {
-                        Capsule().strokeBorder(BeruColor.border, lineWidth: 1)
+                        Capsule().strokeBorder(BeruColor.strongBorder, lineWidth: BeruMetrics.hairline)
                     }
                 }
         }
@@ -103,7 +109,7 @@ struct BeruButton: View {
             return AnyShapeStyle(BeruColor.accentGradient)
         }
         if isHovered && enabled { return AnyShapeStyle(BeruColor.hoverFill) }
-        return AnyShapeStyle(BeruColor.subtleFill)
+        return AnyShapeStyle(Color.clear)
     }
 
     private var font: Font {
@@ -122,11 +128,11 @@ struct BeruButton: View {
         }
     }
 
-    /// 16 across the app; 14 inside the dense 28pt compact pill.
+    /// 16 across the app; compact inside the dense 28pt pill.
     private var iconSize: CGFloat {
         switch size {
         case .large, .regular: return BeruMetrics.iconSize
-        case .compact: return 14
+        case .compact: return BeruMetrics.iconSizeCompact
         }
     }
 

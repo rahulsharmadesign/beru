@@ -15,13 +15,12 @@ struct PanelUpdateButton: View {
                     guard !updates.isBusy else { return }
                     updates.install()
                 }
-                Text(updates.buttonTitle)
-                    .font(BeruType.captionSemibold)
-                    .foregroundStyle(BeruColor.onAccent)
-                    .padding(.horizontal, BeruSpace.xs)
-                    .padding(.vertical, BeruSpace.xxs)
-                    .background(Capsule().fill(BeruColor.accentGradient))
-                    .allowsHitTesting(false)
+                BeruGlassButton(
+                    title: updates.buttonTitle,
+                    prominent: true,
+                    size: .compact
+                ) {}
+                .allowsHitTesting(false)
             }
             .fixedSize()
             .help(updates.availableVersion.map { "Install Beru \($0)" } ?? "Install the latest Beru")
@@ -32,7 +31,7 @@ struct PanelUpdateButton: View {
 }
 
 /// Settings gear. AppKit hit target so window-drag does not swallow the click.
-/// Lucide `settings` at 16pt — the system settings glyph.
+/// Quiet glyph — a glass circle here reads as a purple FAB on the slab.
 struct PanelSettingsLink: View {
     let action: () -> Void
     @State private var isHovered = false
@@ -41,13 +40,18 @@ struct PanelSettingsLink: View {
         ZStack {
             DictationPressView(onToggle: action)
             BeruIcon(name: "settings", size: BeruMetrics.iconSize)
-                .foregroundStyle(isHovered ? BeruColor.textPrimary : BeruColor.textSecondary)
+                .foregroundStyle(BeruColor.textPrimary)
+                .frame(width: BeruMetrics.hitTarget, height: BeruMetrics.hitTarget)
+                .background {
+                    BeruRadius.shape(BeruRadius.sm)
+                        .fill(isHovered ? BeruColor.hoverFill : Color.clear)
+                }
                 .allowsHitTesting(false)
         }
         .frame(width: BeruMetrics.hitTarget, height: BeruMetrics.hitTarget)
         .contentShape(Rectangle())
         .onHover { isHovered = $0 }
-.beruHoverEase(isHovered)
+        .beruHoverEase(isHovered)
         .help("Settings")
         .accessibilityLabel("Settings")
         .accessibilityAddTraits(.isButton)
@@ -85,16 +89,25 @@ struct PanelIconHitButton: View {
     var enabled: Bool = true
     let action: () -> Void
 
+    @State private var isHovered = false
+
     var body: some View {
         ZStack {
             DictationPressView(onToggle: { if enabled { action() } })
-            BeruIcon(name: icon, size: 16)
+            BeruIcon(name: icon, size: BeruMetrics.iconSize)
                 .foregroundStyle(BeruColor.textPrimary)
                 .opacity(enabled ? 1 : 0.45)
+                .frame(width: BeruMetrics.hitTarget, height: BeruMetrics.hitTarget)
+                .background {
+                    BeruRadius.shape(BeruRadius.sm)
+                        .fill(isHovered && enabled ? BeruColor.hoverFill : Color.clear)
+                }
                 .allowsHitTesting(false)
         }
         .frame(width: BeruMetrics.hitTarget, height: BeruMetrics.hitTarget)
         .contentShape(Rectangle())
+        .onHover { isHovered = $0 }
+        .beruHoverEase(isHovered)
         .help(help)
         .accessibilityLabel(help)
         .accessibilityHint(hint)

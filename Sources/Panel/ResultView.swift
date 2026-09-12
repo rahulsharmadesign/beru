@@ -27,37 +27,17 @@ struct ResultView: View {
                     alignment: .center
                 )
             } else if case .streaming(let text) = state {
-                streamingText(text)
+                StreamingPrintedText(text: text, isLive: true)
             } else if case .done(let text) = state {
-                streamingText(text, isDone: true)
+                if usesMarkdown {
+                    BeruMarkdown(text: text)
+                } else {
+                    StreamingPrintedText(text: text, isLive: false)
+                }
             } else if case .error(let message) = state {
                 Text(message)
-                    .font(BeruType.resultBody)
+                    .beruPrintedText()
                     .foregroundStyle(BeruColor.textSecondary)
-            }
-        }
-    }
-
-    /// Expands with the text so the panel window can grow. Parent scrolls
-    /// once `PanelController` hits the 75% viewport cap. No inner padding:
-    /// the module inset is the single frame, so text aligns edge to edge.
-    ///
-    /// A live answer renders as plain text and only gains markdown on `.done`.
-    /// Re-parsing block structure per chunk pops measured height — a lone `#`
-    /// arrives as a tall padded heading, `-` flips paragraph to bullet row —
-    /// and every pop resized the window mid-stream, bouncing the composer.
-    /// Plain-text line layout grows monotonically, so growth steps stay tiny.
-    @ViewBuilder
-    private func streamingText(_ text: String, isDone: Bool = false) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
-            if usesMarkdown && isDone {
-                BeruMarkdown(text: text)
-            } else {
-                Text(text)
-                    .font(BeruType.resultBody)
-                    .foregroundStyle(BeruColor.textPrimary)
-                    .textSelection(.enabled)
-                    .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)

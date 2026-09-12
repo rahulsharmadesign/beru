@@ -175,10 +175,14 @@ extension PanelView {
         anchor: MenuAnchorHolder,
         onTap: @escaping () -> Void
     ) -> some View {
-        Button(action: onTap) {
+        BeruGlassControl(
+            kind: .plain,
+            size: .small,
+            action: onTap
+        ) {
             HStack(spacing: BeruSpace.xxs) {
-                BeruIcon(name: icon, size: 14, strokeWidth: 2)
-                    .foregroundStyle(BeruColor.accent)
+                BeruIcon(name: icon, size: BeruMetrics.iconSizeCompact, strokeWidth: 2)
+                    .foregroundStyle(BeruColor.textSecondary)
                 Text(title)
                     .font(BeruType.footnoteMedium)
                     .foregroundStyle(BeruColor.textPrimary)
@@ -186,17 +190,15 @@ extension PanelView {
                 BeruIcon(name: "chevron-down", size: BeruMetrics.iconSizeDense, strokeWidth: 2)
                     .foregroundStyle(BeruColor.textSecondary)
             }
-            .padding(.horizontal, BeruSpace.sm)
-            .frame(height: BeruMetrics.chipHeight)
-            .background {
-                Capsule()
-                    .fill(BeruColor.subtleFill)
-                    .overlay(Capsule().strokeBorder(BeruColor.border, lineWidth: 1))
+            .padding(.horizontal, BeruSpace.xs)
+            .frame(height: BeruMetrics.pillHeightSm)
+            .overlay {
+                Capsule().strokeBorder(BeruColor.strongBorder, lineWidth: BeruMetrics.hairline)
             }
+            .clipShape(Capsule())
             .contentShape(Capsule())
             .background(NativeMenuAnchor(holder: anchor))
         }
-        .buttonStyle(.plain)
         .fixedSize()
         .help(help)
         .accessibilityLabel(accessibilityLabel)

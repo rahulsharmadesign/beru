@@ -32,10 +32,10 @@ struct WorkspaceListRow<Leading: View, Accessory: View>: View {
             if let icon {
                 ZStack {
                     BeruRadius.shape(BeruRadius.sm)
-                        .fill(BeruColor.subtleFill)
+                        .fill(Color.clear)
                         .overlay {
                             BeruRadius.shape(BeruRadius.sm)
-                                .strokeBorder(BeruColor.border, lineWidth: 1)
+                                .strokeBorder(BeruColor.strongBorder, lineWidth: BeruMetrics.hairline)
                         }
                     BeruIcon(name: icon, size: BeruMetrics.iconSize)
                         .foregroundStyle(BeruColor.textSecondary)

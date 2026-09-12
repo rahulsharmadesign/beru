@@ -91,8 +91,8 @@ extension PanelView {
     }
 }
 
-/// Icon-only action with a hover wash and no chrome. The shared outcome
-/// control: search turn rows and the footer row both use it.
+/// Icon-only outcome control: copy, regenerate, votes, pin. Plain glyph
+/// on the slab — a glass disc here is a second lens.
 struct SearchActionButton: View {
     let icon: String
     let help: String
@@ -100,24 +100,15 @@ struct SearchActionButton: View {
     var active: Bool = false
     let action: () -> Void
 
-    @State private var isHovered = false
-
     var body: some View {
-        Button(action: action) {
-            BeruIcon(name: icon, size: BeruMetrics.iconSize)
-                .foregroundStyle(tint ?? (active ? BeruColor.accent : BeruColor.textSecondary))
-                .frame(width: BeruMetrics.roundButtonSm, height: BeruMetrics.roundButtonSm)
-                .background {
-                    BeruRadius.shape(BeruRadius.sm)
-                        .fill(isHovered ? BeruColor.hoverFill : .clear)
-                }
-                .contentShape(BeruRadius.shape(BeruRadius.sm))
-        }
-        .buttonStyle(.plain)
-        .help(help)
-        .accessibilityLabel(help)
+        BeruIconButton(
+            icon: icon,
+            size: BeruMetrics.iconSize,
+            frameSize: BeruMetrics.roundButtonSm,
+            tint: tint ?? (active ? BeruColor.accent : BeruColor.textSecondary),
+            help: help,
+            action: action
+        )
         .accessibilityAddTraits(active ? .isSelected : [])
-        .onHover { isHovered = $0 }
-.beruHoverEase(isHovered)
     }
 }

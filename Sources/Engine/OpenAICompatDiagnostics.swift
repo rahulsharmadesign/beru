@@ -30,9 +30,7 @@ extension OpenAICompatProvider {
                 var request = URLRequest(url: url)
                 request.httpMethod = "POST"
                 request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-                if let apiKey, !apiKey.isEmpty {
-                    request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
-                }
+                try applyAuthentication(to: &request)
                 var body: [String: Any] = [
                     "model": enhanceModel,
                     "stream": false,
@@ -102,8 +100,10 @@ extension OpenAICompatProvider {
             .trimmingCharacters(in: CharacterSet(charactersIn: "/"))
         guard let url = URL(string: trimmed + "/models") else { return [] }
         var request = URLRequest(url: url)
-        if let apiKey, !apiKey.isEmpty {
-            request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        do {
+            try applyAuthentication(to: &request)
+        } catch {
+            return []
         }
         guard let (data, response) = try? await ProviderHTTP.session().data(for: request),
               let http = response as? HTTPURLResponse,

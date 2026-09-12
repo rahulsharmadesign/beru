@@ -12,11 +12,11 @@ enum ProviderRegistry {
                 grammarModel: settings.ollamaGrammarModel
             )
         case .anthropic:
-            return AnthropicProvider(apiKey: settings.anthropicAPIKey ?? "")
+            return AnthropicProvider(apiKey: settings.resolvedAnthropicAPIKey ?? "")
         case .custom:
             return OpenAICompatProvider(
                 baseURL: settings.customBaseURL,
-                apiKey: settings.customAPIKey,
+                apiKey: settings.resolvedCustomAPIKey,
                 enhanceModel: settings.customEnhanceModel,
                 grammarModel: settings.customGrammarModel
             )

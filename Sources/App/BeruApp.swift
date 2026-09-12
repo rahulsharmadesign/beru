@@ -25,23 +25,9 @@ struct BeruApp: App {
         MenuBarExtra {
             MenuBarContent(coordinator: appDelegate.coordinator)
         } label: {
-            MenuBarStatusIcon()
+            BeruMenuBarIcon()
         }
         .menuBarExtraStyle(.window)
-    }
-}
-
-/// Status-item glyph. Template artwork tinted with the Beru accent so the
-/// bee keeps its brand color in light, dark, and wallpaper-tinted menu
-/// bars instead of falling back to black. Do not route through `NSImage`:
-/// SwiftUI rasterizes those pixels literally and a dark glyph goes
-/// invisible on dark bars.
-private struct MenuBarStatusIcon: View {
-    var body: some View {
-        Image("MenuBarIcon")
-            .renderingMode(.template)
-            .foregroundStyle(BeruColor.accent)
-            .accessibilityLabel("Beru")
     }
 }
 
@@ -64,10 +50,22 @@ struct MenuBarContent: View {
             header
             primaryAction
             HStack(spacing: BeruSpace.xs) {
-                compactAction("Dictate", symbol: "mic", action: coordinator.dictateNewText)
-                compactAction("Vault", symbol: "library", action: {
+                BeruButton(
+                    title: "Dictate",
+                    size: .regular,
+                    leadingIcon: "mic",
+                    expands: true
+                ) {
+                    coordinator.dictateNewText()
+                }
+                BeruButton(
+                    title: "Vault",
+                    size: .regular,
+                    leadingIcon: "library",
+                    expands: true
+                ) {
                     openDashboard(.vault)
-                })
+                }
             }
             MenuProviderPicker()
             Divider()
@@ -90,28 +88,31 @@ struct MenuBarContent: View {
                 .clipShape(BeruRadius.shape(BeruRadius.sm))
             VStack(alignment: .leading, spacing: 0) {
                 Text("Beru").font(BeruType.controlSemibold)
-                Text(headerStatus.text)
-                    .font(BeruType.footnote)
-                    .foregroundStyle(BeruColor.textSecondary)
-                    .lineLimit(1)
+                if let status = headerStatus.text {
+                    Text(status)
+                        .font(BeruType.footnote)
+                        .foregroundStyle(BeruColor.textSecondary)
+                        .lineLimit(1)
+                }
             }
             Spacer(minLength: BeruSpace.xs)
             Circle()
                 .fill(headerStatus.ready ? BeruColor.accent : BeruColor.textSecondary.opacity(0.45))
                 .frame(width: BeruSpace.xs, height: BeruSpace.xs)
-                .accessibilityLabel(headerStatus.ready ? "Beru is ready" : headerStatus.text)
+                .accessibilityLabel(headerStatus.ready ? "Beru is ready" : (headerStatus.text ?? "Beru"))
         }
         .padding(.bottom, BeruSpace.xxs)
     }
 
-    private var headerStatus: (text: String, ready: Bool) {
+    /// Status copy only when something is blocked. Ready is the green dot.
+    private var headerStatus: (text: String?, ready: Bool) {
         if !Permissions.isAccessibilityTrusted() {
             return ("Needs Accessibility", false)
         }
         if !settings.isConfigured(settings.activeProvider) {
             return ("Set up a provider in Settings", false)
         }
-        return ("Ready to refine your writing", true)
+        return (nil, true)
     }
 
     private var primaryAction: some View {
@@ -137,35 +138,22 @@ struct MenuBarContent: View {
         .accessibilityHint("Run Beru on the current clipboard")
     }
 
-    private func compactAction(_ title: String, symbol: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            HStack(spacing: BeruSpace.xs) {
-                BeruIcon(name: symbol, size: BeruMetrics.iconSize, strokeWidth: 2)
-                Text(title)
-                    .font(BeruType.controlMedium)
-                    .lineLimit(1)
-            }
-            .foregroundStyle(BeruColor.textPrimary)
-            .frame(maxWidth: .infinity, minHeight: BeruMetrics.pillHeight)
-            .background(BeruColor.subtleFill, in: Capsule())
-            .overlay {
-                Capsule().strokeBorder(BeruColor.border, lineWidth: 1)
-            }
-        }
-        .buttonStyle(.plain)
-        .frame(maxWidth: .infinity)
-        .accessibilityLabel(title)
-    }
-
     /// `NSMenu.popUp` works in a MenuBarExtra window. SwiftUI `Menu` as an
     /// overlay on a custom row does not receive clicks.
     private var footer: some View {
         HStack(spacing: BeruSpace.xxs) {
-            MenuFooterRow(icon: "settings", title: "Settings") {
+            BeruButton(
+                title: "Settings",
+                size: .regular,
+                leadingIcon: "settings"
+            ) {
                 openDashboard(.general)
             }
             Spacer(minLength: 0)
-            MenuFooterRow(title: "Quit", role: .destructive, compact: true) {
+            BeruButton(
+                title: "Quit",
+                role: .destructive
+            ) {
                 NSApp.terminate(nil)
             }
         }
@@ -193,49 +181,6 @@ struct MenuBarContent: View {
         for window in NSApp.windows where window.className.contains("NSStatusBar") {
             window.orderOut(nil)
         }
-    }
-}
-
-/// Haze menu row for the footer. Transparent idle, surface fill on hover,
-/// destructive tint for Quit.
-private struct MenuFooterRow: View {
-    var icon: String? = nil
-    let title: String
-    var role: ButtonRole? = nil
-    /// Compact rows hug the trailing edge at intrinsic width instead of
-    /// stretching to fill the row.
-    var compact: Bool = false
-    let action: () -> Void
-
-    @State private var isHovered = false
-
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: BeruSpace.xs) {
-                if let icon {
-                    BeruIcon(name: icon, size: BeruMetrics.iconSize, strokeWidth: 2)
-                }
-                Text(title)
-                    .font(BeruType.controlMedium)
-                    .lineLimit(1)
-                if !compact {
-                    Spacer(minLength: 0)
-                }
-            }
-            .foregroundStyle(role == .destructive ? BeruColor.destructive : BeruColor.textPrimary)
-            .padding(.horizontal, BeruSpace.sm)
-            .frame(maxWidth: compact ? nil : .infinity, minHeight: BeruMetrics.pillHeight, alignment: .leading)
-            .background {
-                BeruRadius.shape(BeruRadius.sm)
-                    .fill(isHovered ? BeruColor.hoverFill : .clear)
-            }
-            .contentShape(BeruRadius.shape(BeruRadius.sm))
-        }
-        .buttonStyle(.plain)
-        .frame(maxWidth: compact ? nil : .infinity)
-        .onHover { isHovered = $0 }
-.beruHoverEase(isHovered)
-        .accessibilityLabel(title)
     }
 }
 

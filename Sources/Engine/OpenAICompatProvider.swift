@@ -42,6 +42,24 @@ struct OpenAICompatProvider: LLMProvider {
         return displayHost
     }
 
+    /// Trimmed key, or nil when missing / whitespace-only.
+    var resolvedAPIKey: String? {
+        guard let apiKey else { return nil }
+        let trimmed = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
+    }
+
+    /// Remote OpenAI-compatible hosts must send a Bearer token. Loopback
+    /// servers (Ollama, LM Studio) usually do not.
+    func applyAuthentication(to request: inout URLRequest) throws {
+        if let key = resolvedAPIKey {
+            request.setValue("Bearer \(key)", forHTTPHeaderField: "Authorization")
+            return
+        }
+        if isLoopback { return }
+        throw ProviderError.invalidAPIKey
+    }
+
     func model(for role: ModelRole) -> String {
         switch role {
         case .enhance: return enhanceModel
@@ -157,9 +175,7 @@ struct OpenAICompatProvider: LLMProvider {
                         var request = URLRequest(url: url)
                         request.httpMethod = "POST"
                         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-                        if let apiKey, !apiKey.isEmpty {
-                            request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
-                        }
+                        try applyAuthentication(to: &request)
                         request.httpBody = try JSONSerialization.data(
                             withJSONObject: requestBody(
                                 system: system,

@@ -45,7 +45,7 @@ struct SettingsPrimaryButton: View {
     }
 }
 
-/// Haze check: 18pt box, accent fill, Lucide check. Replaces `.checkbox`.
+/// Haze check: 16pt box, accent fill, Lucide check. Replaces `.checkbox`.
 struct SettingsTogglePill: View {
     let title: String
     @Binding var isOn: Bool
@@ -55,11 +55,11 @@ struct SettingsTogglePill: View {
             HStack(spacing: BeruSpace.xs) {
                 ZStack {
                     BeruRadius.shape(BeruRadius.sm)
-                        .fill(isOn ? AnyShapeStyle(BeruColor.accentGradient) : AnyShapeStyle(BeruColor.subtleFill))
+                        .fill(isOn ? AnyShapeStyle(BeruColor.accentGradient) : AnyShapeStyle(Color.clear))
                         .overlay {
                             if !isOn {
                                 BeruRadius.shape(BeruRadius.sm)
-                                    .strokeBorder(BeruColor.border, lineWidth: 1)
+                                    .strokeBorder(BeruColor.strongBorder, lineWidth: BeruMetrics.hairline)
                             }
                         }
                     if isOn {
@@ -83,7 +83,7 @@ struct SettingsTogglePill: View {
     }
 }
 
-/// Haze round button: subtle-fill circle, hairline, Lucide glyph.
+/// Haze round button: outlined circle, hairline, Lucide glyph. Hover fills.
 struct SettingsIconButton: View {
     let icon: String
     var size: CGFloat = BeruMetrics.iconSize
@@ -97,8 +97,8 @@ struct SettingsIconButton: View {
     var body: some View {
         Button(action: action) {
             ZStack {
-                Circle().fill(isHovered && enabled ? BeruColor.hoverFill : BeruColor.subtleFill)
-                Circle().strokeBorder(BeruColor.border, lineWidth: 1)
+                Circle().fill(isHovered && enabled ? BeruColor.hoverFill : Color.clear)
+                Circle().strokeBorder(BeruColor.strongBorder, lineWidth: BeruMetrics.hairline)
                 BeruIcon(name: icon, size: size)
                     .foregroundStyle(BeruColor.textPrimary)
             }
@@ -112,7 +112,7 @@ struct SettingsIconButton: View {
         .help(help)
         .accessibilityLabel(help)
         .onHover { isHovered = $0 }
-.beruHoverEase(isHovered)
+        .beruHoverEase(isHovered)
     }
 }
 
@@ -156,7 +156,7 @@ struct SettingsStatusBadge: View {
                     .fill(BeruColor.badge)
                     .overlay {
                         BeruRadius.shape(BeruRadius.sm)
-                            .strokeBorder(BeruColor.border, lineWidth: 1)
+                            .strokeBorder(BeruColor.border, lineWidth: BeruMetrics.hairline)
                     }
             }
             .accessibilityLabel(title)

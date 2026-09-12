@@ -40,10 +40,12 @@ struct PanelView: View {
         // scrolls once the window hits 75% of the visible screen height.
         let _ = appearance.signature
 
-        // Color.clear fills the hosting view so leftover window height after a
-        // tall tab is empty glass below, not a centered cluster of close + composer.
+        // Color.clear fills the hosting view. After a tall tab, leftover height
+        // sits between the result and the composer so the input does not jump.
         // A flexible max-height frame is banned here (panel_infinite_height guard).
         Color.clear
+            .glassSlabBackground()
+            .background(PanelDragRegion())
             .overlay(alignment: .top) {
                 VStack(spacing: PanelMetrics.moduleSpacing) {
                     VStack(spacing: PanelMetrics.moduleSpacing) {
@@ -53,21 +55,21 @@ struct PanelView: View {
                     }
                     .reportsPanelBand(.chromeTop)
                     .fixedSize(horizontal: false, vertical: true)
-                    .layoutPriority(1)
 
                     resultSlot
-
-                    composerColumn
-                        .reportsPanelBand(.chromeBottom)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .layoutPriority(1)
                 }
-                .padding(PanelMetrics.moduleInset)
+                .padding(.top, PanelMetrics.moduleInset)
+                .padding(.horizontal, PanelMetrics.moduleInset)
                 .frame(maxWidth: .infinity, alignment: .top)
-                // No fill here: the AppKit NSGlassEffectView slab is the
-                // panel's material. Any SwiftUI background painted over it
-                // flattens Liquid Glass refraction into a grey card.
-                .background(PanelDragRegion())
+            }
+            .overlay(alignment: .bottom) {
+                composerColumn
+                    .reportsPanelBand(.chromeBottom)
+                    .frame(maxWidth: .infinity)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.horizontal, PanelMetrics.moduleInset)
+                    .padding(.bottom, PanelMetrics.moduleInset)
+                    .padding(.top, PanelMetrics.moduleSpacing)
             }
             .ignoresSafeArea()
             .tint(BeruColor.accent)

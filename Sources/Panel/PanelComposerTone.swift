@@ -116,20 +116,18 @@ extension PanelView {
     }
 
     var sendButton: some View {
-        Button(action: submitIfReady) {
-            Circle()
-                .fill(canSubmitDescribe ? AnyShapeStyle(BeruColor.accentGradient) : AnyShapeStyle(BeruColor.disabledFill))
-                .overlay {
-                    BeruIcon(name: "arrow-up", size: BeruMetrics.iconSize, strokeWidth: 2.4)
-                        .foregroundStyle(canSubmitDescribe ? BeruColor.onAccent : BeruColor.textSecondary)
-                }
-                .frame(width: BeruMetrics.roundButton, height: BeruMetrics.roundButton)
-                .contentShape(Circle())
+        PanelHitCapsule(
+            help: isPromptBusy ? "Working…" : "Run this intent",
+            accessibilityLabel: isPromptBusy ? "Working…" : "Send"
+        ) {
+            submitIfReady()
+        } label: {
+            BeruFilledCircleButton(
+                icon: "arrow-up",
+                enabled: canSubmitDescribe && !isPromptBusy,
+                help: isPromptBusy ? "Working…" : "Run this intent"
+            ) {}
         }
-        .buttonStyle(.plain)
-        .disabled(isPromptBusy)
-        .help(isPromptBusy ? "Working…" : "Run this intent")
-        .accessibilityLabel(isPromptBusy ? "Working" : "Run this intent")
         .accessibilityHint("Send the instruction to Beru")
     }
 

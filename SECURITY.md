@@ -46,7 +46,7 @@ The default vault lives at `~/Library/Application Support/Beru/vault/` with the 
 
 ### Secrets
 
-API keys are stored in the Keychain with `kSecAttrAccessibleWhenUnlockedThisDeviceOnly`. They are never written to logs, history files, or UserDefaults.
+API keys are stored in the Keychain with `kSecAttrAccessibleWhenUnlockedThisDeviceOnly`. They are never written to logs, history files, or UserDefaults. A process environment value (`BERU_API_KEY` for OpenAI-compatible hosts, `BERU_ANTHROPIC_API_KEY` for Anthropic) is used only when the Keychain field is empty, and is never copied into the Keychain.
 
 ### Model output
 

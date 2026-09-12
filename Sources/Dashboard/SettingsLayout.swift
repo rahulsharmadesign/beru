@@ -128,14 +128,14 @@ struct SettingsPageHeader: View {
     var body: some View {
         HStack(alignment: .center, spacing: BeruSpace.md) {
             if let icon {
-                // Same 28pt tile the sidebar rows paint, in accent, so the
-                // page announces its route before its title.
+                // Outlined 28pt tile, accent glyph — same size as the sidebar
+                // squircle, so the page announces its route before its title.
                 ZStack {
                     BeruRadius.shape(BeruRadius.sm)
-                        .fill(BeruColor.subtleFill)
+                        .fill(Color.clear)
                         .overlay {
                             BeruRadius.shape(BeruRadius.sm)
-                                .strokeBorder(BeruColor.border, lineWidth: BeruMetrics.hairline)
+                                .strokeBorder(BeruColor.strongBorder, lineWidth: BeruMetrics.hairline)
                         }
                     BeruIcon(name: icon, size: BeruMetrics.iconSize)
                         .foregroundStyle(BeruColor.accent)
@@ -354,7 +354,7 @@ extension View {
     /// Inset list-row highlight so selection pills do not touch column edges.
     func settingsListRowBackground(
         isHighlighted: Bool,
-        fill: some ShapeStyle = BeruColor.accentGradient
+        fill: some ShapeStyle = BeruColor.accent
     ) -> some View {
         listRowBackground(
             BeruRadius.shape(BeruRadius.md)
@@ -370,7 +370,7 @@ extension View {
                     .fill(BeruColor.input)
                     .overlay {
                         BeruRadius.shape(BeruRadius.md)
-                            .strokeBorder(BeruColor.border, lineWidth: 1)
+                            .strokeBorder(BeruColor.border, lineWidth: BeruMetrics.hairline)
                     }
             }
     }

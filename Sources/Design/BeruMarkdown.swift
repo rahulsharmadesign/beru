@@ -24,12 +24,12 @@ struct BeruMarkdown: View {
                             .font(BeruType.resultBodyBold)
                             .foregroundStyle(BeruColor.textSecondary)
                         Text(inline(content))
-                            .font(BeruType.resultBody)
+                            .beruPrintedText()
                             .foregroundStyle(BeruColor.textPrimary)
                     }
                 case .paragraph(let content):
                     Text(inline(content))
-                        .font(BeruType.resultBody)
+                        .beruPrintedText()
                         .foregroundStyle(BeruColor.textPrimary)
                 case .gap:
                     Color.clear.frame(height: BeruSpace.sm)

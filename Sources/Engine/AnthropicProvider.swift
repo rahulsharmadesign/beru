@@ -13,6 +13,18 @@ struct AnthropicProvider: LLMProvider {
 
     let apiKey: String
 
+    /// Trimmed key, or nil when missing / whitespace-only.
+    var resolvedAPIKey: String? {
+        let trimmed = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
+    }
+
+    func applyAuthentication(to request: inout URLRequest) throws {
+        guard let key = resolvedAPIKey else { throw ProviderError.invalidAPIKey }
+        request.setValue(key, forHTTPHeaderField: "x-api-key")
+        request.setValue(Constants.apiVersion, forHTTPHeaderField: "anthropic-version")
+    }
+
     private func model(for role: ModelRole) -> String {
         switch role {
         case .enhance: return Constants.enhanceModel
@@ -83,9 +95,8 @@ struct AnthropicProvider: LLMProvider {
                 do {
                     var request = URLRequest(url: Constants.baseURL)
                     request.httpMethod = "POST"
-                    request.setValue(apiKey, forHTTPHeaderField: "x-api-key")
-                    request.setValue(Constants.apiVersion, forHTTPHeaderField: "anthropic-version")
                     request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+                    try applyAuthentication(to: &request)
 
                     request.httpBody = try JSONSerialization.data(
                         withJSONObject: requestBody(
@@ -131,9 +142,14 @@ struct AnthropicProvider: LLMProvider {
     func testConnection() async -> Result<Void, ProviderError> {
         var request = URLRequest(url: Constants.baseURL)
         request.httpMethod = "POST"
-        request.setValue(apiKey, forHTTPHeaderField: "x-api-key")
-        request.setValue(Constants.apiVersion, forHTTPHeaderField: "anthropic-version")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        do {
+            try applyAuthentication(to: &request)
+        } catch let error as ProviderError {
+            return .failure(error)
+        } catch {
+            return .failure(.connectionFailed(error.localizedDescription))
+        }
         let body: [String: Any] = [
             "model": Constants.grammarModel,
             "max_tokens": 1,

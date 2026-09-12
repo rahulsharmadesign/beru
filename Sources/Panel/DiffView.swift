@@ -34,10 +34,10 @@ struct DiffView: View {
         Group {
             if let attributed {
                 Text(attributed)
-                    .font(BeruType.resultBody)
+                    .beruPrintedText()
             } else {
                 Text(revised)
-                    .font(BeruType.resultBody)
+                    .beruPrintedText()
             }
         }
         .textSelection(.enabled)

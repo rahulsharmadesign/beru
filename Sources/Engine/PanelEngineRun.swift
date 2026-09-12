@@ -6,7 +6,16 @@ import os
 // 866-line file.
 
 extension PanelEngine {
-    func start(actionID: String, previousResult: String? = nil, instruction: String? = nil) {
+    func start(
+        actionID: String,
+        previousResult: String? = nil,
+        instruction: String? = nil,
+        retryHint: String? = nil,
+        isQualityRetry: Bool = false
+    ) {
+        if !isQualityRetry {
+            qualityRetries[actionID] = 0
+        }
         let role: ModelRole
         let systemPrompt: String
         /// Whether the prompt about to run is one this app wrote. Gates the
@@ -100,14 +109,8 @@ extension PanelEngine {
         appState.savings[actionID] = nil
         appState.diffs[actionID] = nil
         appState.rationales[actionID] = nil
-        appState.heavyRewriteNotices.remove(actionID)
-        appState.restyledNotices.remove(actionID)
-        // Clear before the new run or a prior "unchanged" banner sticks even when
-        // this generation actually changes the text.
-        appState.cleanNotices.remove(actionID)
         appState.errorNeedsModelSetup.remove(actionID)
         appState.replySuggestions = []
-        appState.replyScriptNotices.remove(actionID)
         appState.grammarSuggestions = []
         appState.selectedGrammarKind = .corrected
 
@@ -163,6 +166,13 @@ extension PanelEngine {
             if !extra.isEmpty {
                 userMessage += Prompts.additionalInstruction(extra)
             }
+        }
+        if let retryHint, !retryHint.isEmpty {
+            userMessage += """
+
+
+            \(retryHint)
+            """
         }
         // Single point where the destination environment is folded in. Applies
         // to the built-in Enhance prompt only; Generic contributes nothing.

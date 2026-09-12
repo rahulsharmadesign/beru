@@ -56,9 +56,23 @@ enum ReplySuggestions {
     /// the first body. If no tags parse, the trimmed raw text becomes a single
     /// Formal fallback so Insert/Copy still have something to send.
     static func parse(_ raw: String) -> [ReplySuggestion] {
+        parseWithStatus(raw).suggestions
+    }
+
+    /// `usedFallback` is true when the model ignored the tag contract. Callers
+    /// that can retry should not treat that blob as six tones.
+    static func parseWithStatus(_ raw: String) -> (suggestions: [ReplySuggestion], usedFallback: Bool) {
+        let tagged = parseTagged(raw)
+        if tagged.isEmpty {
+            return (fallback(raw), true)
+        }
+        return (tagged, false)
+    }
+
+    private static func parseTagged(_ raw: String) -> [ReplySuggestion] {
         let pattern = #"<reply\s+tone="([^"]+)">([\s\S]*?)</reply>"#
         guard let regex = try? NSRegularExpression(pattern: pattern, options: [.caseInsensitive]) else {
-            return fallback(raw)
+            return []
         }
         let ns = raw as NSString
         let matches = regex.matches(in: raw, range: NSRange(location: 0, length: ns.length))
@@ -74,11 +88,10 @@ enum ReplySuggestions {
             guard !body.isEmpty else { continue }
             byTone[tone] = body
         }
-        let ordered = ReplyTone.allCases.compactMap { tone -> ReplySuggestion? in
+        return ReplyTone.allCases.compactMap { tone -> ReplySuggestion? in
             guard let body = byTone[tone] else { return nil }
             return ReplySuggestion(tone: tone, body: body)
         }
-        return ordered.isEmpty ? fallback(raw) : ordered
     }
 
     static func body(in suggestions: [ReplySuggestion], matching tone: ReplyTone) -> String? {

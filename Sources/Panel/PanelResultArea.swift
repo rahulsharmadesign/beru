@@ -2,7 +2,7 @@ import AppKit
 import SwiftUI
 
 // The result module and every state it can be in: idle, provider setup,
-// missing accessibility, streaming, diff, notices and errors.
+// missing accessibility, streaming, diff, and errors.
 
 extension PanelView {
     // MARK: - Result
@@ -34,47 +34,35 @@ extension PanelView {
             if appState.selectedActionID == EnhancementAction.replyID,
                case .done = state,
                !appState.replySuggestions.isEmpty {
-                VStack(alignment: .leading, spacing: 0) {
-                    if appState.replyScriptNotices.contains(appState.selectedActionID) {
-                        noticeLine("Replies used the wrong language or script — try Regenerate to match the message")
-                    }
-                    ReplySuggestionsView(
-                        suggestions: appState.replySuggestions,
-                        selected: appState.selectedReplyTone,
-                        copied: appState.copiedFeedback,
-                        votes: appState.replyVote,
-                        pinnedRow: appState.pinnedRow,
-                        onSelect: { appState.selectedReplyTone = $0 },
-                        onCopy: { copyReplyTone($0) },
-                        onRegenerate: { engine.retry(actionID: EnhancementAction.replyID) },
-                        onVote: { setReplyVote($0, liked: $1) },
-                        onReplace: { replaceReplyTone($0) },
-                        onPin: { pinReplyTone($0) }
-                    )
-                }
+                ReplySuggestionsView(
+                    suggestions: appState.replySuggestions,
+                    selected: appState.selectedReplyTone,
+                    copied: appState.copiedFeedback,
+                    votes: appState.replyVote,
+                    pinnedRow: appState.pinnedRow,
+                    onSelect: { appState.selectedReplyTone = $0 },
+                    onCopy: { copyReplyTone($0) },
+                    onRegenerate: { engine.retry(actionID: EnhancementAction.replyID) },
+                    onVote: { setReplyVote($0, liked: $1) },
+                    onReplace: { replaceReplyTone($0) },
+                    onPin: { pinReplyTone($0) }
+                )
             } else if appState.selectedActionID == EnhancementAction.grammarID,
                       case .done = state,
                       !appState.grammarSuggestions.isEmpty {
-                VStack(alignment: .leading, spacing: 0) {
-                    if appState.cleanNotices.contains(appState.selectedActionID) {
-                        noticeLine("No spelling, grammar or punctuation errors found — your text is unchanged")
-                    } else if appState.restyledNotices.contains(appState.selectedActionID) {
-                        noticeLine("Some of these swap correct words for different ones rather than fixing errors — Regenerate to try again")
-                    }
-                    GrammarSuggestionsView(
-                        suggestions: appState.grammarSuggestions,
-                        selected: appState.selectedGrammarKind,
-                        copied: appState.copiedFeedback,
-                        votes: appState.grammarVote,
-                        pinnedRow: appState.pinnedRow,
-                        onSelect: { engine.applyGrammarKind($0) },
-                        onCopy: { copyGrammarKind($0) },
-                        onRegenerate: { engine.retry(actionID: EnhancementAction.grammarID) },
-                        onVote: { setGrammarVote($0, liked: $1) },
-                        onReplace: { replaceGrammarKind($0) },
-                        onPin: { pinGrammarKind($0) }
-                    )
-                }
+                GrammarSuggestionsView(
+                    suggestions: appState.grammarSuggestions,
+                    selected: appState.selectedGrammarKind,
+                    copied: appState.copiedFeedback,
+                    votes: appState.grammarVote,
+                    pinnedRow: appState.pinnedRow,
+                    onSelect: { engine.applyGrammarKind($0) },
+                    onCopy: { copyGrammarKind($0) },
+                    onRegenerate: { engine.retry(actionID: EnhancementAction.grammarID) },
+                    onVote: { setGrammarVote($0, liked: $1) },
+                    onReplace: { replaceGrammarKind($0) },
+                    onPin: { pinGrammarKind($0) }
+                )
             } else if appState.selectedActionID == EnhancementAction.searchID {
                 if hasCapturedText {
                     SelectedSourceQuote(text: appState.capturedText)
@@ -84,25 +72,9 @@ extension PanelView {
                 } else {
                     searchThreadList
                 }
-            } else if case .done = state,
-               appState.cleanNotices.contains(appState.selectedActionID) {
-                VStack(alignment: .leading, spacing: 0) {
-                    noticeLine(
-                        appState.selectedActionID == EnhancementAction.grammarID
-                            ? "No spelling, grammar or punctuation errors found — your text is unchanged"
-                            : "The model returned your text unchanged"
-                    )
-                    ResultView(state: state, usesMarkdown: usesSearchMarkdown)
-                }
             } else if case .done(let revised) = state,
                       appState.diffs[appState.selectedActionID] != nil {
                 diffResult(revised: revised)
-            } else if case .done = state,
-                      appState.heavyRewriteNotices.contains(appState.selectedActionID) {
-                VStack(alignment: .leading, spacing: 0) {
-                    rewrittenNotice
-                    ResultView(state: state, usesMarkdown: usesSearchMarkdown)
-                }
             } else if case .error(let message) = state {
                 errorView(message: message)
             } else if case .idle = state,
@@ -128,11 +100,14 @@ extension PanelView {
         VStack(alignment: .leading, spacing: BeruSpace.lg) {
             ForEach(appState.searchThread) { turn in
                 VStack(alignment: .leading, spacing: BeruSpace.xxs) {
-                    Text(turn.question)
-                        .font(BeruType.footnoteMedium)
-                        .foregroundStyle(BeruColor.textSecondary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .textSelection(.enabled)
+                    HStack(alignment: .center, spacing: BeruSpace.xs) {
+                        BeruResponseMark()
+                        Text(turn.question)
+                            .font(BeruType.footnoteMedium)
+                            .foregroundStyle(BeruColor.textSecondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .textSelection(.enabled)
+                    }
                     ResultView(state: turn.answer, usesMarkdown: true)
                         .frame(maxWidth: .infinity, alignment: .leading)
                     if case .done(let text) = turn.answer, !text.isEmpty {
@@ -177,7 +152,11 @@ extension PanelView {
                 .foregroundStyle(BeruColor.textSecondary)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
-            BeruButton(title: "Open System Settings", variant: .primary, size: .compact) {
+            BeruGlassButton(
+                title: "Open System Settings",
+                prominent: true,
+                size: .compact
+            ) {
                 Permissions.requestAccessibilityIfNeeded()
                 Permissions.openAccessibilitySettings()
             }
@@ -218,7 +197,11 @@ extension PanelView {
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
             VStack(spacing: BeruSpace.xs) {
-                BeruButton(title: "Connect a provider", variant: .primary, size: .compact) {
+                BeruGlassButton(
+                    title: "Connect a provider",
+                    prominent: true,
+                    size: .compact
+                ) {
                     engine.requestProviderSetup(preferLocal: false)
                 }
                 BeruButton(title: "Use a local model", size: .compact) {
@@ -241,32 +224,14 @@ extension PanelView {
             .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    var rewrittenNotice: some View {
-        noticeLine("Rewritten from scratch, so there's no useful diff to show")
-    }
-
-    func noticeLine(_ text: String) -> some View {
-        Text(text)
-            .font(BeruType.caption)
-            .foregroundStyle(BeruColor.textSecondary)
-            .fixedSize(horizontal: false, vertical: true)
-            .padding(.top, BeruSpace.xxs)
-            .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
     @ViewBuilder
     func diffResult(revised: String) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
-            if appState.restyledNotices.contains(appState.selectedActionID) {
-                noticeLine("Some of these swap correct words for different ones rather than fixing errors — Regenerate to try again")
-            }
-            DiffView(
-                ops: appState.diffs[appState.selectedActionID],
-                revised: revised,
-                showDiff: true,
-                scrolls: false
-            )
-        }
+        DiffView(
+            ops: appState.diffs[appState.selectedActionID],
+            revised: revised,
+            showDiff: true,
+            scrolls: false
+        )
     }
 
     func errorView(message: String) -> some View {
@@ -275,7 +240,7 @@ extension PanelView {
         let showConnectCTA = appState.errorNeedsModelSetup.contains(actionID)
         return VStack(spacing: BeruSpace.sm) {
             Text(message)
-                .font(BeruType.resultBody)
+                .beruPrintedText()
                 .foregroundStyle(BeruColor.textSecondary)
                 .multilineTextAlignment(.center)
             // Retry rows wrap: with fallbacks plus Connect to model the row
@@ -288,7 +253,11 @@ extension PanelView {
                 // Connect to model: 404 / unknown model — open Models so the
                 // user can install or pick one instead of retrying blindly.
                 if showConnectCTA {
-                    BeruButton(title: "Connect to model", variant: .primary, size: .compact) {
+                    BeruGlassButton(
+                        title: "Connect to model",
+                        prominent: true,
+                        size: .compact
+                    ) {
                         engine.requestProviderSetup(preferLocal: true)
                     }
                 }

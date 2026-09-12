@@ -70,10 +70,10 @@ struct SettingsStatusCard<Action: View>: View {
         HStack(alignment: .center, spacing: BeruSpace.md) {
             ZStack {
                 BeruRadius.shape(BeruRadius.sm)
-                    .fill(BeruColor.subtleFill)
+                    .fill(Color.clear)
                     .overlay {
                         BeruRadius.shape(BeruRadius.sm)
-                            .strokeBorder(BeruColor.border, lineWidth: BeruMetrics.hairline)
+                            .strokeBorder(BeruColor.strongBorder, lineWidth: BeruMetrics.hairline)
                     }
                 BeruIcon(name: icon, size: BeruMetrics.iconSize)
                     .foregroundStyle(isPositive ? BeruColor.positive : BeruColor.textSecondary)

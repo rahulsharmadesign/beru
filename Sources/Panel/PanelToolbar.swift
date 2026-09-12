@@ -1,29 +1,25 @@
 import AppKit
 import SwiftUI
 
-// The panel's top module: verb chips and the one quiet context line.
+// The panel's top module: verb chips, plus the prior-turn chip when it
+// can change the next result.
 
 extension PanelView {
     // MARK: - Toolbar (verbs + context)
 
-    /// Verb chips + quiet metadata. The context line renders only when it
-    /// has content: reserving its height while hidden left a ~22pt phantom
-    /// gap above the result card in the AI Search tab. Tab switches resize
-    /// in the same frame per the frozen height contract, so no reservation
-    /// is needed.
+    /// Verb chips. The prior-turn chip renders only when it has content:
+    /// reserving its height while hidden left a phantom gap above the
+    /// result. Tab switches resize in the same frame per the frozen height
+    /// contract, so no reservation is needed.
     var toolbar: some View {
         VStack(alignment: .leading, spacing: BeruSpace.xs) {
             verbRow
-            if showsContextLine {
-                contextLine
+            if priorTurnCount > 0 {
+                sessionContextChip
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .animation(nil, value: showsContextLine)
-    }
-
-    var showsContextLine: Bool {
-        !appState.isQuickSearch || hasCapturedText
+        .animation(nil, value: priorTurnCount)
     }
 
     var hasCapturedText: Bool {
@@ -105,65 +101,17 @@ extension PanelView {
         appState.selectAction(actionID)
     }
 
-    /// Selection lives on the chip itself: a 0.3s ease melts the gradient
-    /// and text color in place — smooth dissolve, no bounce, no scale, no
-    /// traveling pill. Render-only: layout (and the frozen height contract)
-    /// never moves. (System glass lenses were tried here and flood/misrender
-    /// in this row, so the chips stay translucent pills over the glass slab.)
+    /// AppKit hit target: a SwiftUI `Button` on this row is stolen by
+    /// window-drag, so the chip never selects. Selection dissolve lives on
+    /// the chip; do not wrap `selectAction` in `withAnimation`.
     func chip(for action: EnhancementAction) -> some View {
-        let isSelected = appState.selectedActionID == action.id
-        let label = BeruLabel(title: action.name, icon: action.icon, iconSize: 14, strokeWidth: 2)
-            .labelStyle(.titleAndIcon)
-            .font(BeruType.footnoteMedium)
-            .foregroundStyle(isSelected ? BeruColor.onAccent : BeruColor.textPrimary)
-            .animation(chipColorEase, value: isSelected)
-
-        return Button { selectTab(action.id) } label: {
-            label
-                .padding(.horizontal, BeruSpace.sm)
-                .frame(height: BeruMetrics.tabPillHeight)
-                .contentShape(Capsule())
-                .background {
-                    // Layered fills, not a conditional fill: SwiftUI cannot
-                    // interpolate a gradient into a solid color, so swapping
-                    // `.fill()` styles snapped instantly with no visible
-                    // transition. Fading the gradient layer's opacity melts
-                    // selection from chip to chip instead.
-                    Capsule()
-                        .fill(BeruColor.subtleFill)
-                        .overlay {
-                            Capsule()
-                                .fill(BeruColor.accentGradient)
-                                .opacity(isSelected ? 1 : 0)
-                                .animation(chipColorEase, value: isSelected)
-                        }
-                        .overlay {
-                            Capsule().strokeBorder(isSelected ? Color.clear : BeruColor.border, lineWidth: 1)
-                        }
-                }
-        }
-        .buttonStyle(.plain)
-        .frame(height: BeruMetrics.tabPillHeight)
-        .help(action.summary)
-        .accessibilityAddTraits(isSelected ? .isSelected : [])
-    }
-
-    /// Chip tint: lens and text color over 0.3s ease. No overshoot — the
-    /// glass container owns the motion.
-    var chipColorEase: Animation {
-        a11y.reduceMotion ? .easeOut(duration: 0.12) : .easeOut(duration: 0.3)
-    }
-
-    /// Character count only — the action name, host app, and clipboard
-    /// toggle used to crowd this line. Context as caption text, left aligned.
-    var contextLine: some View {
-        HStack(spacing: BeruSpace.xxs) {
-            Text(characterCountSummary)
-                .font(BeruType.caption)
-                .foregroundStyle(BeruColor.textSecondary)
-                .lineLimit(1)
-            Spacer(minLength: 0)
-            sessionContextChip
+        PanelTabChip(
+            title: action.name,
+            icon: action.icon,
+            isSelected: appState.selectedActionID == action.id,
+            help: action.summary
+        ) {
+            selectTab(action.id)
         }
     }
 
@@ -196,9 +144,31 @@ extension PanelView {
               Prompts.threadApplies(actionID: appState.selectedActionID) else { return 0 }
         return thread.turns(forBundleID: appState.hostBundleID).count
     }
+}
 
-    var characterCountSummary: String {
-        let count = appState.capturedText.trimmingCharacters(in: .whitespacesAndNewlines).count
-        return count == 1 ? "1 character" : "\(count) characters"
+/// AppKit click target around a verb chip. A SwiftUI `Button` on this row
+/// is stolen by window-drag — same reason Replace and the mic use `PanelHitCapsule`.
+private struct PanelTabChip: View {
+    let title: String
+    let icon: String
+    let isSelected: Bool
+    let help: String
+    let action: () -> Void
+
+    @State private var isHovered = false
+
+    var body: some View {
+        PanelHitCapsule(help: help, accessibilityLabel: title, action: action) {
+            BeruGlassChip(
+                title: title,
+                icon: icon,
+                isSelected: isSelected,
+                isHovered: isHovered
+            )
+        }
+        .onHover { isHovered = $0 }
+        .beruHoverEase(isHovered)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+        .frame(height: BeruMetrics.tabPillHeight)
     }
 }

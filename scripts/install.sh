@@ -57,9 +57,21 @@ echo "==> building"
 xcodebuild -scheme Beru -configuration Debug build -destination 'platform=macOS' \
     >/tmp/beru-build.log 2>&1 || { tail -30 /tmp/beru-build.log; exit 1; }
 
-BUILT=$(ls -td "$HOME"/Library/Developer/Xcode/DerivedData/Beru-*/Build/Products/Debug/Beru.app | head -1)
+# Ask this project where it wrote the app. Globbing DerivedData/Beru-* picks
+# whichever folder was touched last — a leftover checkout can be newer and
+# install an old marketing version (1.1.0 instead of this tree).
+BUILT_PRODUCTS_DIR=$(xcodebuild -scheme Beru -configuration Debug \
+    -destination 'platform=macOS' -showBuildSettings 2>/dev/null \
+    | sed -n 's/^[[:space:]]*BUILT_PRODUCTS_DIR = //p' | head -1)
+BUILT="${BUILT_PRODUCTS_DIR}/Beru.app"
+if [[ ! -d "$BUILT" ]]; then
+    echo "error: built app not found at $BUILT" >&2
+    exit 1
+fi
 
-echo "==> installing to /Applications"
+VERSION=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$BUILT/Contents/Info.plist")
+BUILD=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$BUILT/Contents/Info.plist")
+echo "==> installing ${VERSION} (${BUILD}) to /Applications"
 killall Beru 2>/dev/null || true
 pkill -f "Beru.app/Contents/MacOS/Beru" 2>/dev/null || true
 # Wait until the old process is gone so the new binary owns the hotkey.

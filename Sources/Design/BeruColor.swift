@@ -19,8 +19,19 @@ enum BeruColor {
             : NSColor(srgbRed: 242 / 255, green: 243 / 255, blue: 246 / 255, alpha: 1)
     }
 
-    /// Opaque plate for Reduce Transparency and composer wells.
-    /// Haze `--panel-solid`: #FFFFFF light, #202124 dark.
+    /// Composer field fill on the glass slab. Dark: 14% white hint. Light:
+    /// 72% white so the caret sits on a well, not the page.
+    /// Reduce Transparency uses `panelSolid` instead (see `GlassModule`).
+    static var composerWell: Color {
+        Color(nsColor: NSColor(name: "BeruComposerWell") { appearance in
+            let dark = appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+            return dark
+                ? NSColor.white.withAlphaComponent(0.14)
+                : NSColor.white.withAlphaComponent(0.72)
+        })
+    }
+    /// Opaque plate for Reduce Transparency. Haze `--panel-solid`:
+    /// #FFFFFF light, #202124 dark.
     static let panelSolidNSColor = NSColor(name: "BeruPanelSolid") { appearance in
         let dark = appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
         return dark
@@ -122,6 +133,16 @@ enum BeruColor {
                 : NSColor(srgbRed: 160 / 255, green: 166 / 255, blue: 177 / 255, alpha: 1)
         })
     }
+    /// Status-item bee. Always white: Light appearance still paints a dark
+    /// menu bar over a dark wallpaper, and a template black glyph disappears
+    /// against Control Center / Wi-Fi which stay white in that slot.
+    static var menuBarGlyphNSColor: NSColor { .white }
+    static var menuBarGlyph: Color { Color(nsColor: menuBarGlyphNSColor) }
+
+    /// Glyph on a colored sidebar tile. Always white so it reads on every
+    /// System Settings–style squircle, independent of the selected accent.
+    static var onTile: Color { .white }
+
     /// Markdown links in search answers and vault preview. System link color so
     /// it stays a distinct hue from `textPrimary` in both appearances.
     static var link: Color { Color(nsColor: .linkColor) }

@@ -32,7 +32,7 @@ struct SettingsField: View {
                 .overlay {
                     Capsule().strokeBorder(
                         focused ? BeruColor.accent : BeruColor.border,
-                        lineWidth: 1
+                        lineWidth: BeruMetrics.hairline
                     )
                 }
                 .shadow(color: focused ? BeruColor.focusGlow : .clear, radius: BeruMetrics.focusHalo)
@@ -80,7 +80,7 @@ struct SettingsSecretField: View {
                 .overlay {
                     Capsule().strokeBorder(
                         focused ? BeruColor.accent : BeruColor.border,
-                        lineWidth: 1
+                        lineWidth: BeruMetrics.hairline
                     )
                 }
                 .shadow(color: focused ? BeruColor.focusGlow : .clear, radius: BeruMetrics.focusHalo)
@@ -118,7 +118,7 @@ struct SettingsSearchField: View {
             Capsule()
                 .fill(BeruColor.subtleFill)
                 .overlay {
-                    Capsule().strokeBorder(BeruColor.border, lineWidth: 1)
+                    Capsule().strokeBorder(BeruColor.border, lineWidth: BeruMetrics.hairline)
                 }
         }
         .accessibilityLabel(placeholder)

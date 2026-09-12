@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// Settings shell: grouped sidebar + detail. Same nine routes and behavior,
-/// rebuilt around Haze rows — icon tiles, group headers, gradient selection.
+/// rebuilt around Haze rows — icon tiles, group headers, solid accent selection.
 struct DashboardView: View {
     @Bindable var model: DashboardModel
     @State private var query = ""
@@ -42,7 +42,7 @@ struct DashboardView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .clipped()
         .tint(BeruColor.accent)
-        .font(BeruType.font(13))
+        .font(BeruType.control)
     }
 
     private var filteredMenu: [DashboardRoute] {
@@ -144,8 +144,8 @@ struct DashboardView: View {
     private func sidebarRow(_ route: DashboardRoute) -> some View {
         let selected = model.route == route
         return HStack(spacing: BeruSpace.sm) {
-            BeruIcon(name: route.systemImage, size: BeruMetrics.sidebarTileGlyph)
-                .foregroundStyle(.white)
+            BeruIcon(name: route.lucideIcon, size: BeruMetrics.sidebarTileGlyph)
+                .foregroundStyle(BeruColor.onTile)
                 .frame(width: BeruMetrics.sidebarTileBox, height: BeruMetrics.sidebarTileBox)
                 .background(BeruRadius.shape(BeruMetrics.sidebarTileRadius).fill(route.sidebarTileColor))
             Text(route.title)
@@ -160,11 +160,11 @@ struct DashboardView: View {
         }
         .foregroundStyle(selected ? BeruColor.onAccent : BeruColor.textPrimary)
         .padding(.horizontal, BeruSpace.sm)
-        .padding(.vertical, BeruSpace.xxs)
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, minHeight: BeruMetrics.sidebarRowHeight, alignment: .leading)
+        .frame(height: BeruMetrics.sidebarRowHeight)
         .background {
             BeruRadius.shape(BeruRadius.md)
-                .fill(selected ? AnyShapeStyle(BeruColor.accentGradient) : AnyShapeStyle(Color.clear))
+                .fill(selected ? BeruColor.accent : Color.clear)
         }
         .contentShape(RoundedRectangle(cornerRadius: BeruRadius.md, style: .continuous))
     }
@@ -239,7 +239,7 @@ private struct SettingsTipCard: View {
                     .fill(BeruColor.card)
                     .overlay {
                         BeruRadius.shape(BeruRadius.md)
-                            .strokeBorder(BeruColor.border, lineWidth: 1)
+                            .strokeBorder(BeruColor.border, lineWidth: BeruMetrics.hairline)
                     }
             }
             .opacity(revealed ? 1 : 0)
@@ -255,7 +255,7 @@ private struct SidebarUpdateChip: View {
     var body: some View {
         SettingsIconButton(
             icon: "square.and.arrow.down",
-            size: 14,
+            size: BeruMetrics.iconSizeCompact,
             frameSize: BeruMetrics.hitTargetCompact,
             enabled: !updates.isBusy,
             help: updates.availableVersion.map { "Install Beru \($0)" } ?? "Install the latest Beru"

@@ -32,7 +32,7 @@ struct BeruLoader: View {
         .accessibilityLabel("Loading")
     }
 
-    /// Compact ring for the 32pt send / Replace controls.
+    /// Compact ring for the 40pt send / 28pt Replace controls.
     static func compact(tint: Color = BeruColor.accent) -> BeruLoader {
         BeruLoader(
             tint: tint,

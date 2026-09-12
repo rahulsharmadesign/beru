@@ -103,17 +103,6 @@ struct EnhancementAction: Identifiable, Codable, Equatable {
         }
     }
 
-    /// Caption under the verb chips: which skill is live, and which app it
-    /// came from — so a Cursor landing on Enhance is not read as Grammar.
-    static func contextSummary(actionName: String, hostAppName: String?, characterCount: Int) -> String {
-        let trimmedHost = hostAppName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        let host = trimmedHost.isEmpty ? "Mac" : trimmedHost
-        if characterCount == 0 {
-            return "\(actionName) · \(host)"
-        }
-        return "\(actionName) · \(host) · \(characterCount) characters"
-    }
-
     static let grammarID = "grammar"
     static let enhanceID = "enhance"
     /// Reserved id for one-off intent-bar instructions.
@@ -148,6 +137,13 @@ struct EnhancementAction: Identifiable, Codable, Equatable {
     /// Search and one-off instructions can run from the composer alone.
     static func allowsEmptyCapture(_ actionID: String) -> Bool {
         actionID == searchID || actionID == describeID
+    }
+
+    /// Transform verbs that must produce a new artifact. An unchanged copy of
+    /// the source is a failed job, not a valid result. Grammar is excluded:
+    /// returning the document as-is is correct when it has no errors.
+    static func rejectsUnchangedOutput(_ actionID: String) -> Bool {
+        actionID == summarizeID || actionID == explainID || actionID == describeID
     }
 
     /// How the composer and host capture combine for one run.

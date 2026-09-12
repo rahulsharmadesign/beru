@@ -43,7 +43,7 @@ struct SuggestionOptionCard: View {
                         .font(BeruType.captionMedium)
                         .foregroundStyle(isSelected ? BeruColor.accent : BeruColor.textSecondary)
                     Text(bodyText)
-                        .font(BeruType.resultBody)
+                        .beruPrintedText()
                         .foregroundStyle(BeruColor.textPrimary)
                         .multilineTextAlignment(.leading)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -58,9 +58,9 @@ struct SuggestionOptionCard: View {
 
             if showActions {
                 HStack(spacing: BeruSpace.xs) {
-                    BeruButton(
+                    BeruGlassButton(
                         title: writeTitle,
-                        variant: .primary,
+                        prominent: true,
                         size: .compact,
                         leadingIcon: "replace"
                     ) {
@@ -125,7 +125,7 @@ struct SuggestionOptionCard: View {
                 .overlay {
                     if isSelected {
                         BeruRadius.shape(BeruRadius.md)
-                            .strokeBorder(BeruColor.accent, lineWidth: 1)
+                            .strokeBorder(BeruColor.accent, lineWidth: BeruMetrics.hairline)
                     }
                 }
         }

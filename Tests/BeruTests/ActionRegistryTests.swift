@@ -172,22 +172,6 @@ final class ActionRegistryTests: XCTestCase {
             EnhancementAction.resolvedName(actionID: "custom-1", registryName: "For my VP"),
             "For my VP"
         )
-        XCTAssertEqual(
-            EnhancementAction.contextSummary(actionName: "Enhance Prompt", hostAppName: "Cursor", characterCount: 0),
-            "Enhance Prompt · Cursor"
-        )
-        XCTAssertEqual(
-            EnhancementAction.contextSummary(actionName: "Grammar", hostAppName: "Cursor", characterCount: 240),
-            "Grammar · Cursor · 240 characters"
-        )
-        XCTAssertEqual(
-            EnhancementAction.contextSummary(actionName: "AI Search", hostAppName: nil, characterCount: 0),
-            "AI Search · Mac"
-        )
-        XCTAssertFalse(
-            EnhancementAction.contextSummary(actionName: "Grammar", hostAppName: "Mail", characterCount: 0)
-                .contains("No text selected")
-        )
     }
 
     func testResolveInputUsesComposerAsSourceWhenCaptureIsEmpty() {

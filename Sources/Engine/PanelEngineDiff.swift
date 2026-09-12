@@ -34,9 +34,7 @@ extension PanelEngine {
         // wrong words.
         guard case .done(revised) = appState.resultState(for: actionID) else { return }
 
-        // A diff of identical text is all `.equal` — nothing to highlight, and
-        // storing it would hide the "nothing needed fixing" notice behind an
-        // apparently-empty diff view.
+        // A diff of identical text is all `.equal` — nothing to highlight.
         let hasChanges = ops.contains {
             switch $0 {
             case .insertion, .deletion: return true
@@ -46,27 +44,17 @@ extension PanelEngine {
         guard hasChanges else { return }
 
         guard WordDiff.retentionRatio(ops) >= Self.diffLegibilityFloor else {
-            // Leave the diff unset so the plain result renders, and say why —
-            // silently dropping it would look like the diff had failed.
-            appState.heavyRewriteNotices.insert(actionID)
+            // Leave the diff unset so the plain result renders. An interleaved
+            // rewrite looks corrupted even when the text is correct.
             return
         }
         appState.diffs[actionID] = ops
-
-        // Grammar may only replace a word with a corrected spelling of it. When
-        // most of its substitutions are unrelated words, the model paraphrased —
-        // and it should say so rather than pass a rewrite off as a correction.
-        if actionID == EnhancementAction.grammarID,
-           appState.selectedGrammarKind == .corrected,
-           WordDiff.paraphraseScore(ops) > Self.grammarParaphraseCeiling {
-            appState.restyledNotices.insert(actionID)
-        }
     }
 
     /// Above this share of unrelated word substitutions, Grammar has rewritten
     /// rather than corrected. Corrections cluster near 0 (every replacement is a
     /// near-miss of the original word); the reported paraphrase scored 1.0.
-    static let grammarParaphraseCeiling = 0.4
+    static let grammarParaphraseCeiling = OutputQuality.grammarParaphraseCeiling
 
     /// Separates the result from its explanation.
     ///

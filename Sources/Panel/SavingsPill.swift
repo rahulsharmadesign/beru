@@ -17,12 +17,6 @@ struct SavingsPill: View {
 
     @Environment(\.colorScheme) private var colorScheme
 
-    /// Opaque plate so whatever is behind the panel cannot bleed through far
-    /// enough to swallow 11pt text. Haze metapill fill with a hairline.
-    private var surface: Color {
-        BeruColor.panelSolid
-    }
-
     /// Contrast-tuned per appearance; see `BeruColor.Status`.
     private var accent: Color {
         switch (savings.direction, colorScheme) {
@@ -58,12 +52,13 @@ struct SavingsPill: View {
         .foregroundStyle(accent)
         .padding(.horizontal, BeruSpace.xs)
         .frame(height: BeruMetrics.metapillHeight)
-        .background(
+        .background {
             Capsule()
-                .fill(surface)
-                .overlay(Capsule().fill(accent.opacity(colorScheme == .dark ? 0.16 : 0.10)))
-                .overlay(Capsule().strokeBorder(BeruColor.border, lineWidth: 1))
-        )
+                .fill(BeruColor.surface)
+                .overlay {
+                    Capsule().strokeBorder(BeruColor.border, lineWidth: BeruMetrics.hairline)
+                }
+        }
         // Never let the footer's other controls compress this pill below its
         // intrinsic width; it always keeps room for the number and "tok".
         .layoutPriority(1)

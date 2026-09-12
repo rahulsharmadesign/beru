@@ -88,14 +88,33 @@ final class PanelViewportCapTests: XCTestCase {
         XCTAssertEqual(applied?.lastChrome, 214)
     }
 
-    func testTabChangeShrinksImmediatelyAndUnanimated() {
+    func testTabChangeDoesNotShrink() {
         XCTAssertEqual(
             PanelLayoutHeights.shrinkBehavior(isTabChange: true, isStreaming: false),
-            .applyNowUnanimated
+            .skip
         )
         XCTAssertEqual(
             PanelLayoutHeights.shrinkBehavior(isTabChange: true, isStreaming: true),
-            .applyNowUnanimated
+            .skip
+        )
+    }
+
+    func testFrozenTargetKeepsTheTallerWindow() {
+        XCTAssertEqual(
+            PanelLayoutHeights.frozenTarget(computed: 240, lastApplied: 400, heightFrozen: true, resultGrew: false),
+            400
+        )
+        XCTAssertEqual(
+            PanelLayoutHeights.frozenTarget(computed: 500, lastApplied: 400, heightFrozen: true, resultGrew: true),
+            500
+        )
+        XCTAssertEqual(
+            PanelLayoutHeights.frozenTarget(computed: 500, lastApplied: 400, heightFrozen: true, resultGrew: false),
+            400
+        )
+        XCTAssertEqual(
+            PanelLayoutHeights.frozenTarget(computed: 240, lastApplied: 400, heightFrozen: false, resultGrew: true),
+            240
         )
     }
 

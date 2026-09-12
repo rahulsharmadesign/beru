@@ -30,6 +30,8 @@ final class GrammarSuggestionsTests: XCTestCase {
         XCTAssertEqual(parsed.count, 1)
         XCTAssertEqual(parsed.first?.kind, .corrected)
         XCTAssertEqual(parsed.first?.body, "He doesn't know whether it's right.")
+        XCTAssertTrue(GrammarSuggestions.parseWithStatus("He doesn't know whether it's right.").usedFallback)
+        XCTAssertFalse(GrammarSuggestions.parseWithStatus(tagged).usedFallback)
     }
 
     func testSelectedBodyPrefersMatchingKindThenFirst() {

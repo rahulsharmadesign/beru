@@ -38,9 +38,23 @@ struct GrammarSuggestion: Equatable, Identifiable, Sendable {
 
 enum GrammarSuggestions {
     static func parse(_ raw: String) -> [GrammarSuggestion] {
+        parseWithStatus(raw).suggestions
+    }
+
+    /// `usedFallback` is true when no `<grammar>` tags parsed. A retry can
+    /// still recover the triple; publishing the raw blob as "Corrected" cannot.
+    static func parseWithStatus(_ raw: String) -> (suggestions: [GrammarSuggestion], usedFallback: Bool) {
+        let tagged = parseTagged(raw)
+        if tagged.isEmpty {
+            return (fallback(raw), true)
+        }
+        return (tagged, false)
+    }
+
+    private static func parseTagged(_ raw: String) -> [GrammarSuggestion] {
         let pattern = #"<grammar\s+kind="([^"]+)">([\s\S]*?)</grammar>"#
         guard let regex = try? NSRegularExpression(pattern: pattern, options: [.caseInsensitive]) else {
-            return fallback(raw)
+            return []
         }
         let ns = raw as NSString
         let matches = regex.matches(in: raw, range: NSRange(location: 0, length: ns.length))
@@ -56,11 +70,10 @@ enum GrammarSuggestions {
             guard !body.isEmpty else { continue }
             byKind[kind] = body
         }
-        let ordered = GrammarKind.allCases.compactMap { kind -> GrammarSuggestion? in
+        return GrammarKind.allCases.compactMap { kind -> GrammarSuggestion? in
             guard let body = byKind[kind] else { return nil }
             return GrammarSuggestion(kind: kind, body: body)
         }
-        return ordered.isEmpty ? fallback(raw) : ordered
     }
 
     static func body(in suggestions: [GrammarSuggestion], matching kind: GrammarKind) -> String? {

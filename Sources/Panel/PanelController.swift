@@ -17,9 +17,10 @@ private let layoutLog = Logger(subsystem: "com.rahul.beru", category: "panel-lay
 /// - Window height = min(chrome + result, 75% of visible screen).
 /// - Below the cap: result is intrinsic. At the cap: result scrolls inside
 ///   `appState.panelResultScrollHeight`; close / chips / composer stay pinned.
-/// - Grow immediately and unanimated. Tab-change shrinks are immediate and
-///   unanimated. Other shrinks debounce. Never drive height from
-///   `NSHostingView.intrinsicContentSize` (`sizingOptions` stays empty).
+/// - Grow immediately and unanimated. Tab-change shrinks are skipped so
+///   Search ↔ Enhance cannot jump the window; leftover height sits between
+///   the result and the composer. Other shrinks debounce. Never drive height
+///   from `NSHostingView.intrinsicContentSize` (`sizingOptions` stays empty).
 @MainActor
 final class PanelController {
     private var panel: FloatingPanel?
@@ -43,6 +44,10 @@ final class PanelController {
     private var lastResult: CGFloat = 0
     private var lastActionID: String?
     private var lastResolvedLayout: PanelLayoutHeights?
+    /// Once the user switches tabs this session, never shrink below the
+    /// height already on screen. Search (no footer, thread) and Enhance
+    /// (footer, diff) disagree enough to jump the window otherwise.
+    private var heightFrozen = false
 
     private var a11y: AccessibilityPreferences { AccessibilityPreferences.shared }
 
@@ -55,6 +60,7 @@ final class PanelController {
         lastResult = 0
         lastActionID = nil
         lastResolvedLayout = nil
+        heightFrozen = false
         appState.panelResultScrollHeight = nil
         entranceSettledAt = CFAbsoluteTimeGetCurrent() + 0.55
 
@@ -154,6 +160,7 @@ final class PanelController {
 
     /// Chrome + result ideal heights from SwiftUI band preferences.
     func setLayoutHeights(_ layout: PanelLayoutHeights) {
+        let previousResult = lastResult
         guard let applied = PanelLayoutHeights.resolved(
             layout: layout,
             lastChrome: lastChrome,
@@ -162,21 +169,22 @@ final class PanelController {
         lastChrome = applied.lastChrome
         lastResult = applied.lastResult
         lastResolvedLayout = PanelLayoutHeights(chrome: applied.chrome, result: applied.result)
+        let resultGrew = applied.result > previousResult + 0.5
 
         let cap = maxPanelHeight()
         let chrome = applied.chrome
         let ideal = chrome + applied.result
         let capped = ideal > cap + 0.5
 
-        let target: CGFloat
+        let computed: CGFloat
         let scrollHeight: CGFloat?
         if capped, chrome < cap {
             let scroll = max(PanelMetrics.resultIdleMinHeight, (cap - chrome).rounded())
             scrollHeight = scroll
-            target = min(cap, (chrome + scroll).rounded())
+            computed = min(cap, (chrome + scroll).rounded())
         } else {
             scrollHeight = nil
-            target = min(ideal, cap).rounded()
+            computed = min(ideal, cap).rounded()
         }
 
         // Apply scroll budget before resizing so the next SwiftUI pass lays
@@ -186,16 +194,27 @@ final class PanelController {
         }
 
         layoutLog.debug("layout chrome=\(applied.chrome, format: .fixed(precision: 0)) result=\(applied.result, format: .fixed(precision: 0)) ideal=\(applied.chrome + applied.result, format: .fixed(precision: 0)) cap=\(self.maxPanelHeight(), format: .fixed(precision: 0)) scroll=\(scrollHeight ?? -1, format: .fixed(precision: 0))")
+
+        let isTabChange = lastActionID != nil && lastActionID != appState.selectedActionID
+        if isTabChange { heightFrozen = true }
+        rememberActionID()
+
+        let target = PanelLayoutHeights.frozenTarget(
+            computed: computed,
+            lastApplied: lastAppliedHeight,
+            heightFrozen: heightFrozen,
+            resultGrew: resultGrew
+        )
         let growing = target > (panel?.frame.height ?? 0) + 0.5
         if growing {
             pendingResize?.cancel()
             applyContentHeight(target, animated: false)
-            rememberActionID()
             return
         }
-
-        let isTabChange = lastActionID != nil && lastActionID != appState.selectedActionID
-        rememberActionID()
+        if heightFrozen {
+            pendingResize?.cancel()
+            return
+        }
 
         switch PanelLayoutHeights.shrinkBehavior(isTabChange: isTabChange, isStreaming: isStreaming) {
         case .applyNowUnanimated:
@@ -354,45 +373,5 @@ final class PanelController {
         origin.x = min(max(origin.x, visible.minX + inset), visible.maxX - size.width - inset)
         origin.y = min(max(origin.y, visible.minY + inset), visible.maxY - size.height - inset)
         return origin
-    }
-}
-
-/// Hosts SwiftUI. Window height comes only from layout band preferences.
-private final class PanelHostingView<Content: View>: NSHostingView<Content> {
-    override var isOpaque: Bool { false }
-    override var mouseDownCanMoveWindow: Bool { true }
-
-    override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
-
-    override func viewDidMoveToWindow() {
-        super.viewDidMoveToWindow()
-        clearHostFill()
-    }
-
-    override func layout() {
-        super.layout()
-        clearHostFill()
-        if let container = superview {
-            frame = container.bounds
-        }
-        clipsToBounds = true
-    }
-
-    private func clearHostFill() {
-        wantsLayer = true
-        layer?.isOpaque = false
-        layer?.backgroundColor = .clear
-    }
-}
-
-extension NSView {
-    func beruBeginWindowDrag(with event: NSEvent) {
-        guard let window else { return }
-        let grab = event.locationInWindow
-        while let next = window.nextEvent(matching: [.leftMouseDragged, .leftMouseUp]) {
-            if next.type == .leftMouseUp { break }
-            let mouse = NSEvent.mouseLocation
-            window.setFrameOrigin(NSPoint(x: mouse.x - grab.x, y: mouse.y - grab.y))
-        }
     }
 }

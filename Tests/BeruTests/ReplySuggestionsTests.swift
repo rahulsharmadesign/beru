@@ -53,6 +53,9 @@ final class ReplySuggestionsTests: XCTestCase {
         XCTAssertEqual(parsed.count, 1)
         XCTAssertEqual(parsed.first?.tone, .formal)
         XCTAssertEqual(parsed.first?.body, "Just a plain reply without tags.")
+        let status = ReplySuggestions.parseWithStatus("Just a plain reply without tags.")
+        XCTAssertTrue(status.usedFallback)
+        XCTAssertFalse(ReplySuggestions.parseWithStatus(tagged).usedFallback)
     }
 
     func testEmptyInputParsesToNothing() {

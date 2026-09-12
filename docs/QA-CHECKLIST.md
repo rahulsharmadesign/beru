@@ -14,7 +14,8 @@ the window height fits the content:
 
 - [ ] Idle, with Accessibility granted (text selected, before running)
 - [ ] Idle, with Accessibility **not** granted (the placeholder card)
-- [ ] Loading / streaming: dashed accent spinner in the result; send uses a compact ring
+- [ ] Loading: pixel dots in the result; send disc uses muted fill when idle, accent when the field can submit; no spinner on the button
+- [ ] Streaming: words print one by one with a blinking caret, newest word settling out of blur; Reduce Motion shows text as it arrives; composer does not bounce. Done Search answers gain markdown; history turns do not replay the typewriter
 - [ ] Long result: window grows up to **75%** of the visible screen; close disc, chips, outcome icons, and composer stay visible; only the result scrolls
 - [ ] Copy: icon morphs to a green check, then the panel closes after ~1.4s
 - [ ] Result with a diff, and result long enough to scroll
@@ -24,10 +25,10 @@ the window height fits the content:
 - [ ] Close disc on the leading edge; gear (no “Settings” label) opens Settings
 - [ ] Close disc and composer sit 10pt in from the window on every side; idle tabs have no gray fill; selected tab is accent
 - [ ] Open the panel and switch Search ↔ Enhance: inset does not collapse then snap; composer never crops
-- [ ] In Cursor with a selection: context line reads “Enhance Prompt · Cursor · N characters”; switching to Grammar updates the skill name; no selection after switching: “Grammar · Cursor” (not “No text selected” on that line)
+- [ ] In Cursor with a selection: no character count under the chips; “Using N prior turns” appears only when session context applies, and clicking it clears the thread
 - [ ] Replace: footer shows “Replaced in [app]” for ~2s, then the panel closes and the host text updates; a second click during the toast does nothing; Escape during the toast still writes
 - [ ] Select text on a webpage and invoke: **Enhance Prompt** is selected and already visible in the chip row (no horizontal swipe)
-- [ ] AI Search: ask twice — both Q&As stack plateless with a dotted rule between; window grows to 75% then scrolls; thread clears when the panel closes
+- [ ] AI Search: ask twice — both Q&As stack plateless with a dotted rule between; window grows to 75% then scrolls; a long thread keeps earlier turns (up to 100) and still scrolls; thread clears when the panel closes
 - [ ] Each answered turn shows copy / regenerate / like / dislike / pin icons; votes persist for the session and log as training signal; pin flashes a check without dismissing
 - [ ] AI Search regenerate rewrites only the latest answer; earlier turns stay
 - [ ] AI Search answers use `##` headings and body that read as distinct (size, weight, spacing)
@@ -43,13 +44,15 @@ Reset by clearing `hasCompletedGetStarted` (or a fresh install):
 
 ## Liquid Glass
 
-- [ ] Panel over a light document and a dark window: floating HUD glass (refraction, not a frosted fill); host does not show through as holes between modules
+- [ ] Panel over a light document and a dark window: floating HUD glass (refraction, not a black fill); host does not show through as holes between modules
+- [ ] Composer field is a distinct well on the glass; Reduce Transparency: opaque well, type still readable
+- [ ] Selected tab is a solid accent fill; idle tabs are outlined with primary type (no gray fill)
 - [ ] Result markdown and diffs stay readable on both hosts
 - [ ] Reduce Transparency on: panel becomes opaque canvas without relaunching
 - [ ] Reduce Transparency off: glass returns
 - [ ] Settings uses the system window material (not a grey card, not a blur of the host); General → About twice with no stacked pages
 - [ ] Window close traffic light has no square fill; shortcut recorder × has no dark bezel
-- [ ] Menu bar extra keeps the original row layout on system chrome; Enhance Clipboard, Dictate, Vault, Settings still work
+- [ ] Menu bar extra keeps the original row layout on system chrome; Enhance Clipboard is the accent CTA with the shortcut chip; Dictate, Vault, Settings, and Quit are outlined Haze pills; provider options use solid accent when selected; ready state is name + green dot only (no “Ready to refine…”); blocked states still say Needs Accessibility / Set up a provider
 
 ## Settings routes
 
@@ -76,7 +79,7 @@ Recording must be on (Data → Record usage):
 
 Vault, Actions, Targets, Runs should read as macOS Settings (source list + inspector), not a custom app:
 
-- [ ] Each list is a system source list: click, arrow keys, and selection use the system highlight (not a solid accent pill with inverted text)
+- [ ] Each list is a source list: click and arrow keys select; the row paints a Haze accent wash with primary text (not the system blue highlight, not a solid inverted pill). Sidebar nav uses a solid accent pill with inverted text; Lucide tiles stay colored squircles
 - [ ] Hairlines are full-bleed: title rule, toolbar rule, split, inspector bars. About sits in the same 48pt footer as list +/−; selected About uses the same row highlight as General / Models
 - [ ] Toolbar is always **search first**, then filters / Notes–Pins / More. Workspace inset is 16pt (not 32pt form padding)
 - [ ] Actions / Targets / Vault: **+/−** at the bottom of the list. More/Folder for import and export
@@ -96,6 +99,7 @@ Vault, Actions, Targets, Runs should read as macOS Settings (source list + inspe
 - [ ] Sidebar shows the download badge while it runs
 - [ ] Return to Models: progress is still accurate, Cancel works
 - [ ] Installed model appears in the Enhance and Grammar pickers
+- [ ] API preset + key in Models (or `BERU_API_KEY` when launched from a terminal): Test connection succeeds; panel provider picker enables API
 
 ## Session context (when touched)
 
@@ -118,10 +122,12 @@ Highlight a message in another app, invoke, then tap **Smart Reply**:
 - [ ] Funny and Witty mention a concrete detail from the selected message; Formal stays non-jokey
 - [ ] Tone pill jumps the highlight; clicking a card does the same; neither re-runs the model
 - [ ] Copy / Insert send only the selected card, not the tagged blob; every card owns primary Insert first, then copy / regenerate / like / dislike / pin on its own row, left-aligned; no footer on the tab
+- [ ] After Smart Reply, Enhance in the same app must not see `<reply` tags in prior-turn context
+- [ ] Grammar Corrected that paraphrases (synonym swaps) rechecks once, then keeps the original rather than replacing it
+- [ ] Summarize / Explain / Instruction: if the result is the source unchanged, the panel shows Retry — not a success
 - [ ] Hotkey with a comment selected in Chrome/Safari opens **Smart Reply** automatically
 - [ ] Roman Hinglish comment → all six replies stay in Roman/Latin (not Devanagari or German)
-- [ ] If the model mixes languages across cards, a language notice appears — try Regenerate
-- [ ] No selection on Grammar: idle says “Type or paste text”; composer matches; not “ask instead”. Type a sentence, Return → Grammar result; context line shows character count; composer is empty optional extras
+- [ ] No selection on Grammar: idle says “Type or paste text”; composer matches; not “ask instead”. Type a sentence, Return → Grammar result; no character count under the chips; composer is empty optional extras
 - [ ] With a selection, Grammar still auto-runs; composer stays optional extras; Replace unchanged
 - [ ] Type on Search with no selection, then click Enhance: Enhance runs on that text without a second Return
 - [ ] Grammar shows Corrected / Clearer / Tighter as borderless rows like Smart Reply; selected row has the accent wash and edge; every row owns primary Replace first, then copy / regenerate / like / dislike / pin, left-aligned; clicking a row selects it without re-running; row Replace sends that row's body; no footer and no token savings pill

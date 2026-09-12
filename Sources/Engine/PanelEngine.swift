@@ -54,6 +54,10 @@ final class PanelEngine {
     var lastDescribeInstruction: String?
     /// Regeneration count per action within the current invocation.
     var attempts: [String: Int] = [:]
+    /// Silent quality re-runs (parse / language / paraphrase / unchanged).
+    /// Capped at one per action per user-initiated start so a stubborn model
+    /// cannot loop. Reset when the user starts or regenerates, not when we retry.
+    var qualityRetries: [String: Int] = [:]
 
     /// Monotonic for the life of the process, never reset: a token that came
     /// round again could let a task cancelled in a previous invocation write
@@ -72,6 +76,7 @@ final class PanelEngine {
     /// Called when a new panel session begins, so attempt numbering restarts.
     func resetForNewInvocation() {
         attempts.removeAll()
+        qualityRetries.removeAll()
         // Nothing from the previous session is live any more. Clearing rather
         // than reassigning matters: an in-flight task holds a token that now
         // matches no entry, so it can no longer publish.
@@ -93,6 +98,14 @@ final class PanelEngine {
 
     func isLive(_ generation: Int, for actionID: String) -> Bool {
         liveGeneration[actionID] == generation
+    }
+
+    func canQualityRetry(for actionID: String) -> Bool {
+        (qualityRetries[actionID] ?? 0) < 1
+    }
+
+    func markQualityRetry(for actionID: String) {
+        qualityRetries[actionID, default: 0] += 1
     }
 
     /// Writes result state only while this generation is still the live one.

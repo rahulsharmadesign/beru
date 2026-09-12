@@ -20,31 +20,45 @@ extension PanelView {
     /// outcome. Their shell mounts only for result-level info with no row
     /// home (write-back toast, applied context). Enhance and the verb tabs
     /// keep a plain leading icon row — no glass, no overlap.
+    ///
+    /// The slot is always `footerMinHeight` so Search → Enhance cannot grow
+    /// the window when the icons appear (the reverse shrink is already frozen).
     var composerColumn: some View {
         VStack(spacing: 0) {
-            if showsFooter {
-                footer
-                    .fixedSize(horizontal: false, vertical: true)
-                    .zIndex(2)
-                    .opacity(footerReloading ? 0.5 : 1)
-                    .transition(.opacity.combined(with: .move(edge: .bottom)))
-            }
+            footerSlot
             intentField
+                .frame(maxWidth: .infinity)
                 .glassModule(
                     radius: PanelMetrics.composerRadius,
                     focusRing: describeFieldFocused,
-                    scrim: .well,
-                    bordered: true
+                    scrim: .well
                 )
                 .overlay { firstRunBeamOverlay }
+                .frame(maxWidth: .infinity)
+                .clipped()
                 .fixedSize(horizontal: false, vertical: true)
                 .zIndex(1)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .overlay(alignment: .bottom) {
             toastFallbackOverlay
         }
         .animation(nil, value: hasFinishedResult)
         .animation(nil, value: appState.selectedActionID)
+    }
+
+    /// Keeps chrome height stable across tabs. Empty on Search / Grammar /
+    /// Reply; filled on Enhance once a result is in.
+    var footerSlot: some View {
+        ZStack {
+            if showsFooter {
+                footer
+                    .opacity(footerReloading ? 0.5 : 1)
+            }
+        }
+        .frame(height: PanelMetrics.footerMinHeight)
+        .frame(maxWidth: .infinity)
+        .zIndex(2)
     }
 
     /// Transient confirmations ("Replaced in …", "Pinned") never resize the
@@ -57,14 +71,10 @@ extension PanelView {
     var toastFallbackOverlay: some View {
         Group {
             if toastVisible && !showsFooter {
-                toastText
+                    toastText
                     .padding(.horizontal, BeruSpace.sm)
                     .padding(.vertical, BeruSpace.xxs)
-                    .background {
-                        Capsule()
-                            .fill(BeruColor.subtleFill)
-                            .overlay(Capsule().strokeBorder(BeruColor.border, lineWidth: 1))
-                    }
+                    .beruGlassCapsule()
                     .padding(.bottom, BeruSpace.xl)
                     .transition(.opacity)
             }
@@ -133,9 +143,7 @@ extension PanelView {
             }
         }
         .padding(.horizontal, PanelMetrics.moduleInset)
-        .padding(.top, BeruSpace.xxs)
-        .padding(.bottom, BeruSpace.xxs)
-        .frame(minHeight: PanelMetrics.footerMinHeight, alignment: .center)
+        .frame(height: PanelMetrics.footerMinHeight, alignment: .center)
         .frame(maxWidth: .infinity)
         .animation(.easeOut(duration: 0.15), value: toastVisible)
     }
@@ -152,9 +160,9 @@ extension PanelView {
                 performReplace()
             } label: {
                 ZStack {
-                    BeruButton(
+                    BeruGlassButton(
                         title: primaryFooterTitle,
-                        variant: .primary,
+                        prominent: true,
                         size: .compact,
                         leadingIcon: "replace"
                     ) {}
@@ -265,7 +273,7 @@ extension PanelView {
                     if appState.describeInstruction.isEmpty {
                         Text(composerPlaceholder)
                             .font(BeruType.body)
-                            .foregroundStyle(BeruColor.textTertiary)
+                            .foregroundStyle(BeruColor.textSecondary)
                             .lineLimit(1)
                     }
                     ComposerTextField(
@@ -303,6 +311,7 @@ extension PanelView {
                 DictationButton(onNeedsPermission: { engine.requestDictationPermission() })
                 sendButton
             }
+            .frame(maxWidth: .infinity)
         }
         // Search mode swaps the icon, placeholder and the target/provider menu.
         // Scoped here so the composer card's own frame is not part of it.

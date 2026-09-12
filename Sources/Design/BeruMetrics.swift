@@ -15,12 +15,13 @@ enum BeruMetrics {
 
     /// Navigation sidebar in the settings window.
     static let sidebarWidth: CGFloat = 240
-    /// Settings sidebar icon tile. Mirrors macOS Settings tile metrics at
-    /// Beru's sidebar density: 20pt box, 16pt glyph, 5pt radius. Off the
-    /// 4pt grid on purpose — the OS tile geometry, not Beru spacing.
-    static let sidebarTileBox: CGFloat = 20
-    static let sidebarTileGlyph: CGFloat = 16
-    static let sidebarTileRadius: CGFloat = 5
+    /// Settings sidebar row. 36pt, on the 4pt grid.
+    static let sidebarRowHeight: CGFloat = 36
+    /// Settings sidebar icon tile: 28pt well, 20pt glyph. Radius 8 matches
+    /// `BeruRadius.sm` so the well is a rounded square, not a circle.
+    static let sidebarTileBox: CGFloat = 28
+    static let sidebarTileGlyph: CGFloat = 20
+    static let sidebarTileRadius: CGFloat = 8
     /// Secondary list column inside a workspace page (Actions, Targets, Vault).
     static let workspaceListWidth: CGFloat = 280
     static let workspaceListInset = BeruSpace.md
@@ -63,6 +64,9 @@ enum BeruMetrics {
     /// Haze round icon button. 32 max; compact 28 inside dense rows.
     static let roundButton: CGFloat = 32
     static let roundButtonSm: CGFloat = 28
+    /// Composer send. 40pt circle, on the 4pt grid, sized as the primary
+    /// action inside the well — larger than the 32pt mic beside it.
+    static let sendButton: CGFloat = 40
     /// Haze text-field well. 32 to match pills.
     static let fieldHeight: CGFloat = 32
     /// Text bounds of the shortcut recorder. Off the grid on purpose: without
@@ -87,6 +91,10 @@ enum BeruMetrics {
     /// dense chips, cites, and kbd.
     static let iconSize: CGFloat = 16
     static let iconSizeDense: CGFloat = 12
+    /// Compact glyph inside 28pt pills, tabs, and composer chips.
+    /// 14 sits between dense (12) and the 16pt default. Off the 4pt
+    /// grid on purpose.
+    static let iconSizeCompact: CGFloat = 14
     /// Haze hairline. 1pt rules and strokes live here so Panel and
     /// Dashboard never inline the off-grid literal.
     static let hairline: CGFloat = 1

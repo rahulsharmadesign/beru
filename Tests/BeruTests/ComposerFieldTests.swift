@@ -7,7 +7,7 @@ import XCTest
 @MainActor
 final class ComposerFieldTests: XCTestCase {
     private func makeScroll() -> (ComposerScrollView, GrowingComposerTextView) {
-        let font = NSFont.systemFont(ofSize: 13)
+        let font = BeruType.bodyNSFont
         let oneLine = GrowingComposerTextView.oneLineHeight(for: font)
         let textView = GrowingComposerTextView(frame: NSRect(x: 0, y: 0, width: 300, height: oneLine))
         textView.font = font
@@ -32,12 +32,12 @@ final class ComposerFieldTests: XCTestCase {
         XCTAssertLessThanOrEqual(scroll.intrinsicContentSize.height, scroll.maxHeight + 1)
     }
 
-    /// Three lines of 13pt system hold ~51pt. The old ascender + descender +
-    /// leading math measured ~60 and a fourth line slipped through.
+    /// Cap is three rendered lines of the body font, not the old leading math
+    /// that let a fourth line slip through.
     func testCapMatchesThreeRenderedLines() {
         let (scroll, _) = makeScroll()
-        XCTAssertGreaterThanOrEqual(scroll.maxHeight, 45)
-        XCTAssertLessThanOrEqual(scroll.maxHeight, 55)
+        let three = GrowingComposerTextView.oneLineHeight(for: BeruType.bodyNSFont) * 3
+        XCTAssertEqual(scroll.maxHeight, three)
     }
 
     func testReturnSubmits() {

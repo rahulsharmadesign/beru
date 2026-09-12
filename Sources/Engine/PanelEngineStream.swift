@@ -124,17 +124,6 @@ extension PanelEngine {
                     Self.strippedWrapping(body),
                     input: request.capturedText
                 )
-                if request.actionID == EnhancementAction.grammarID,
-                   self.isLive(request.generation, for: request.actionID) {
-                    let parsed = GrammarSuggestions.parse(final)
-                    self.appState.grammarSuggestions = parsed
-                    let preferred = SettingsStore.shared.interactionProfile.preferredGrammarKind ?? .corrected
-                    let kind = parsed.contains(where: { $0.kind == preferred }) ? preferred : .corrected
-                    self.appState.selectedGrammarKind = kind
-                    if let body = GrammarSuggestions.body(in: parsed, matching: kind) {
-                        final = body
-                    }
-                }
                 let totalMs = Self.milliseconds(clock.now - requestStart)
                 let ttfbMs = firstTokenAt.map { Self.milliseconds($0 - requestStart) }
                 engineLogger.notice("stream done for \(request.actionID), length = \(final.count), total = \(totalMs) ms, reasoning chunks discarded = \(reasoningChunks)")
@@ -148,34 +137,75 @@ extension PanelEngine {
                         attempt: request.attempt, totalMs: totalMs, reasoningChunks: reasoningChunks,
                         errorMessage: "empty response"
                     )
+                    return
+                }
+
+                let decision = OutputQuality.evaluate(
+                    actionID: request.actionID,
+                    raw: final,
+                    source: request.capturedText,
+                    selectedReplyTone: self.appState.selectedReplyTone,
+                    preferredGrammarKind: SettingsStore.shared.interactionProfile.preferredGrammarKind,
+                    canRetry: self.canQualityRetry(for: request.actionID)
+                )
+                switch decision.outcome {
+                case .retry(let previous, let hint):
+                    guard self.isLive(request.generation, for: request.actionID) else { return }
+                    self.markQualityRetry(for: request.actionID)
+                    self.publish(.loading, for: request.actionID, generation: request.generation)
+                    let actionID = request.actionID
+                    let instruction = request.threadInstruction.isEmpty ? nil : request.threadInstruction
+                    Task { @MainActor [weak self] in
+                        self?.start(
+                            actionID: actionID,
+                            previousResult: previous,
+                            instruction: instruction,
+                            retryHint: hint,
+                            isQualityRetry: true
+                        )
+                    }
+                    return
+                case .reject(let message):
+                    self.publish(.error(message), for: request.actionID, generation: request.generation)
+                    Self.recordOutcome(
+                        .generationFailed, invocationID: request.invocationID, actionID: request.actionID,
+                        attempt: request.attempt, totalMs: totalMs, reasoningChunks: reasoningChunks,
+                        errorMessage: message
+                    )
+                    return
+                case .publish:
+                    if request.actionID == EnhancementAction.replyID,
+                       self.isLive(request.generation, for: request.actionID) {
+                        self.appState.replySuggestions = decision.replySuggestions
+                        if let tone = decision.selectedReplyTone {
+                            self.appState.selectedReplyTone = tone
+                        }
+                    }
+                    if request.actionID == EnhancementAction.grammarID,
+                       self.isLive(request.generation, for: request.actionID) {
+                        self.appState.grammarSuggestions = decision.grammarSuggestions
+                        if let kind = decision.selectedGrammarKind {
+                            self.appState.selectedGrammarKind = kind
+                        }
+                    }
+                    final = decision.text
+                }
+
+                if final.isEmpty {
+                    self.publish(
+                        .error("The model returned an empty response — try Regenerate"),
+                        for: request.actionID, generation: request.generation
+                    )
+                    Self.recordOutcome(
+                        .generationFailed, invocationID: request.invocationID, actionID: request.actionID,
+                        attempt: request.attempt, totalMs: totalMs, reasoningChunks: reasoningChunks,
+                        errorMessage: "empty response"
+                    )
                 } else {
                     let savings = TokenSavings(input: request.capturedText, output: final)
                     self.appState.savings[request.actionID] = savings
-                    // "Nothing needed fixing" and "the tool did nothing" look
-                    // identical on screen, and the second reading is what makes
-                    // people hit Regenerate until the model invents changes.
-                    if final == request.capturedText.trimmingCharacters(in: .whitespacesAndNewlines) {
-                        self.appState.cleanNotices.insert(request.actionID)
-                    } else {
-                        self.appState.cleanNotices.remove(request.actionID)
-                    }
                     if let rationale, self.isLive(request.generation, for: request.actionID) {
                         self.appState.rationales[request.actionID] = rationale
-                    }
-                    if request.actionID == EnhancementAction.replyID,
-                       self.isLive(request.generation, for: request.actionID) {
-                        let policy = ReplyLanguagePolicy.analyze(request.capturedText)
-                        let parsed = ReplySuggestions.parse(final)
-                        self.appState.replySuggestions = parsed
-                        if ReplyLanguagePolicy.repliesViolatePolicy(parsed, input: policy) {
-                            self.appState.replyScriptNotices.insert(request.actionID)
-                        } else {
-                            self.appState.replyScriptNotices.remove(request.actionID)
-                        }
-                        if let first = parsed.first,
-                           !parsed.contains(where: { $0.tone == self.appState.selectedReplyTone }) {
-                            self.appState.selectedReplyTone = first.tone
-                        }
                     }
                     self.publish(.done(final), for: request.actionID, generation: request.generation)
                     // Recorded only for a result that actually reached the

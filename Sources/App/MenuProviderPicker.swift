@@ -38,9 +38,8 @@ struct MenuProviderPicker: View {
             .foregroundStyle(BeruColor.textPrimary)
             .padding(.horizontal, BeruSpace.sm)
             .frame(maxWidth: .infinity, minHeight: BeruMetrics.pillHeight, alignment: .leading)
-            .background(BeruColor.subtleFill, in: Capsule())
             .overlay {
-                Capsule().strokeBorder(BeruColor.border, lineWidth: 1)
+                Capsule().strokeBorder(BeruColor.strongBorder, lineWidth: BeruMetrics.hairline)
             }
             .contentShape(Capsule())
         }
@@ -58,22 +57,26 @@ struct MenuProviderPicker: View {
         } label: {
             HStack(spacing: BeruSpace.xs) {
                 BeruIcon(name: selected ? "check" : "cloud", size: BeruMetrics.iconSize, strokeWidth: 2)
-                    .foregroundStyle(selected ? BeruColor.accent : BeruColor.textSecondary)
+                    .foregroundStyle(selected ? BeruColor.onAccent : BeruColor.textSecondary)
                 Text(kind.title)
                     .font(BeruType.control)
                     .lineLimit(1)
                 Spacer(minLength: 0)
             }
             .foregroundStyle(
-                selected ? BeruColor.textPrimary
+                selected ? BeruColor.onAccent
                 : (settings.isConfigured(kind) ? BeruColor.textSecondary : BeruColor.textTertiary)
             )
             .padding(.horizontal, BeruSpace.sm)
             .frame(maxWidth: .infinity, minHeight: BeruMetrics.pillHeight, alignment: .leading)
-            .background(selected ? AnyShapeStyle(BeruColor.selectedRow) : AnyShapeStyle(Color.clear), in: Capsule())
-            .overlay {
+            .background {
                 if selected {
-                    Capsule().strokeBorder(BeruColor.strongBorder, lineWidth: 1)
+                    Capsule().fill(BeruColor.accent)
+                }
+            }
+            .overlay {
+                if !selected {
+                    Capsule().strokeBorder(BeruColor.strongBorder, lineWidth: BeruMetrics.hairline)
                 }
             }
             .contentShape(Capsule())

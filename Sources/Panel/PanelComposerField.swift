@@ -9,7 +9,7 @@ import SwiftUI
 struct ComposerTextField: NSViewRepresentable {
     @Binding var text: String
     var isFocused: Bool
-    var font: NSFont = .systemFont(ofSize: 13)
+    var font: NSFont = BeruType.bodyNSFont
     var maxLines: Int = 3
     var onSubmit: () -> Void
     var onFocusChange: (Bool) -> Void

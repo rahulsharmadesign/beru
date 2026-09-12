@@ -29,9 +29,6 @@ final class AppStateTests: XCTestCase {
         state.savings[EnhancementAction.enhanceID] = TokenSavings(input: "aaa", output: "b")
         state.diffs[EnhancementAction.enhanceID] = [.equal("x")]
         state.rationales[EnhancementAction.enhanceID] = "because"
-        state.heavyRewriteNotices.insert(EnhancementAction.enhanceID)
-        state.restyledNotices.insert(EnhancementAction.enhanceID)
-        state.cleanNotices.insert(EnhancementAction.enhanceID)
         state.errorProviders[EnhancementAction.enhanceID] = .ollama
         state.errorNeedsModelSetup.insert(EnhancementAction.enhanceID)
         return state
@@ -43,9 +40,6 @@ final class AppStateTests: XCTestCase {
         XCTAssertTrue(state.diffs.isEmpty, "diffs \(message)")
         XCTAssertTrue(state.rationales.isEmpty, "rationales \(message)")
         XCTAssertTrue(state.contextApplications.isEmpty, "contextApplications \(message)")
-        XCTAssertTrue(state.heavyRewriteNotices.isEmpty, "heavyRewriteNotices \(message)")
-        XCTAssertTrue(state.restyledNotices.isEmpty, "restyledNotices \(message)")
-        XCTAssertTrue(state.cleanNotices.isEmpty, "cleanNotices \(message)")
         XCTAssertTrue(state.errorProviders.isEmpty, "errorProviders \(message)")
         XCTAssertTrue(state.errorNeedsModelSetup.isEmpty, "errorNeedsModelSetup \(message)")
         XCTAssertNil(state.clipboardText, "clipboardText \(message)")

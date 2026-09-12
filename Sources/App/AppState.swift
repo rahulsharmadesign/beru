@@ -71,7 +71,9 @@ final class AppState {
     /// or idle state lands via `setResult`, and on dismiss / reset.
     var reloadingActions: Set<String> = []
     /// Soft ceiling for stacked Search turns in one panel session.
-    static let searchThreadMaxTurns = 20
+    /// Matches `SessionThread.storageCap` so the window can scroll as far
+    /// back as the model still remembers.
+    static let searchThreadMaxTurns = 100
     /// The instruction text typed into the intent bar.
     var describeInstruction: String = ""
     /// Which AI environment an enhanced prompt is being written for.
@@ -100,19 +102,6 @@ final class AppState {
     /// completes. Keyed like `results` and cleared with them; a missing entry
     /// means still streaming, or the computation hasn't finished.
     var diffs: [String: [DiffOp]] = [:]
-    /// Actions whose result changed most of the text, i.e. the model restyled
-    /// instead of correcting. Only ever populated for Grammar: for Enhance a
-    /// near-total rewrite is the intended outcome, so warning about it there
-    /// would be misleading.
-    var heavyRewriteNotices: Set<String> = []
-    /// Actions where the model rewrote rather than corrected — it replaced correct
-    /// words with unrelated ones. Shown alongside the diff, unlike
-    /// `heavyRewriteNotices` which replaces it.
-    var restyledNotices: Set<String> = []
-    /// Actions whose result came back identical to the input. Without saying so,
-    /// "nothing needed fixing" is indistinguishable from "the tool did nothing",
-    /// which is what drives people to hit Regenerate until it invents changes.
-    var cleanNotices: Set<String> = []
     /// The model's explanation of what it changed, per action. Keyed and cleared
     /// like `results` — advice attached to a result that is no longer on screen
     /// would describe the wrong text.
@@ -134,8 +123,6 @@ final class AppState {
     /// Which Grammar body the result field and Replace send. Default is the
     /// copy-edit; Clearer / Tighter are explicit picks.
     var selectedGrammarKind: GrammarKind = .corrected
-    /// Smart Reply when the model switched script (e.g. Roman in, Devanagari out).
-    var replyScriptNotices: Set<String> = []
     /// Search mode is the AI Search tab — a question, not a rewrite skill.
     var isQuickSearch = false
     /// When set, Replace writes the result back into this vault note instead of
@@ -230,13 +217,9 @@ final class AppState {
         diffs.removeAll()
         rationales.removeAll()
         contextApplications.removeAll()
-        heavyRewriteNotices.removeAll()
-        restyledNotices.removeAll()
-        cleanNotices.removeAll()
         errorProviders.removeAll()
         errorNeedsModelSetup.removeAll()
         replySuggestions = []
-        replyScriptNotices.removeAll()
         grammarSuggestions = []
         selectedGrammarKind = .corrected
     }
@@ -266,13 +249,9 @@ final class AppState {
         diffs.removeAll()
         rationales.removeAll()
         contextApplications.removeAll()
-        heavyRewriteNotices.removeAll()
-        restyledNotices.removeAll()
-        cleanNotices.removeAll()
         errorProviders.removeAll()
         errorNeedsModelSetup.removeAll()
         replySuggestions = []
-        replyScriptNotices.removeAll()
         grammarSuggestions = []
         selectedGrammarKind = .corrected
     }
@@ -335,9 +314,5 @@ final class AppState {
         guard let body = GrammarSuggestions.body(in: grammarSuggestions, matching: kind) else { return }
         setResult(.done(body), for: EnhancementAction.grammarID)
         diffs.removeValue(forKey: EnhancementAction.grammarID)
-        if kind != .corrected {
-            restyledNotices.remove(EnhancementAction.grammarID)
-            heavyRewriteNotices.remove(EnhancementAction.grammarID)
-        }
     }
 }

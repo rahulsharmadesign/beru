@@ -188,7 +188,7 @@ struct GetStartedView: View {
             body: "Beru lives in your menu bar. Select text in any app, press the shortcut, and improve it instantly. Fix grammar, refine prompts, write replies, or ask questions."
         ) {
             VStack(spacing: BeruSpace.lg) {
-                HStack(spacing: BeruSpace.xs) {
+                HStack(spacing: BeruSpace.xxs) {
                     BeruChip(icon: "wand-sparkles", title: "Fix grammar")
                     BeruChip(icon: "sparkles", title: "Refine prompts")
                     BeruChip(icon: "messages-square", title: "Write replies")
@@ -260,7 +260,7 @@ struct GetStartedView: View {
                     .foregroundStyle(BeruColor.textPrimary)
                     .multilineTextAlignment(.center)
                 Text(body)
-                    .font(BeruType.body)
+                    .beruPrintedText()
                     .foregroundStyle(BeruColor.textSecondary)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)

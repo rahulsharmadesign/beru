@@ -85,12 +85,8 @@ struct DropdownPill: View {
             }
             .padding(.horizontal, horizontalPadding)
             .frame(height: height)
-            .background {
-                Capsule()
-                    .fill(BeruColor.subtleFill)
-                    .overlay {
-                        Capsule().strokeBorder(BeruColor.border, lineWidth: 1)
-                    }
+            .overlay {
+                Capsule().strokeBorder(BeruColor.strongBorder, lineWidth: BeruMetrics.hairline)
             }
             .contentShape(Capsule())
         }
@@ -191,7 +187,7 @@ struct SettingsSegmented<Value: Hashable>: View {
                                     // plain hairline vanishes on it, so the
                                     // chip takes the strong stroke.
                                     if selected {
-                                        Capsule().strokeBorder(BeruColor.strongBorder, lineWidth: 1)
+                                        Capsule().strokeBorder(BeruColor.strongBorder, lineWidth: BeruMetrics.hairline)
                                     }
                                 }
                         }

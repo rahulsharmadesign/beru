@@ -111,7 +111,10 @@ struct ProviderSettingsSections: View {
                 OllamaModelIDPicker(selection: $settings.ollamaGrammarModel, accessibilityLabel: "Grammar model")
             }
         case .anthropic:
-            SettingsRow(title: "API key", caption: "Stored in the Keychain on this Mac.") {
+            SettingsRow(
+                title: "API key",
+                caption: "Stored in the Keychain. If empty, BERU_ANTHROPIC_API_KEY is used when Beru is launched from a terminal."
+            ) {
                 SettingsSecretField(placeholder: "sk-ant-…", text: $anthropicKey, width: BeruMetrics.wideFieldWidth)
             }
         case .custom:
@@ -133,7 +136,10 @@ struct ProviderSettingsSections: View {
             SettingsRow(title: "Base URL") {
                 SettingsField(placeholder: "https://api.example.com/v1", text: $settings.customBaseURL, width: BeruMetrics.wideFieldWidth)
             }
-            SettingsRow(title: "API key", caption: "Stored in the Keychain on this Mac.") {
+            SettingsRow(
+                title: "API key",
+                caption: "Stored in the Keychain. If empty, BERU_API_KEY is used when Beru is launched from a terminal."
+            ) {
                 SettingsSecretField(placeholder: "sk-…", text: $customKey, width: BeruMetrics.wideFieldWidth)
             }
             SettingsRow(title: "Model") {

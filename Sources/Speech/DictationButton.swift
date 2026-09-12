@@ -13,21 +13,22 @@ struct DictationButton: View {
     /// Settings → Permissions so the user can fix it.
     var onNeedsPermission: () -> Void = {}
 
+    @State private var isHovered = false
+
     var body: some View {
         ZStack {
             DictationPressView(onToggle: toggle)
-            Circle()
-                .fill(BeruColor.subtleFill)
-                .allowsHitTesting(false)
-            Circle()
-                .strokeBorder(BeruColor.border, lineWidth: 1)
-                .allowsHitTesting(false)
             BeruIcon(name: symbol, size: BeruMetrics.iconSize, strokeWidth: 2)
-                .foregroundStyle(tint)
+                .foregroundStyle(iconTint)
                 .allowsHitTesting(false)
         }
         .frame(width: BeruMetrics.roundButton, height: BeruMetrics.roundButton)
+        .background {
+            Circle().fill(isHovered ? BeruColor.hoverFill : Color.clear)
+        }
         .contentShape(Circle())
+        .onHover { isHovered = $0 }
+        .beruHoverEase(isHovered)
         .help(helpText)
         .accessibilityLabel(dictation.isRecording ? "Stop dictation" : "Dictate an instruction")
         .accessibilityHint(helpText)
@@ -75,9 +76,9 @@ struct DictationButton: View {
         return isActionable ? "audio-lines" : "mic-off"
     }
 
-    private var tint: AnyShapeStyle {
-        if dictation.isRecording { return AnyShapeStyle(BeruColor.destructive) }
-        return isActionable ? AnyShapeStyle(BeruColor.accent) : AnyShapeStyle(BeruColor.textTertiary)
+    private var iconTint: Color {
+        if dictation.isRecording { return BeruColor.destructive }
+        return BeruColor.textSecondary
     }
 
     private var helpText: String {

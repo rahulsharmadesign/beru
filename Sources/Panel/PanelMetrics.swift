@@ -57,8 +57,8 @@ enum PanelMetrics {
     }
     /// Horizontal chip row. Haze pill height.
     static var chipRowHeight: CGFloat { BeruMetrics.pillHeight }
-    /// Footer (regenerate / dismiss) refuses to compress below this.
-    /// Haze pill height.
+    /// Outcome-row slot above the composer. Always reserved so Search →
+    /// Enhance cannot grow the window when the icons appear. Haze pill height.
     static let footerMinHeight: CGFloat = 32
     /// Composer, including its internal padding. Must stay below the real
     /// idle composer height — the window floors to this when a band report

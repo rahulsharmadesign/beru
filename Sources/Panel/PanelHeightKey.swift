@@ -34,9 +34,11 @@ struct PanelLayoutHeights: Equatable {
     }
 
     /// How a shrink should land. Grow is always immediate and unanimated.
-    /// Tab changes skip the debounce and the window animator so close / composer
-    /// do not sit at the old Y for 0.3s. Streaming layout jitter still debounces;
-    /// a shrink during a stream is dropped until `streamingDidEnd` flushes.
+    /// Tab changes never shrink: Search has no footer and a different result
+    /// stack than Enhance, so applying the new ideal would jump the window.
+    /// Leftover height stays; the composer pins to the bottom. Streaming
+    /// layout jitter still skips; a shrink during a stream is dropped until
+    /// `streamingDidEnd` flushes. Other shrinks debounce.
     enum ShrinkBehavior: Equatable {
         case applyNowUnanimated
         case debounceAnimated
@@ -44,9 +46,23 @@ struct PanelLayoutHeights: Equatable {
     }
 
     static func shrinkBehavior(isTabChange: Bool, isStreaming: Bool) -> ShrinkBehavior {
-        if isTabChange { return .applyNowUnanimated }
+        if isTabChange { return .skip }
         if isStreaming { return .skip }
         return .debounceAnimated
+    }
+
+    /// After a tab switch, keep the taller window so Search ↔ Enhance cannot
+    /// jump. Result growth (a new Search answer) still wins; chrome-only
+    /// growth (the Enhance footer appearing) does not.
+    static func frozenTarget(
+        computed: CGFloat,
+        lastApplied: CGFloat,
+        heightFrozen: Bool,
+        resultGrew: Bool
+    ) -> CGFloat {
+        guard heightFrozen, lastApplied > 1 else { return computed }
+        if resultGrew { return max(computed, lastApplied) }
+        return lastApplied
     }
 
     /// Picks chrome and result that are safe to size the window from.

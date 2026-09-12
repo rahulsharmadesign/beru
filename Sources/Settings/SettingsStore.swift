@@ -238,13 +238,13 @@ final class SettingsStore {
                 && Self.isUsableModel(ollamaEnhanceModel)
                 && Self.isUsableModel(ollamaGrammarModel)
         case .anthropic:
-            return Self.isUsableKey(anthropicAPIKey)
+            return Self.isUsableKey(resolvedAnthropicAPIKey)
         case .custom:
             // Remote hosts (Groq, OpenAI, …) need a key; loopback servers often don't.
             guard Self.isUsableBaseURL(customBaseURL),
                   Self.isUsableModel(customEnhanceModel),
                   Self.isUsableModel(customGrammarModel) else { return false }
-            return Self.isLoopback(customBaseURL) || Self.isUsableKey(customAPIKey)
+            return Self.isLoopback(customBaseURL) || Self.isUsableKey(resolvedCustomAPIKey)
         }
     }
 
@@ -327,6 +327,25 @@ final class SettingsStore {
     var customAPIKey: String? {
         get { cachedKey(\.customKeyCache, account: "custom") }
         set { storeKey(newValue, cache: \.customKeyCache, account: "custom") }
+    }
+
+    /// Keychain first, then `BERU_ANTHROPIC_API_KEY`. Settings fields still
+    /// read `anthropicAPIKey` so an env value is not copied into Keychain.
+    var resolvedAnthropicAPIKey: String? {
+        ProviderAPIKey.resolved(
+            stored: anthropicAPIKey,
+            fallback: ProviderAPIKey.fromEnvironment(
+                name: ProviderAPIKey.anthropicEnvironmentVariable
+            )
+        )
+    }
+
+    /// Keychain first, then `BERU_API_KEY`.
+    var resolvedCustomAPIKey: String? {
+        ProviderAPIKey.resolved(
+            stored: customAPIKey,
+            fallback: ProviderAPIKey.fromEnvironment()
+        )
     }
 
     private var anthropicKeyCache: KeyCache = .unloaded

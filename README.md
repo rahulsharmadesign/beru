@@ -48,7 +48,7 @@ macOS 26+ only.
 
 ### Download (recommended)
 
-1. Download **Beru-1.1.14.dmg** from [Releases](https://github.com/rahulsharmadesign/beru/releases). Only the latest release is kept; older versions and their downloads are removed.
+1. Download **Beru-1.1.17.dmg** from [Releases](https://github.com/rahulsharmadesign/beru/releases). Only the latest release is kept; older versions and their downloads are removed.
 2. Open the DMG and drag **Beru** into **Applications**.
 3. macOS will block it (unsigned). Allow it once:
 

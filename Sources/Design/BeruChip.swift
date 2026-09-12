@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Haze chip: dense glyph + caption on a surface pill. Non-interactive
+/// Haze chip: dense glyph + caption on an outlined pill. Non-interactive
 /// decoration for feature hints and metadata rows; actions use `BeruButton`.
 struct BeruChip: View {
     let icon: String
@@ -13,20 +13,21 @@ struct BeruChip: View {
                 .font(BeruType.footnote)
         }
         .foregroundStyle(BeruColor.textSecondary)
-        .padding(.horizontal, BeruSpace.sm)
-        .frame(height: BeruMetrics.pillHeightSm)
+        .lineLimit(1)
+        .padding(.horizontal, BeruSpace.xs)
+        .frame(height: BeruMetrics.chipHeight)
         .background {
             Capsule()
-                .fill(BeruColor.subtleFill)
+                .fill(Color.clear)
                 .overlay {
-                    Capsule().strokeBorder(BeruColor.border, lineWidth: BeruMetrics.hairline)
+                    Capsule().strokeBorder(BeruColor.strongBorder, lineWidth: BeruMetrics.hairline)
                 }
         }
     }
 }
 
 /// Haze kbd chip: monospaced caption in a hairline well. `.onAccent` sits on
-/// the accent gradient (menu footer); `.neutral` sits on canvas or surface.
+/// the accent gradient (menu footer); `.neutral` is outlined on canvas.
 struct BeruKbd: View {
     enum Tone { case neutral, onAccent }
     let text: String
@@ -53,10 +54,10 @@ struct BeruKbd: View {
     }
 
     private var fill: Color {
-        tone == .onAccent ? BeruColor.onAccent.opacity(0.16) : BeruColor.subtleFill
+        tone == .onAccent ? BeruColor.onAccent.opacity(0.16) : Color.clear
     }
 
     private var stroke: Color {
-        tone == .onAccent ? BeruColor.onAccent.opacity(0.25) : BeruColor.border
+        tone == .onAccent ? BeruColor.onAccent.opacity(0.25) : BeruColor.strongBorder
     }
 }
