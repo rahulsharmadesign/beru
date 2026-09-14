@@ -13,6 +13,8 @@ Invoke with the hotkey and confirm nothing is clipped at the top or bottom and
 the window height fits the content:
 
 - [ ] Idle, with Accessibility granted (text selected, before running)
+- [ ] Idle placeholder copy stays centered between chips and composer when leftover height grows; panel is 480pt wide
+- [ ] A finished Enhance has no graduation / “why” line under the result
 - [ ] Idle, with Accessibility **not** granted (the placeholder card)
 - [ ] Loading: pixel dots in the result; send disc uses muted fill when idle, accent when the field can submit; no spinner on the button
 - [ ] Streaming: words print one by one with a blinking caret, newest word settling out of blur; Reduce Motion shows text as it arrives; composer does not bounce. Done Search answers gain markdown; history turns do not replay the typewriter
@@ -28,12 +30,13 @@ the window height fits the content:
 - [ ] In Cursor with a selection: no character count under the chips; “Using N prior turns” appears only when session context applies, and clicking it clears the thread
 - [ ] Replace: footer shows “Replaced in [app]” for ~2s, then the panel closes and the host text updates; a second click during the toast does nothing; Escape during the toast still writes
 - [ ] Select text on a webpage and invoke: **Enhance Prompt** is selected and already visible in the chip row (no horizontal swipe)
-- [ ] AI Search: ask twice — both Q&As stack plateless with a dotted rule between; window grows to 75% then scrolls; a long thread keeps earlier turns (up to 100) and still scrolls; thread clears when the panel closes
 - [ ] Each answered turn shows copy / regenerate / like / dislike / pin icons; votes persist for the session and log as training signal; pin flashes a check without dismissing
 - [ ] AI Search regenerate rewrites only the latest answer; earlier turns stay
 - [ ] AI Search answers use `##` headings and body that read as distinct (size, weight, spacing)
 - [ ] AI Search has no footer — turns own every outcome; turn copy never dismisses (close disc / Escape close instead); switching to Enhance Prompt brings the icon row and the token chip back without jumping height
-- [ ] Outcome row lives only on Enhance and the verb tabs: plain leading icons (copy, retry, like, dislike, write-back, pin) plus token pill; Grammar and Reply rows own all six each, and their tabs have no footer; row votes teach that row's tone/kind even when another is selected
+- [ ] Outcome row lives only on Enhance and the verb tabs: Replace keeps icon + label in the same muted color as copy (no accent fill); then copy / retry / like / dislike / pin plus token pill. Composer has no regenerate — retry is on this row only. Grammar and Reply rows own all six each, and their tabs have no footer; row votes teach that row's tone/kind even when another is selected
+- [ ] Composer well sits in the slab (quiet wash, not a bright card); Reduce Transparency still opaque
+- [ ] Enhance + Cursor on a short UI ask: result restates the asks as a short work order — no locate-the-file steps and no invented “confirm after these changes” checklist
 
 ## Get Started
 
@@ -45,14 +48,19 @@ Reset by clearing `hasCompletedGetStarted` (or a fresh install):
 ## Liquid Glass
 
 - [ ] Panel over a light document and a dark window: floating HUD glass (refraction, not a black fill); host does not show through as holes between modules
-- [ ] Composer field is a distinct well on the glass; Reduce Transparency: opaque well, type still readable
+- [ ] Composer field is a quiet well on the glass (not a bright card); Reduce Transparency: opaque well, type still readable
 - [ ] Selected tab is a solid accent fill; idle tabs are outlined with primary type (no gray fill)
 - [ ] Result markdown and diffs stay readable on both hosts
 - [ ] Reduce Transparency on: panel becomes opaque canvas without relaunching
 - [ ] Reduce Transparency off: glass returns
-- [ ] Settings uses the system window material (not a grey card, not a blur of the host); General → About twice with no stacked pages
+- [ ] Increase Contrast on: composer well, settings cards, and hairlines stay distinct on the glass without relaunching
+- [ ] System Settings Liquid Glass intensity: panel and Settings follow without relaunching; no second glass lens on the composer, toast, or chips
+- [ ] Composer Target and Provider menus keep their icons (they name an object). Reply tone, Delete, and action menus stay text + checkmark
+- [ ] Settings uses the same refractive slab as the panel (not a grey card, not a blur of the host); General → About twice with no stacked pages
+- [ ] Clicking panel chips, footer icons, Replace, or Send does not bounce the window
+- [ ] Hovering Replace / Copy / Pin shows the helper pill above the control, fully visible (not cropped by the composer)
 - [ ] Window close traffic light has no square fill; shortcut recorder × has no dark bezel
-- [ ] Menu bar extra keeps the original row layout on system chrome; Enhance Clipboard is the accent CTA with the shortcut chip; Dictate, Vault, Settings, and Quit are outlined Haze pills; provider options use solid accent when selected; ready state is name + green dot only (no “Ready to refine…”); blocked states still say Needs Accessibility / Set up a provider
+- [ ] Menu bar extra keeps the original row layout on system chrome; Enhance Clipboard is a solid accent CTA (no gradient) with the shortcut chip; Dictate, Vault, Settings, and Quit are outlined Haze pills; provider options use solid accent when selected; ready state is name + green dot only (no “Ready to refine…”); blocked states still say Needs Accessibility / Set up a provider
 
 ## Settings routes
 
@@ -114,6 +122,7 @@ Vault, Actions, Targets, Runs should read as macOS Settings (source list + inspe
 
 - [ ] Change the accent color: panel and Settings both repaint immediately
 - [ ] Switch system appearance while the panel is open: it follows
+- [ ] Menu bar mark is the SVG ant at 24.75pt, black in Light and white in Dark; switching appearance updates it without relaunching. Dock, About, Get Started, and the menu extra header show the same color mark (not the old winged bee). Spotlight / Dock may cache the old icon until Beru is reinstalled or the icon cache is cleared.
 
 ## Smart Reply
 
@@ -121,7 +130,7 @@ Highlight a message in another app, invoke, then tap **Smart Reply**:
 
 - [ ] Funny and Witty mention a concrete detail from the selected message; Formal stays non-jokey
 - [ ] Tone pill jumps the highlight; clicking a card does the same; neither re-runs the model
-- [ ] Copy / Insert send only the selected card, not the tagged blob; every card owns primary Insert first, then copy / regenerate / like / dislike / pin on its own row, left-aligned; no footer on the tab
+- [ ] Copy / Insert send only the selected card, not the tagged blob; every card owns Insert first (icon + label in the same muted color as copy), then copy / regenerate / like / dislike / pin on its own row, left-aligned; no footer on the tab
 - [ ] After Smart Reply, Enhance in the same app must not see `<reply` tags in prior-turn context
 - [ ] Grammar Corrected that paraphrases (synonym swaps) rechecks once, then keeps the original rather than replacing it
 - [ ] Summarize / Explain / Instruction: if the result is the source unchanged, the panel shows Retry — not a success
@@ -130,8 +139,8 @@ Highlight a message in another app, invoke, then tap **Smart Reply**:
 - [ ] No selection on Grammar: idle says “Type or paste text”; composer matches; not “ask instead”. Type a sentence, Return → Grammar result; no character count under the chips; composer is empty optional extras
 - [ ] With a selection, Grammar still auto-runs; composer stays optional extras; Replace unchanged
 - [ ] Type on Search with no selection, then click Enhance: Enhance runs on that text without a second Return
-- [ ] Grammar shows Corrected / Clearer / Tighter as borderless rows like Smart Reply; selected row has the accent wash and edge; every row owns primary Replace first, then copy / regenerate / like / dislike / pin, left-aligned; clicking a row selects it without re-running; row Replace sends that row's body; no footer and no token savings pill
-- [ ] Switching tabs dissolves selection between chips in place (no bounce, no traveling pill); close disc and composer move with the window immediately
+- [ ] Grammar shows Corrected / Clearer / Tighter as borderless rows like Smart Reply; selected row has the accent wash and edge; every row owns Replace first (icon + label in the same muted color as copy), then copy / regenerate / like / dislike / pin, left-aligned; clicking a row selects it without re-running; row Replace sends that row's body; no footer and no token savings pill
+- [ ] Switching tabs slides the accent highlight between chips with no bounce; type cross-fades in place; close disc and composer move with the window immediately
 
 ## Before release only
 

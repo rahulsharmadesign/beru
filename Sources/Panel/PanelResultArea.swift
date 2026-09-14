@@ -13,10 +13,6 @@ extension PanelView {
                 truncationBanner
             }
             resultArea
-            if let rationale = appState.rationales[appState.selectedActionID],
-               case .done = appState.resultState(for: appState.selectedActionID) {
-                RationaleNote(text: rationale)
-            }
         }
         // Inset inside clipShape so placeholder copy is not sheared by the
         // card radius. Height is intrinsic — the window sizes to the stack.
@@ -68,7 +64,7 @@ extension PanelView {
                     SelectedSourceQuote(text: appState.capturedText)
                 }
                 if appState.searchThread.isEmpty {
-                    idlePlaceholder
+                    idlePlaceholder()
                 } else {
                     searchThreadList
                 }
@@ -80,7 +76,7 @@ extension PanelView {
             } else if case .idle = state,
                       appState.selectedActionID == EnhancementAction.describeID
                         || appState.capturedText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                idlePlaceholder
+                idlePlaceholder()
             } else {
                 ResultView(state: state, usesMarkdown: usesSearchMarkdown)
             }
@@ -128,18 +124,28 @@ extension PanelView {
     }
 
     @ViewBuilder
-    var idlePlaceholder: some View {
-        if !a11y.isAccessibilityTrusted {
-            accessibilityPlaceholder
-        } else {
-            let needsSetup = appState.selectedActionID == EnhancementAction.searchID
-                && !SettingsStore.shared.isConfigured(SettingsStore.shared.activeProvider)
-            if needsSetup {
-                providerSetupPlaceholder
+    func idlePlaceholder(fillsBand: Bool = true) -> some View {
+        Group {
+            if !a11y.isAccessibilityTrusted {
+                accessibilityPlaceholder
             } else {
-                regularIdlePlaceholder
+                let needsSetup = appState.selectedActionID == EnhancementAction.searchID
+                    && !SettingsStore.shared.isConfigured(SettingsStore.shared.activeProvider)
+                if needsSetup {
+                    providerSetupPlaceholder
+                } else {
+                    regularIdlePlaceholder
+                }
             }
         }
+        .padding(.horizontal, BeruSpace.lg)
+        .padding(.vertical, PanelMetrics.moduleInset)
+        .frame(
+            maxWidth: .infinity,
+            minHeight: fillsBand ? PanelMetrics.resultIdleMinHeight : 0,
+            alignment: .center
+        )
+        .background(PanelDragRegion())
     }
 
     var accessibilityPlaceholder: some View {
@@ -147,11 +153,14 @@ extension PanelView {
             Text("Allow Accessibility")
                 .font(BeruType.bodyMedium)
                 .foregroundStyle(BeruColor.textPrimary)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: .infinity)
             Text("Beru needs Accessibility to read and replace selected text in other apps.")
                 .font(BeruType.footnote)
                 .foregroundStyle(BeruColor.textSecondary)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity)
             BeruGlassButton(
                 title: "Open System Settings",
                 prominent: true,
@@ -162,10 +171,6 @@ extension PanelView {
             }
             .padding(.top, BeruSpace.xxs)
         }
-        .padding(.horizontal, BeruSpace.lg)
-        .padding(.vertical, PanelMetrics.moduleInset)
-        .frame(maxWidth: .infinity, minHeight: PanelMetrics.resultIdleMinHeight)
-        .background(PanelDragRegion())
     }
 
     var regularIdlePlaceholder: some View {
@@ -174,16 +179,15 @@ extension PanelView {
             Text(copy.title)
                 .font(BeruType.bodyMedium)
                 .foregroundStyle(BeruColor.textPrimary)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: .infinity)
             Text(copy.subtitle)
                 .font(BeruType.footnote)
                 .foregroundStyle(BeruColor.textSecondary)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity)
         }
-        .padding(.horizontal, BeruSpace.lg)
-        .padding(.vertical, PanelMetrics.moduleInset)
-        .frame(maxWidth: .infinity, minHeight: PanelMetrics.resultIdleMinHeight)
-        .background(PanelDragRegion())
     }
 
     var providerSetupPlaceholder: some View {
@@ -191,11 +195,14 @@ extension PanelView {
             Text("Choose your AI model")
                 .font(BeruType.bodyMedium)
                 .foregroundStyle(BeruColor.textPrimary)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: .infinity)
             Text("Connect an AI provider or choose a local model to start using Beru.")
                 .font(BeruType.footnote)
                 .foregroundStyle(BeruColor.textSecondary)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity)
             VStack(spacing: BeruSpace.xs) {
                 BeruGlassButton(
                     title: "Connect a provider",
@@ -210,10 +217,6 @@ extension PanelView {
             }
             .padding(.top, BeruSpace.xxs)
         }
-        .padding(.horizontal, BeruSpace.lg)
-        .padding(.vertical, PanelMetrics.moduleInset)
-        .frame(maxWidth: .infinity, minHeight: PanelMetrics.resultIdleMinHeight)
-        .background(PanelDragRegion())
     }
 
     var truncationBanner: some View {
@@ -244,7 +247,7 @@ extension PanelView {
                 .foregroundStyle(BeruColor.textSecondary)
                 .multilineTextAlignment(.center)
             // Retry rows wrap: with fallbacks plus Connect to model the row
-            // can outgrow the 420pt panel, and clipped actions are dead ends.
+            // can outgrow the panel, and clipped actions are dead ends.
             WrapHStack(spacing: BeruSpace.xs, lineSpacing: BeruSpace.xs) {
                 BeruButton(title: "Retry", size: .compact) {
                     engine.retry(actionID: actionID)

@@ -146,7 +146,7 @@ final class FloatingPanel: NSPanel {
         } else {
             let glass = NSGlassEffectView(frame: bounds)
             glass.cornerRadius = PanelMetrics.cornerRadius
-            glass.style = .regular
+            LiquidGlassChrome.prepareWindowSlab(glass)
             glass.clipsToBounds = true
             glass.autoresizingMask = [.width, .height]
             glassView = glass

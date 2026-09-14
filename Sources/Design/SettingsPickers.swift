@@ -66,6 +66,7 @@ struct DropdownPill: View {
     var accessibilityLabel: String = ""
 
     @State private var anchor = DropdownAnchorView()
+    @State private var isHovered = false
 
     var body: some View {
         Button {
@@ -85,6 +86,9 @@ struct DropdownPill: View {
             }
             .padding(.horizontal, horizontalPadding)
             .frame(height: height)
+            .background {
+                Capsule().fill(isHovered ? BeruColor.hoverFill : Color.clear)
+            }
             .overlay {
                 Capsule().strokeBorder(BeruColor.strongBorder, lineWidth: BeruMetrics.hairline)
             }
@@ -92,6 +96,8 @@ struct DropdownPill: View {
         }
         .buttonStyle(.plain)
         .background { DropdownAnchor(view: anchor) }
+        .onHover { isHovered = $0 }
+        .beruHoverEase(isHovered)
         .accessibilityLabel(accessibilityLabel.isEmpty ? title : accessibilityLabel)
         .accessibilityValue(title)
     }
@@ -160,11 +166,15 @@ struct SettingsOverflowMenu: View {
 }
 
 /// Haze segmented control: capsule track, solid selected chip.
-/// Replaces `Picker(.segmented)`.
+/// Replaces `Picker(.segmented)`. The selected fill travels between options
+/// with the same spring as panel tabs (Animate UI highlight).
 struct SettingsSegmented<Value: Hashable>: View {
     @Binding var selection: Value
     let options: [SettingsPickerOption<Value>]
     var accessibilityLabel: String
+
+    @Namespace private var segmentHighlight
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         HStack(spacing: BeruSpace.hair) {
@@ -180,16 +190,17 @@ struct SettingsSegmented<Value: Hashable>: View {
                         .padding(.horizontal, BeruSpace.sm)
                         .frame(minHeight: BeruMetrics.pillHeightSm)
                         .background {
-                            Capsule()
-                                .fill(selected ? BeruColor.panelSolid : Color.clear)
-                                .overlay {
-                                    // panelSolid reads white in light mode; a
-                                    // plain hairline vanishes on it, so the
-                                    // chip takes the strong stroke.
-                                    if selected {
+                            if selected {
+                                Capsule()
+                                    .fill(BeruColor.panelSolid)
+                                    .overlay {
+                                        // panelSolid reads white in light mode; a
+                                        // plain hairline vanishes on it, so the
+                                        // chip takes the strong stroke.
                                         Capsule().strokeBorder(BeruColor.strongBorder, lineWidth: BeruMetrics.hairline)
                                     }
-                                }
+                                    .matchedGeometryEffect(id: "segmentHighlight", in: segmentHighlight)
+                            }
                         }
                         .contentShape(Capsule())
                 }
@@ -202,6 +213,7 @@ struct SettingsSegmented<Value: Hashable>: View {
             Capsule().fill(BeruColor.subtleFill)
         }
         .fixedSize()
+        .animation(reduceMotion ? nil : BeruMotion.tabSwitchAnimation, value: selection)
         .accessibilityElement(children: .contain)
         .accessibilityLabel(accessibilityLabel)
     }

@@ -76,4 +76,15 @@ enum CompatibleAPIPreset: String, CaseIterable, Identifiable {
         "llama3-70b-8192",
         "llama3-8b-8192"
     ]
+
+    /// Which preset a saved base URL corresponds to. Unknown hosts stay
+    /// Custom so a typed URL is never overwritten on the next Settings visit.
+    static func matching(baseURL: String) -> CompatibleAPIPreset {
+        let url = baseURL.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        if url.isEmpty { return .groq }
+        if url.contains("api.groq.com") { return .groq }
+        if url.contains("api.openai.com") { return .openAI }
+        if url.contains("openrouter.ai") { return .openRouter }
+        return .custom
+    }
 }

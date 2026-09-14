@@ -9,6 +9,23 @@ import SwiftUI
 /// This is the only file in the app allowed to hold a raw color literal.
 enum BeruColor {
 
+    /// Light/dark plus Increase Contrast. Named colors consult this so
+    /// hairlines and wells stay readable on macOS 27 Liquid Glass (intensity
+    /// slider + Increase Contrast) without a second glass lens.
+    struct DisplayTraits: Equatable {
+        var isDark: Bool
+        var isHighContrast: Bool
+
+        static func resolve(_ appearance: NSAppearance) -> DisplayTraits {
+            // macOS 27 collapsed high-contrast into a system switch. Named
+            // high-contrast appearances no longer survive `bestMatch` — they
+            // resolve as Aqua / Dark Aqua. Read the workspace flag instead.
+            let isDark = appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+            let isHighContrast = NSWorkspace.shared.accessibilityDisplayShouldIncreaseContrast
+            return DisplayTraits(isDark: isDark, isHighContrast: isHighContrast)
+        }
+    }
+
     // MARK: - Surfaces
 
     /// Page fill. Haze `--canvas`: #F2F3F6 light, #141517 dark.
@@ -19,15 +36,17 @@ enum BeruColor {
             : NSColor(srgbRed: 242 / 255, green: 243 / 255, blue: 246 / 255, alpha: 1)
     }
 
-    /// Composer field fill on the glass slab. Dark: 14% white hint. Light:
-    /// 72% white so the caret sits on a well, not the page.
+    /// Composer field fill on the glass slab. Dark: 8% white so the well
+    /// sits in the slab instead of reading as a second card. Light: 55%
+    /// white so the caret still has a well, not a bright plate.
     /// Reduce Transparency uses `panelSolid` instead (see `GlassModule`).
     static var composerWell: Color {
         Color(nsColor: NSColor(name: "BeruComposerWell") { appearance in
-            let dark = appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
-            return dark
-                ? NSColor.white.withAlphaComponent(0.14)
-                : NSColor.white.withAlphaComponent(0.72)
+            let traits = DisplayTraits.resolve(appearance)
+            if traits.isDark {
+                return NSColor.white.withAlphaComponent(traits.isHighContrast ? 0.16 : 0.08)
+            }
+            return NSColor.white.withAlphaComponent(traits.isHighContrast ? 0.78 : 0.55)
         })
     }
     /// Opaque plate for Reduce Transparency. Haze `--panel-solid`:
@@ -45,10 +64,11 @@ enum BeruColor {
     /// white 5% dark.
     static var surface: Color {
         Color(nsColor: NSColor(name: "BeruSurface") { appearance in
-            let dark = appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
-            return dark
-                ? NSColor.white.withAlphaComponent(0.05)
-                : NSColor.white.withAlphaComponent(0.72)
+            let traits = DisplayTraits.resolve(appearance)
+            if traits.isDark {
+                return NSColor.white.withAlphaComponent(traits.isHighContrast ? 0.12 : 0.05)
+            }
+            return NSColor.white.withAlphaComponent(traits.isHighContrast ? 0.88 : 0.72)
         })
     }
     /// Pill / well fill. Haze `--surface-2`: #F3F4F7 light, white 7% dark.
@@ -78,20 +98,22 @@ enum BeruColor {
     /// Hairline stroke. Haze `--hair`: ink 7% light, white 8% dark.
     static var border: Color {
         Color(nsColor: NSColor(name: "BeruHair") { appearance in
-            let dark = appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
-            return dark
-                ? NSColor.white.withAlphaComponent(0.08)
-                : NSColor(srgbRed: 17 / 255, green: 20 / 255, blue: 24 / 255, alpha: 0.07)
+            let traits = DisplayTraits.resolve(appearance)
+            if traits.isDark {
+                return NSColor.white.withAlphaComponent(traits.isHighContrast ? 0.32 : 0.08)
+            }
+            return NSColor(srgbRed: 17 / 255, green: 20 / 255, blue: 24 / 255, alpha: traits.isHighContrast ? 0.28 : 0.07)
         })
     }
     /// Only where a hairline must survive against a busy fill.
     /// Haze `--hair-strong`: ink 12% light, white 14% dark.
     static var strongBorder: Color {
         Color(nsColor: NSColor(name: "BeruHairStrong") { appearance in
-            let dark = appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
-            return dark
-                ? NSColor.white.withAlphaComponent(0.14)
-                : NSColor(srgbRed: 17 / 255, green: 20 / 255, blue: 24 / 255, alpha: 0.12)
+            let traits = DisplayTraits.resolve(appearance)
+            if traits.isDark {
+                return NSColor.white.withAlphaComponent(traits.isHighContrast ? 0.45 : 0.14)
+            }
+            return NSColor(srgbRed: 17 / 255, green: 20 / 255, blue: 24 / 255, alpha: traits.isHighContrast ? 0.40 : 0.12)
         })
     }
     /// Lit 1pt along the top edge. Haze `--edge`.
@@ -133,10 +155,12 @@ enum BeruColor {
                 : NSColor(srgbRed: 160 / 255, green: 166 / 255, blue: 177 / 255, alpha: 1)
         })
     }
-    /// Status-item bee. Always white: Light appearance still paints a dark
-    /// menu bar over a dark wallpaper, and a template black glyph disappears
-    /// against Control Center / Wi-Fi which stay white in that slot.
-    static var menuBarGlyphNSColor: NSColor { .white }
+    /// Status-item mark. Black in Light, white in Dark. Baked as `.original`
+    /// so wallpaper-tinted menu bars cannot invert a template glyph.
+    static let menuBarGlyphNSColor = NSColor(name: "BeruMenuBarGlyph") { appearance in
+        let dark = appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+        return dark ? .white : .black
+    }
     static var menuBarGlyph: Color { Color(nsColor: menuBarGlyphNSColor) }
 
     /// Glyph on a colored sidebar tile. Always white so it reads on every

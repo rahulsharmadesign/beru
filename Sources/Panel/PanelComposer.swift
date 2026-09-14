@@ -58,7 +58,6 @@ extension PanelView {
         }
         .frame(height: PanelMetrics.footerMinHeight)
         .frame(maxWidth: .infinity)
-        .zIndex(2)
     }
 
     /// Transient confirmations ("Replaced in …", "Pinned") never resize the
@@ -74,7 +73,7 @@ extension PanelView {
                     toastText
                     .padding(.horizontal, BeruSpace.sm)
                     .padding(.vertical, BeruSpace.xxs)
-                    .beruGlassCapsule()
+                    .beruOverlayCapsule()
                     .padding(.bottom, BeruSpace.xl)
                     .transition(.opacity)
             }
@@ -148,21 +147,25 @@ extension PanelView {
         .animation(.easeOut(duration: 0.15), value: toastVisible)
     }
 
-    /// Primary write-back first and left-aligned: Replace (Insert on Reply,
-    /// Apply on a vault note) is the main action, so it owns the primary
-    /// pill with its icon. The token pill sits far right as a side note.
+    /// Write-back first and left-aligned: Replace (Insert on Reply, Apply
+    /// on a vault note) matches the copy-row type color. The token pill
+    /// sits far right as a side note.
     /// Clicks travel through `PanelHitCapsule`: window-drag swallows plain
     /// buttons here.
     @ViewBuilder
     var footerPrimaryAction: some View {
         if !isSearchTab && !isGrammar && !isSmartReply && showsHostWriteAction {
-            PanelHitCapsule(help: primaryFooterHelp, accessibilityLabel: primaryFooterTitle) {
+            PanelHitCapsule(
+                help: primaryFooterHoverHelp,
+                accessibilityLabel: primaryFooterTitle,
+                showsHelpPill: true
+            ) {
                 performReplace()
             } label: {
                 ZStack {
                     BeruGlassButton(
                         title: primaryFooterTitle,
-                        prominent: true,
+                        secondary: true,
                         size: .compact,
                         leadingIcon: "replace"
                     ) {}
@@ -192,36 +195,50 @@ extension PanelView {
             let actionID = appState.selectedActionID
             let vote = appState.resultFeedback[actionID]
             PanelHitCapsule(
-                help: appState.copiedFeedback ? "Copied" : "Copy to clipboard",
-                accessibilityLabel: appState.copiedFeedback ? "Copied" : "Copy"
+                help: appState.copiedFeedback ? "Copied" : "Copy response",
+                accessibilityLabel: appState.copiedFeedback ? "Copied" : "Copy",
+                showsHelpPill: true
             ) {
                 performCopy()
             } label: {
                 SearchActionButton(
                     icon: appState.copiedFeedback ? "check" : "copy",
-                    help: "Copy",
+                    help: appState.copiedFeedback ? "Copied" : "Copy response",
                     tint: appState.copiedFeedback ? BeruColor.positive : nil
                 ) {}
                 .animation(.easeOut(duration: 0.15), value: appState.copiedFeedback)
             }
-            PanelHitCapsule(help: "Regenerate", accessibilityLabel: "Regenerate") {
+            PanelHitCapsule(
+                help: "Regenerate",
+                accessibilityLabel: "Regenerate",
+                showsHelpPill: true
+            ) {
                 engine.retry(actionID: actionID)
             } label: {
                 SearchActionButton(icon: "rotate-cw", help: "Regenerate") {}
             }
-            PanelHitCapsule(help: "Good result — helps Beru learn", accessibilityLabel: "Like") {
+            PanelHitCapsule(
+                help: "Good result",
+                accessibilityLabel: "Like",
+                showsHelpPill: true
+            ) {
                 setResultVoteFooter(liked: true)
             } label: {
-                SearchActionButton(icon: "thumbs-up", help: "Like", active: vote == true) {}
-            }
-            PanelHitCapsule(help: "Bad result — helps Beru learn", accessibilityLabel: "Dislike") {
-                setResultVoteFooter(liked: false)
-            } label: {
-                SearchActionButton(icon: "thumbs-down", help: "Dislike", active: vote == false) {}
+                SearchActionButton(icon: "thumbs-up", help: "Good result", active: vote == true) {}
             }
             PanelHitCapsule(
-                help: appState.pinnedFeedback ? "Pinned" : "Save this result in the vault",
-                accessibilityLabel: appState.pinnedFeedback ? "Pinned" : "Pin"
+                help: "Bad result",
+                accessibilityLabel: "Dislike",
+                showsHelpPill: true
+            ) {
+                setResultVoteFooter(liked: false)
+            } label: {
+                SearchActionButton(icon: "thumbs-down", help: "Bad result", active: vote == false) {}
+            }
+            PanelHitCapsule(
+                help: appState.pinnedFeedback ? "Pinned" : "Pin",
+                accessibilityLabel: appState.pinnedFeedback ? "Pinned" : "Pin",
+                showsHelpPill: true
             ) {
                 performPin()
             } label: {
@@ -293,20 +310,9 @@ extension PanelView {
                 } else {
                     providerMenu
                 }
-                // Rows own regenerate on Search, Grammar, and Reply — the
-                // composer button stays for Enhance and the verb tabs.
-                if !isSearchTab && !isGrammar && !isSmartReply {
-                    PanelIconHitButton(
-                        icon: "rotate-cw",
-                        help: "Regenerate",
-                        hint: "Run this action again on the same input",
-                        enabled: hasFinishedResult || isErrorState
-                    ) {
-                        engine.retry(actionID: appState.selectedActionID)
-                    }
-                }
-                // Mic and send ride the trailing edge; the provider/target pill
-                // and regenerate own the leading edge.
+                // Mic and send ride the trailing edge; the provider/target
+                // pill owns the leading edge. Regenerate lives on the
+                // outcome row (Enhance) or on Search / Grammar / Reply rows.
                 Spacer(minLength: 0)
                 DictationButton(onNeedsPermission: { engine.requestDictationPermission() })
                 sendButton
@@ -333,7 +339,7 @@ extension PanelView {
     }
 
     var canSubmitDescribe: Bool {
-        !appState.describeInstruction.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        return !appState.describeInstruction.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
     func submitDescribe() {

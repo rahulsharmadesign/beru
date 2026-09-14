@@ -75,10 +75,14 @@ struct OpenAICompatProvider: LLMProvider {
     /// from the OpenAI-compatible base URL. Returns nil when the URL doesn't
     /// have that shape, so a non-Ollama local server is never poked.
     func nativeGenerateURL() -> URL? {
+        nativeAPIURL(path: "/api/generate")
+    }
+
+    func nativeAPIURL(path: String) -> URL? {
         var trimmed = baseURL.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
         guard trimmed.hasSuffix("/v1") else { return nil }
         trimmed.removeLast("/v1".count)
-        return URL(string: trimmed + "/api/generate")
+        return URL(string: trimmed + path)
     }
 
     /// Reasoning models emit a chain-of-thought pass before any answer. For

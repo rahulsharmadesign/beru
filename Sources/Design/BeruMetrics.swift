@@ -87,6 +87,9 @@ enum BeruMetrics {
     static let menuDropdownWidth: CGFloat = 320
     /// Brand mark in the menu-bar header. Off the grid on purpose.
     static let brandMark: CGFloat = 30
+    /// Status-item glyph. 18 × 1.25 × 1.10 = 24.75 so the SVG mark
+    /// reads at a glance. Off the grid on purpose.
+    static let menuBarGlyph: CGFloat = 24.75
     /// Haze glyph size. 16 across the app; 12-14 allowed only inside
     /// dense chips, cites, and kbd.
     static let iconSize: CGFloat = 16
@@ -126,6 +129,9 @@ enum BeruMetrics {
     static let savingsMeterHeight: CGFloat = 3
     /// Haze metapill height for status pills on the panel.
     static let metapillHeight: CGFloat = 26
+    /// Lift the hover helper so it sits above the control. The footer row
+    /// clips a pill parked underneath (composer well covers it).
+    static var helpPillOffset: CGFloat { pillHeight + BeruSpace.xs }
     /// Minimum height for workspace source-list rows, so one-line and
     /// two-line rows keep the same vertical rhythm.
     static let workspaceRowMinHeight: CGFloat = 48

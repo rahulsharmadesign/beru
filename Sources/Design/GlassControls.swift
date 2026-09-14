@@ -25,7 +25,7 @@ struct BeruGlassContainer<Content: View>: View {
 /// How a panel control sits on the window slab. `.glass` is a second
 /// refractive lens and muddies NSGlassEffectView — do not use it there.
 enum BeruGlassKind {
-    /// Filled accent control. Selected tab, Replace, Send when ready.
+    /// Filled accent control. Selected tab, Send when ready.
     case prominent
     /// No extra material. Idle tabs, menus, and icon actions on the slab.
     case plain
@@ -36,38 +36,83 @@ enum BeruGlassKind {
 struct BeruGlassButton: View {
     let title: String
     var prominent: Bool = false
+    /// Outlined hairline pill in the same muted type as copy. Replace /
+    /// Insert / Apply keep this look — never an accent fill.
+    var secondary: Bool = false
     var size: BeruButton.Size = .compact
     var leadingIcon: String?
     var trailingIcon: String?
     var enabled: Bool = true
+    /// Hover helper pill. Empty skips it.
+    var help: String = ""
     let action: () -> Void
 
+    @State private var isHovered = false
+    @Environment(\.beruParentHovered) private var parentHovered
+
+    private var hovered: Bool { enabled && (isHovered || parentHovered) }
+
     var body: some View {
-        BeruGlassControl(
-            kind: prominent ? .prominent : .plain,
-            enabled: enabled,
-            size: controlSize,
-            action: action
-        ) {
-            HStack(spacing: BeruSpace.xxs) {
-                if let leadingIcon {
-                    BeruIcon(name: leadingIcon, size: iconSize)
-                }
-                Text(title)
-                    .font(font)
-                    .lineLimit(1)
-                if let trailingIcon {
-                    BeruIcon(name: trailingIcon, size: iconSize)
-                }
+        if secondary {
+            Button(action: action) {
+                labelStack
+                    .foregroundStyle(BeruColor.textSecondary)
+                    .padding(.horizontal, BeruSpace.sm)
+                    .frame(height: height)
+                    .background {
+                        Capsule()
+                            .fill(hovered ? BeruColor.hoverFill : Color.clear)
+                            .overlay {
+                                Capsule().strokeBorder(
+                                    BeruColor.strongBorder,
+                                    lineWidth: BeruMetrics.hairline
+                                )
+                            }
+                    }
+                    .contentShape(Capsule())
             }
-            .padding(.horizontal, BeruSpace.sm)
+            .buttonStyle(.plain)
+            .disabled(!enabled)
+            .fixedSize()
             .frame(height: height)
+            .clipShape(Capsule())
+            .contentShape(Capsule())
+            .opacity(enabled ? 1 : 0.45)
+            .onHover { isHovered = $0 }
+            .beruHoverEase(hovered)
+            .beruHoverHelp(help, isVisible: hovered && !parentHovered)
+            .accessibilityLabel(help.isEmpty ? title : help)
+        } else {
+            BeruGlassControl(
+                kind: prominent ? .prominent : .plain,
+                enabled: enabled,
+                size: controlSize,
+                action: action
+            ) {
+                labelStack
+                    .padding(.horizontal, BeruSpace.sm)
+                    .frame(height: height)
+                    .contentShape(Capsule())
+            }
+            .fixedSize()
+            .frame(height: height)
+            .clipShape(Capsule())
             .contentShape(Capsule())
         }
-        .fixedSize()
-        .frame(height: height)
-        .clipShape(Capsule())
-        .contentShape(Capsule())
+    }
+
+    private var labelStack: some View {
+        HStack(spacing: BeruSpace.xxs) {
+            if let leadingIcon {
+                BeruIcon(name: leadingIcon, size: iconSize)
+            }
+            Text(title)
+                .font(font)
+                .lineLimit(1)
+            if let trailingIcon {
+                BeruIcon(name: trailingIcon, size: iconSize)
+            }
+        }
     }
 
     private var controlSize: ControlSize {
@@ -92,34 +137,50 @@ struct BeruGlassButton: View {
 /// lens on the slab, never a capsule, never a square.
 /// Visual only: the panel wraps this in `PanelHitCapsule` so window-drag
 /// cannot swallow the click.
+///
+/// The accent fill is a shared `matchedGeometryEffect` highlight (Animate UI
+/// `layoutId`). Type still cross-fades as two baked layers so it never
+/// interpolates through muddy midtones.
 struct BeruGlassChip: View {
     let title: String
     let icon: String
     var isSelected: Bool
     var isHovered: Bool = false
+    var highlightNamespace: Namespace.ID
 
     private var chipShape: RoundedRectangle { BeruRadius.shape(BeruRadius.sm2) }
 
     var body: some View {
+        ZStack {
+            if isSelected {
+                chipShape.fill(BeruColor.accent)
+                    .matchedGeometryEffect(id: "tabHighlight", in: highlightNamespace)
+            }
+
+            chipLabel(BeruColor.textPrimary)
+                .overlay {
+                    chipShape.strokeBorder(BeruColor.strongBorder, lineWidth: BeruMetrics.hairline)
+                }
+                .compositingGroup()
+                .opacity(isSelected ? 0 : 1)
+
+            chipLabel(BeruColor.onAccent)
+                .compositingGroup()
+                .opacity(isSelected ? 1 : 0)
+        }
+        .frame(height: BeruMetrics.tabHeight)
+        .contentShape(chipShape)
+        .opacity(isSelected || isHovered ? 1 : 0.92)
+        .beruTabSwitchEase(isSelected)
+    }
+
+    private func chipLabel(_ color: Color) -> some View {
         BeruLabel(title: title, icon: icon, iconSize: BeruMetrics.iconSizeCompact, strokeWidth: 2)
             .labelStyle(.titleAndIcon)
             .font(BeruType.footnoteMedium)
-            .foregroundStyle(isSelected ? BeruColor.onAccent : BeruColor.textPrimary)
+            .foregroundStyle(color)
             .padding(.horizontal, BeruSpace.sm)
             .frame(height: BeruMetrics.tabHeight)
-            .background {
-                chipShape.fill(isSelected ? BeruColor.accent : Color.clear)
-            }
-            .overlay {
-                chipShape.strokeBorder(
-                    isSelected ? Color.clear : BeruColor.strongBorder,
-                    lineWidth: BeruMetrics.hairline
-                )
-            }
-            .clipShape(chipShape)
-            .contentShape(chipShape)
-            .opacity(isSelected || isHovered ? 1 : 0.92)
-            .beruTabSwitchEase(isSelected)
     }
 }
 
@@ -227,9 +288,15 @@ struct BeruGlassControl<Label: View>: View {
 }
 
 extension View {
-    /// Capsule glass for non-button chrome (token pill, toast).
+    /// Capsule glass for chrome that is not already sitting on a window slab.
+    /// Do not use this on the panel or Settings — that stacks glass on glass.
     func beruGlassCapsule(interactive: Bool = false) -> some View {
         modifier(BeruGlassCapsule(interactive: interactive))
+    }
+
+    /// Solid capsule on a glass slab (toast, token chip). Not a second lens.
+    func beruOverlayCapsule() -> some View {
+        modifier(BeruOverlayCapsule())
     }
 }
 
@@ -241,6 +308,18 @@ private struct BeruGlassCapsule: ViewModifier {
             content.glassEffect(.regular.interactive(), in: Capsule())
         } else {
             content.glassEffect(.regular, in: Capsule())
+        }
+    }
+}
+
+private struct BeruOverlayCapsule: ViewModifier {
+    func body(content: Content) -> some View {
+        content.background {
+            Capsule()
+                .fill(BeruColor.panelSolid)
+                .overlay {
+                    Capsule().strokeBorder(BeruColor.strongBorder, lineWidth: BeruMetrics.hairline)
+                }
         }
     }
 }

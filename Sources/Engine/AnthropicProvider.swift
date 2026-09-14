@@ -49,6 +49,10 @@ struct AnthropicProvider: LLMProvider {
         return adaptive.contains { modelID.hasPrefix($0) }
     }
 
+    static func userMessageObject(text: String) -> [String: Any] {
+        ["role": "user", "content": text]
+    }
+
     private func requestBody(
         system: String,
         user: String,
@@ -66,7 +70,7 @@ struct AnthropicProvider: LLMProvider {
             ),
             "stream": true,
             "system": system,
-            "messages": [["role": "user", "content": user]]
+            "messages": [Self.userMessageObject(text: user)]
         ]
         if Self.acceptsTemperature(modelID) {
             body["temperature"] = ProviderTuning.temperature(for: role, actionID: actionID)
@@ -79,7 +83,11 @@ struct AnthropicProvider: LLMProvider {
 
     /// Exposes the assembled body so tests can assert the model-specific rules
     /// (omitted temperature, disabled thinking) without making a network call.
-    func requestBodyForTesting(system: String, user: String, role: ModelRole) -> [String: Any] {
+    func requestBodyForTesting(
+        system: String,
+        user: String,
+        role: ModelRole
+    ) -> [String: Any] {
         requestBody(system: system, user: user, role: role)
     }
 

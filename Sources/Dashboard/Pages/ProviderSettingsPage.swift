@@ -12,6 +12,8 @@ struct ProviderSettingsSections: View {
     @State private var anthropicKey: String = ""
     @State private var customKey: String = ""
     @State private var apiPreset: CompatibleAPIPreset = .groq
+    /// Bumped when a named preset writes URL/model so AppKit text fields remount.
+    @State private var fieldStamp = 0
 
     enum TestState: Equatable {
         case idle, testing, success, failure(String)
@@ -54,11 +56,10 @@ struct ProviderSettingsSections: View {
         }
         .onAppear {
             hydrateKeysForActiveProvider()
-            apiPreset = Self.detectPreset(baseURL: settings.customBaseURL)
+            apiPreset = CompatibleAPIPreset.matching(baseURL: settings.customBaseURL)
             if settings.activeProvider == .custom {
                 if settings.customBaseURL.isEmpty {
                     applyAPIPreset(.groq)
-                    apiPreset = .groq
                 } else if apiPreset == .groq, settings.customEnhanceModel.isEmpty {
                     applyAPIPreset(.groq)
                 }
@@ -68,7 +69,6 @@ struct ProviderSettingsSections: View {
             hydrateKeysForActiveProvider()
             if kind == .custom, settings.customBaseURL.isEmpty {
                 applyAPIPreset(.groq)
-                apiPreset = .groq
             }
         }
         .onChange(of: anthropicKey) { _, newValue in
@@ -76,6 +76,12 @@ struct ProviderSettingsSections: View {
         }
         .onChange(of: customKey) { _, newValue in
             settings.customAPIKey = newValue
+        }
+        .onChange(of: settings.customBaseURL) { _, url in
+            let detected = CompatibleAPIPreset.matching(baseURL: url)
+            if detected != apiPreset {
+                apiPreset = detected
+            }
         }
         .onChange(of: settings.customEnhanceModel) { oldValue, newValue in
             if settings.customGrammarModel.isEmpty || settings.customGrammarModel == oldValue {
@@ -123,18 +129,23 @@ struct ProviderSettingsSections: View {
                 caption: "Groq, OpenAI, OpenRouter, LM Studio, or any OpenAI-compatible /v1 API."
             ) {
                 SettingsMenuPicker(
-                    selection: $apiPreset,
+                    selection: Binding(
+                        get: { apiPreset },
+                        set: { applyAPIPreset($0) }
+                    ),
                     options: CompatibleAPIPreset.allCases.map {
                         SettingsPickerOption(value: $0, title: $0.title)
                     },
                     accessibilityLabel: "API preset"
                 )
-                .onChange(of: apiPreset) { _, preset in
-                    applyAPIPreset(preset)
-                }
             }
             SettingsRow(title: "Base URL") {
-                SettingsField(placeholder: "https://api.example.com/v1", text: $settings.customBaseURL, width: BeruMetrics.wideFieldWidth)
+                SettingsField(
+                    placeholder: "https://api.example.com/v1",
+                    text: $settings.customBaseURL,
+                    width: BeruMetrics.wideFieldWidth
+                )
+                .id("base-\(fieldStamp)")
             }
             SettingsRow(
                 title: "API key",
@@ -144,9 +155,11 @@ struct ProviderSettingsSections: View {
             }
             SettingsRow(title: "Model") {
                 SettingsField(placeholder: "Model id", text: $settings.customEnhanceModel)
+                    .id("enhance-\(fieldStamp)")
             }
             SettingsRow(title: "Grammar model", caption: "Optional. Defaults to the same model.") {
                 SettingsField(placeholder: "Optional", text: $settings.customGrammarModel)
+                    .id("grammar-\(fieldStamp)")
             }
         }
     }
@@ -161,19 +174,12 @@ struct ProviderSettingsSections: View {
     }
 
     private func applyAPIPreset(_ preset: CompatibleAPIPreset) {
+        apiPreset = preset
         guard preset != .custom else { return }
         settings.customBaseURL = preset.baseURL
         settings.customEnhanceModel = preset.defaultModel
         settings.customGrammarModel = preset.defaultModel
-    }
-
-    private static func detectPreset(baseURL: String) -> CompatibleAPIPreset {
-        let url = baseURL.lowercased()
-        if url.contains("api.groq.com") { return .groq }
-        if url.contains("api.openai.com") { return .openAI }
-        if url.contains("openrouter.ai") { return .openRouter }
-        if url.isEmpty { return .groq }
-        return .custom
+        fieldStamp += 1
     }
 
     @ViewBuilder

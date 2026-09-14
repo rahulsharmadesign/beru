@@ -137,7 +137,10 @@ final class DashboardWindowController: NSWindowController, NSWindowDelegate {
 
         guard let host = hostedView, let window else { return }
 
-        let bounds = window.contentLayoutRect
+        // Same full-window slab as the panel. `contentLayoutRect` left the
+        // titleband on the system material, so Settings read more opaque.
+        let bounds = window.contentView?.bounds
+            ?? NSRect(origin: .zero, size: window.frame.size)
         if wantOpaque {
             let canvas = DashboardCanvasView(frame: bounds)
             canvas.autoresizingMask = [.width, .height]
@@ -151,7 +154,7 @@ final class DashboardWindowController: NSWindowController, NSWindowDelegate {
             canvas.refreshColors()
         } else {
             let glass = NSGlassEffectView(frame: bounds)
-            glass.style = .regular
+            LiquidGlassChrome.prepareWindowSlab(glass)
             glass.autoresizingMask = [.width, .height]
             glassView = glass
             window.contentView = glass

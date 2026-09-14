@@ -3,8 +3,10 @@ import Observation
 
 /// Live view of the system accessibility switches the panel must honor.
 /// `NSGlassEffectView` has no opacity control, so Reduce Transparency swaps
-/// the panel to an opaque card. Custom overlays and springs still need this
-/// live read — the user should not have to relaunch for a change to take effect.
+/// the panel to an opaque card. Increase Contrast thickens hairlines and wells
+/// through `BeruColor.DisplayTraits`. Custom overlays and springs still need
+/// this live read — the user should not have to relaunch for a change to take
+/// effect.
 ///
 /// Also owns Accessibility (AX) trust, which the panel previously re-read on a
 /// 1-second loop for as long as it was open. Polling keeps the process awake and
@@ -25,6 +27,7 @@ final class AccessibilityPreferences {
 
     private(set) var reduceTransparency = false
     private(set) var reduceMotion = false
+    private(set) var increaseContrast = false
     private(set) var isAccessibilityTrusted = false
 
     /// Undocumented but long-standing notification name for AX trust changes.
@@ -64,6 +67,7 @@ final class AccessibilityPreferences {
         let workspace = NSWorkspace.shared
         reduceTransparency = workspace.accessibilityDisplayShouldReduceTransparency
         reduceMotion = workspace.accessibilityDisplayShouldReduceMotion
+        increaseContrast = workspace.accessibilityDisplayShouldIncreaseContrast
     }
 
     /// Re-reads AX trust. Publishes only on change so views do not invalidate on

@@ -63,8 +63,12 @@ struct PanelSettingsLink: View {
 struct PanelHitCapsule<Label: View>: View {
     var help: String
     var accessibilityLabel: String? = nil
+    /// Solid helper pill above the control instead of the native tooltip.
+    var showsHelpPill: Bool = false
     var action: () -> Void
     @ViewBuilder var label: () -> Label
+
+    @State private var isHovered = false
 
     var body: some View {
         ZStack {
@@ -74,7 +78,11 @@ struct PanelHitCapsule<Label: View>: View {
                 .accessibilityHidden(true)
         }
         .fixedSize()
-        .help(help)
+        .onHover { isHovered = $0 }
+        .beruHoverEase(isHovered)
+        .environment(\.beruParentHovered, isHovered)
+        .beruHoverHelp(help, isVisible: showsHelpPill && isHovered)
+        .beruNativeHelp(help, enabled: !showsHelpPill)
         .accessibilityLabel(accessibilityLabel ?? help)
         .accessibilityAddTraits(.isButton)
     }

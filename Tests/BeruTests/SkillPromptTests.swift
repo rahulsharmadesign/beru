@@ -47,6 +47,7 @@ final class BuiltInPromptScopeTests: XCTestCase {
         XCTAssertTrue(Prompts.enhance.contains("not the finished deliverable"))
         XCTAssertTrue(Prompts.enhance.contains("immediately usable"))
         XCTAssertTrue(Prompts.enhance.contains("Do not add length limits"))
+        XCTAssertTrue(Prompts.enhance.contains("Do not grow a complete request into locate / modify / confirm steps"))
         XCTAssertFalse(Prompts.enhance.contains("under 20 lines"))
     }
 

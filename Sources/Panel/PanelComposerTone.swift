@@ -15,7 +15,9 @@ extension PanelView {
         appState.selectedActionID == EnhancementAction.searchID || appState.isQuickSearch
     }
 
-    var showsHostWriteAction: Bool { !isSearchTab }
+    var showsHostWriteAction: Bool {
+        !isSearchTab
+    }
 
     var isGrammar: Bool {
         appState.selectedActionID == EnhancementAction.grammarID
@@ -24,7 +26,11 @@ extension PanelView {
     /// Savings is "this rewrite is cheaper to paste into an AI". Search,
     /// Smart Reply, and Grammar are not tighter prompts — Grammar's number
     /// reads as a correction count.
-    var showsTokenSavings: Bool { !isSearchTab && !isSmartReply && !isGrammar }
+    var showsTokenSavings: Bool {
+        !isSearchTab
+            && !isSmartReply
+            && !isGrammar
+    }
 
     var primaryFooterTitle: String {
         if appState.vaultNoteID != nil { return "Apply" }
@@ -39,6 +45,12 @@ extension PanelView {
             return "Paste this reply into the focused field (Cmd-Return)"
         }
         return "Replace the selection (Cmd-Return)"
+    }
+
+    /// Short hover pill. Matches the ChatGPT "Copy response" helper format.
+    var primaryFooterHoverHelp: String {
+        if appState.vaultNoteID != nil { return "Apply to note" }
+        return isSmartReply ? "Insert reply" : "Replace selection"
     }
 
     var toneMenu: some View {

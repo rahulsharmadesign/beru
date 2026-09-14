@@ -66,3 +66,52 @@ final class ProviderConfigurationTests: XCTestCase {
         XCTAssertTrue(SettingsStore.isUsableKey("sk-abc123"))
     }
 }
+
+final class CompatibleAPIPresetTests: XCTestCase {
+    func testMatchingRecognisesKnownHosts() {
+        XCTAssertEqual(
+            CompatibleAPIPreset.matching(baseURL: "https://api.groq.com/openai/v1"),
+            .groq
+        )
+        XCTAssertEqual(
+            CompatibleAPIPreset.matching(baseURL: "https://api.openai.com/v1"),
+            .openAI
+        )
+        XCTAssertEqual(
+            CompatibleAPIPreset.matching(baseURL: "https://openrouter.ai/api/v1"),
+            .openRouter
+        )
+    }
+
+    func testMatchingTreatsUnknownHostsAsCustom() {
+        XCTAssertEqual(
+            CompatibleAPIPreset.matching(baseURL: "http://127.0.0.1:1234/v1"),
+            .custom
+        )
+        XCTAssertEqual(
+            CompatibleAPIPreset.matching(baseURL: "https://api.example.com/v1"),
+            .custom
+        )
+    }
+
+    func testMatchingEmptyURLDefaultsToGroq() {
+        XCTAssertEqual(CompatibleAPIPreset.matching(baseURL: ""), .groq)
+        XCTAssertEqual(CompatibleAPIPreset.matching(baseURL: "  "), .groq)
+    }
+
+    func testMatchingIsCaseInsensitive() {
+        XCTAssertEqual(
+            CompatibleAPIPreset.matching(baseURL: "HTTPS://API.GROQ.COM/openai/v1"),
+            .groq
+        )
+    }
+
+    func testNamedPresetsCarryABaseURLAndModel() {
+        for preset in CompatibleAPIPreset.allCases where preset != .custom {
+            XCTAssertFalse(preset.baseURL.isEmpty, "\(preset.title) needs a base URL")
+            XCTAssertFalse(preset.defaultModel.isEmpty, "\(preset.title) needs a default model")
+        }
+        XCTAssertTrue(CompatibleAPIPreset.custom.baseURL.isEmpty)
+        XCTAssertTrue(CompatibleAPIPreset.custom.defaultModel.isEmpty)
+    }
+}

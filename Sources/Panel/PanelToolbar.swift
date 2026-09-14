@@ -97,19 +97,20 @@ extension PanelView {
     func selectTab(_ actionID: String) {
         guard actionID != appState.selectedActionID else { return }
         // Do not wrap selectAction in withAnimation — that re-lays out chrome
-        // with the window. Selection cross-dissolves on each chip instead.
+        // with the window. The chip row owns the highlight spring instead.
         appState.selectAction(actionID)
     }
 
     /// AppKit hit target: a SwiftUI `Button` on this row is stolen by
-    /// window-drag, so the chip never selects. Selection dissolve lives on
+    /// window-drag, so the chip never selects. Highlight travel lives on
     /// the chip; do not wrap `selectAction` in `withAnimation`.
     func chip(for action: EnhancementAction) -> some View {
         PanelTabChip(
             title: action.name,
             icon: action.icon,
             isSelected: appState.selectedActionID == action.id,
-            help: action.summary
+            help: action.summary,
+            highlightNamespace: tabHighlight
         ) {
             selectTab(action.id)
         }
@@ -153,6 +154,7 @@ private struct PanelTabChip: View {
     let icon: String
     let isSelected: Bool
     let help: String
+    var highlightNamespace: Namespace.ID
     let action: () -> Void
 
     @State private var isHovered = false
@@ -163,7 +165,8 @@ private struct PanelTabChip: View {
                 title: title,
                 icon: icon,
                 isSelected: isSelected,
-                isHovered: isHovered
+                isHovered: isHovered,
+                highlightNamespace: highlightNamespace
             )
         }
         .onHover { isHovered = $0 }

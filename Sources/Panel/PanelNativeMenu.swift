@@ -96,6 +96,9 @@ extension PanelView {
                     systemSymbolName: IconNames.system(stored: icon),
                     accessibilityDescription: nil
                 )
+                // Target and provider rows are objects, not actions — HIG
+                // keeps those symbols visible. macOS 27 hides them otherwise.
+                LiquidGlassChrome.keepMenuImageVisible(menuItem)
             }
             menu.addItem(menuItem)
         }

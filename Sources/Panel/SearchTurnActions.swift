@@ -15,31 +15,31 @@ extension PanelView {
         return HStack(spacing: BeruSpace.hair) {
             SearchActionButton(
                 icon: copied ? "check" : "copy",
-                help: copied ? "Copied" : "Copy this answer",
+                help: copied ? "Copied" : "Copy response",
                 tint: copied ? BeruColor.positive : nil
             ) {
                 copySearchTurn(text: text, id: turn.id)
             }
-            SearchActionButton(icon: "rotate-cw", help: "Regenerate this answer") {
+            SearchActionButton(icon: "rotate-cw", help: "Regenerate") {
                 engine.regenerateSearchTurn(id: turn.id)
             }
             SearchActionButton(
                 icon: "thumbs-up",
-                help: "Good answer — helps Beru learn",
+                help: "Good result",
                 active: vote == true
             ) {
                 setSearchVote(turn, liked: true)
             }
             SearchActionButton(
                 icon: "thumbs-down",
-                help: "Bad answer — helps Beru learn",
+                help: "Bad result",
                 active: vote == false
             ) {
                 setSearchVote(turn, liked: false)
             }
             SearchActionButton(
                 icon: pinned ? "check" : "pin",
-                help: pinned ? "Pinned" : "Pin this answer",
+                help: pinned ? "Pinned" : "Pin",
                 tint: pinned ? BeruColor.positive : nil
             ) {
                 pinSearchTurn(text: text, id: turn.id)

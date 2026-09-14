@@ -70,9 +70,9 @@ enum DesignSnapshot {
                 let result = Int(bands[.result] ?? -1)
                 logged += "prefs[top=\(top) bottom=\(bottom) result=\(result)]; "
             }
-        let seed = snap(view.frame(width: 420, height: 430).background(BeruColor.panelGradient))
+        let seed = snap(view.frame(width: PanelMetrics.width, height: 430).background(BeruColor.panelGradient))
         render(seed, name: "panel-seed", appearance: .darkAqua, to: root)
-        let cap = snap(view.frame(width: 420, height: 900).background(BeruColor.panelGradient))
+        let cap = snap(view.frame(width: PanelMetrics.width, height: 900).background(BeruColor.panelGradient))
         render(cap, name: "panel-cap", appearance: .darkAqua, to: root)
         // Band callbacks arrive via DispatchQueue.main.async; give them a beat.
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
@@ -232,6 +232,7 @@ enum DesignSnapshot {
                         BeruChip(icon: "messages-square", title: "Write replies")
                         BeruKbd(text: "⌃⌥⌘P")
                         BeruKbd(text: "⌃⌥⌘P", tone: .onAccent)
+                        BeruHelpPill(text: "Copy response")
                     }
                 }
 

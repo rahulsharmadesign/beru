@@ -10,11 +10,19 @@ final class AppearanceObserver {
     static let shared = AppearanceObserver()
     private(set) var signature: String
     private var distributed: NSObjectProtocol?
+    private var accessibility: NSObjectProtocol?
 
     private init() {
-        signature = NSApp.effectiveAppearance.name.rawValue
+        signature = Self.makeSignature()
         distributed = DistributedNotificationCenter.default().addObserver(
             forName: Notification.Name("AppleInterfaceThemeChangedNotification"),
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated { self?.refresh() }
+        }
+        accessibility = NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification,
             object: nil,
             queue: .main
         ) { [weak self] _ in
@@ -23,11 +31,24 @@ final class AppearanceObserver {
     }
 
     func refresh() {
-        signature = NSApp.effectiveAppearance.name.rawValue
+        signature = Self.makeSignature()
         let appearance = NSApp.effectiveAppearance
         for window in NSApp.windows {
             window.appearance = appearance
             (window as? FloatingPanel)?.syncAppearance(with: appearance)
         }
+    }
+
+    /// Light/dark plus Increase Contrast / Reduce Transparency / Reduce Motion,
+    /// so named `BeruColor` tokens re-resolve when Liquid Glass accessibility
+    /// settings change without a relaunch.
+    private static func makeSignature() -> String {
+        let workspace = NSWorkspace.shared
+        return [
+            NSApp.effectiveAppearance.name.rawValue,
+            workspace.accessibilityDisplayShouldIncreaseContrast ? "c" : "-",
+            workspace.accessibilityDisplayShouldReduceTransparency ? "t" : "-",
+            workspace.accessibilityDisplayShouldReduceMotion ? "m" : "-"
+        ].joined(separator: "|")
     }
 }

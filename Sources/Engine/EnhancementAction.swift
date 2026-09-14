@@ -222,7 +222,7 @@ struct EnhancementAction: Identifiable, Codable, Equatable {
     )
 
     /// Always the first chip. Not in `ActionRegistry` so Settings → Actions,
-    /// Cmd-2…9, and the default-action picker stay on rewrite skills.
+    /// Cmd-3…9, and the default-action picker stay on rewrite skills.
     static let search = EnhancementAction(
         id: searchID,
         name: "AI Search",

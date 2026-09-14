@@ -19,7 +19,7 @@ struct BeruButton: View {
         case large
         /// Settings and dashboard. 32.
         case regular
-        /// The panel, where a 420pt width has to hold several actions. 28.
+        /// The panel, where a 480pt width has to hold several actions. 28.
         case compact
     }
 
@@ -158,6 +158,9 @@ struct BeruIconButton: View {
     let action: () -> Void
 
     @State private var isHovered = false
+    @Environment(\.beruParentHovered) private var parentHovered
+
+    private var hovered: Bool { enabled && (isHovered || parentHovered) }
 
     var body: some View {
         Button(action: action) {
@@ -166,16 +169,16 @@ struct BeruIconButton: View {
                 .frame(width: frameSize, height: frameSize)
                 .background {
                     BeruRadius.shape(BeruRadius.sm)
-                        .fill(isHovered && enabled ? BeruColor.hoverFill : .clear)
+                        .fill(hovered ? BeruColor.hoverFill : .clear)
                 }
         }
         .buttonStyle(.plain)
         .disabled(!enabled)
         .fixedSize()
         .opacity(enabled ? 1 : 0.45)
-        .help(help)
         .accessibilityLabel(help)
         .onHover { isHovered = $0 }
-.beruHoverEase(isHovered)
+        .beruHoverEase(hovered)
+        .beruHoverHelp(help, isVisible: hovered && !parentHovered)
     }
 }

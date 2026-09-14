@@ -150,7 +150,8 @@ final class PanelEngine {
             break
         }
         let instruction: String? = {
-            if actionID == EnhancementAction.searchID || actionID == EnhancementAction.describeID {
+            if actionID == EnhancementAction.searchID
+                || actionID == EnhancementAction.describeID {
                 let live = appState.describeInstruction.trimmingCharacters(in: .whitespacesAndNewlines)
                 if !live.isEmpty { return live }
                 return lastDescribeInstruction
@@ -170,8 +171,8 @@ final class PanelEngine {
     /// would cancel the first stream and look exactly like a hang.
     func runDescribe(instruction: String) {
         let trimmed = instruction.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return }
         let current = appState.selectedActionID
+        guard !trimmed.isEmpty else { return }
         let capturedEmpty = appState.capturedText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         // Quick search (no selection) still uses the one-off instruction path.
         // Otherwise stay on the chip the user is on — switching to describe

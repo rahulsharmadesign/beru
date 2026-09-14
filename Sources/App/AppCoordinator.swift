@@ -276,11 +276,10 @@ final class AppCoordinator {
             )
         )
         panelController.show(at: anchor, appState: appState, engine: engine)
-        // The dictate key listens only while the panel is up.
         pushToTalk.arm()
-        // Search waits for a query. Skills auto-run only when there is text.
-        if hasCapture, appState.selectedActionID != EnhancementAction.searchID {
-            engine.startIfNeeded(actionID: appState.selectedActionID)
+        let landing = appState.selectedActionID
+        if hasCapture && landing != EnhancementAction.searchID {
+            engine.startIfNeeded(actionID: landing)
         }
     }
 
@@ -310,10 +309,7 @@ final class AppCoordinator {
         source: String? = nil,
         windowTitle: String? = nil
     ) -> String {
-        if openOnSearch || needsSetup {
-            return EnhancementAction.searchID
-        }
-        guard hasCapture else {
+        if openOnSearch || needsSetup || !hasCapture {
             return EnhancementAction.searchID
         }
         // Clipboard and vault sources hand Beru text directly; they are not

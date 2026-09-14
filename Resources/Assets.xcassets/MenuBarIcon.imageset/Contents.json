@@ -1,14 +1,25 @@
 {
   "images" : [
-    { "filename" : "menubar_18.png", "idiom" : "universal", "scale" : "1x" },
-    { "filename" : "menubar_18@2x.png", "idiom" : "universal", "scale" : "2x" },
-    { "filename" : "menubar_18@3x.png", "idiom" : "universal", "scale" : "3x" }
+    {
+      "filename" : "Black.svg",
+      "idiom" : "universal"
+    },
+    {
+      "appearances" : [
+        {
+          "appearance" : "luminosity",
+          "value" : "dark"
+        }
+      ],
+      "filename" : "White.svg",
+      "idiom" : "universal"
+    }
   ],
   "info" : {
     "author" : "xcode",
     "version" : 1
   },
   "properties" : {
-    "template-rendering-intent" : "template"
+    "preserves-vector-representation" : true
   }
 }

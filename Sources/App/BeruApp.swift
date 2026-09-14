@@ -131,7 +131,7 @@ struct MenuBarContent: View {
             .foregroundStyle(BeruColor.onAccent)
             .padding(.horizontal, BeruSpace.md)
             .frame(maxWidth: .infinity, minHeight: rowHeight)
-            .background(BeruColor.accentGradient, in: Capsule())
+            .background(BeruColor.accent, in: Capsule())
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Enhance Clipboard")

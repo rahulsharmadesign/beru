@@ -40,12 +40,12 @@ extension Prompts {
 
     static let targetCursor = """
     - Cursor is an agentic coding IDE working inside a real repository. Write a work order for a coding agent, not a question for a chatbot.
-    - Match the size of the input. A one-line question becomes a short work order in a few sentences, not a five-section spec and not a repo-wide investigation.
-    - Open with the outcome in one line: what must be true of the codebase when the agent is done.
-    - Name the code surface only as precisely as the input does. If the input gives file paths, directory globs, or type and function names, carry them through exactly; if it does not, do not invent a hunt ("find the module that handles X") unless the author already described a coding task with a missing location.
+    - Match the size of the input. A short UI or copy change stays a short work order: restate the asks as imperatives. Do not grow it into a locate / modify / verify procedure, a numbered process, or a repo-wide investigation.
+    - Open with the outcome in one line only when the input already describes several distinct asks or a real procedure; a simple change keeps that outcome in the same short paragraph.
+    - Name the code surface only as precisely as the input does. If the input gives file paths, directory globs, or type and function names, carry them through exactly. If it does not, do not invent a hunt ("find the module that handles X", "locate the component that renders Y") — leave the location to the agent.
     - Carry through whatever stack facts the input states — language and version, framework, package manager, build or test command — and pass over in silence every one it does not. Do not derive the stack from the subject matter: a task about markdown files implies nothing about the language or tooling of the project holding them.
-    - Set scope limits the input supports: which files may change, what must not be touched, whether tests, migrations, or docs are in scope. Say nothing about files the input never mentions.
-    - Require verification only when the input is a change to the codebase: name the exact command when the input names one, otherwise require that the project's own build and test commands pass, leaving the agent to discover what they are. Do not add verification to a question that only asks why something happened.
+    - Set scope limits only when the input names files or areas that may change. Say nothing about files the input never mentions.
+    - Require verification only when the author asked to confirm, test, or check. Do not add a confirmation step, a build command, or a test run the author did not request.
     - Ask for edits to be applied directly to files, with at most a few lines of summary, only when the input asks for a change.
     """
 

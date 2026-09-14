@@ -283,13 +283,18 @@ final class TargetInventionRuleTests: XCTestCase {
         let fragment = cursor.promptFragment
         for regression in [
             "State the stack facts that constrain the edit:",
-            "Require verification: name the command that must pass"
+            "Require verification: name the command that must pass",
+            "unless the author already described a coding task with a missing location",
+            "otherwise require that the project's own build and test commands pass"
         ] {
             XCTAssertFalse(
                 fragment.contains(regression),
-                "Unconditional demand restored, which fabricated a path and a build command in 4/8 runs: \(regression)"
+                "Unconditional demand restored, which fabricated a path, a hunt, or a build command: \(regression)"
             )
         }
+        XCTAssertTrue(fragment.contains("do not invent a hunt"))
+        XCTAssertTrue(fragment.contains("Do not grow it into a locate / modify / verify procedure"))
+        XCTAssertTrue(fragment.contains("Require verification only when the author asked"))
 
         // Each surviving bullet that asks for a fact about the user's project has
         // to carry its own escape hatch, since the backstop alone measured only

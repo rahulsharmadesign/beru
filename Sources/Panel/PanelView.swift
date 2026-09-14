@@ -24,6 +24,11 @@ struct PanelView: View {
     /// Identity of the composer first-run beam lap. Regenerated whenever the
     /// beam should run again (fresh open, or returning to the AI Search tab).
     @State var beamRunID = UUID()
+    /// Shared by verb chips so the accent fill can travel between them.
+    @Namespace var tabHighlight
+    /// Last measured chrome bands, used to center idle copy in leftover height.
+    @State var chromeTopHeight: CGFloat = 0
+    @State var chromeBottomHeight: CGFloat = 0
 
     init(
         appState: AppState,
@@ -70,6 +75,14 @@ struct PanelView: View {
                     .padding(.horizontal, PanelMetrics.moduleInset)
                     .padding(.bottom, PanelMetrics.moduleInset)
                     .padding(.top, PanelMetrics.moduleSpacing)
+            }
+            .overlay {
+                if showsIdlePlaceholderOnly {
+                    idlePlaceholder(fillsBand: false)
+                        .padding(.horizontal, PanelMetrics.moduleInset)
+                        .offset(y: idleCopyOffsetY)
+                        .allowsHitTesting(idlePlaceholderIsInteractive)
+                }
             }
             .ignoresSafeArea()
             .tint(BeruColor.accent)
@@ -134,33 +147,43 @@ struct PanelView: View {
     /// Search threads pin to the latest turn so follow-ups stay in view.
     @ViewBuilder
     var resultSlot: some View {
-        let measured = resultModule.reportsPanelBand(.result)
-
-        if let scrollHeight = appState.panelResultScrollHeight {
-            ScrollViewReader { proxy in
-                ScrollView {
-                    measured
-                }
-                .scrollBounceBehavior(.basedOnSize)
-                .frame(height: scrollHeight)
+        if showsIdlePlaceholderOnly {
+            // Reserve the idle band for window sizing. The copy itself is
+            // overlaid on the leftover gap between chips and composer so it
+            // stays centered when the window is taller than chrome + idle.
+            Color.clear
+                .frame(height: PanelMetrics.resultIdleMinHeight)
                 .frame(maxWidth: .infinity)
-                // Cap touchdown mounts a fresh ScrollView at offset zero —
-                // without this the thread flashes its first turn ("jump to
-                // the top") until the next chunk scrolls down. Pin instantly.
-                .onAppear {
-                    scrollSearchThreadToLatest(proxy, animated: false)
-                }
-                .onChange(of: appState.searchThread.count) { _, _ in
-                    scrollSearchThreadToLatest(proxy)
-                }
-                .onChange(of: appState.resultState(for: EnhancementAction.searchID)) { _, _ in
-                    scrollSearchThreadToLatest(proxy)
-                }
-            }
+                .reportsPanelBand(.result)
         } else {
-            measured
-                .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: .infinity, alignment: .top)
+            let measured = resultModule.reportsPanelBand(.result)
+
+            if let scrollHeight = appState.panelResultScrollHeight {
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        measured
+                    }
+                    .scrollBounceBehavior(.basedOnSize)
+                    .frame(height: scrollHeight)
+                    .frame(maxWidth: .infinity)
+                    // Cap touchdown mounts a fresh ScrollView at offset zero —
+                    // without this the thread flashes its first turn ("jump to
+                    // the top") until the next chunk scrolls down. Pin instantly.
+                    .onAppear {
+                        scrollSearchThreadToLatest(proxy, animated: false)
+                    }
+                    .onChange(of: appState.searchThread.count) { _, _ in
+                        scrollSearchThreadToLatest(proxy)
+                    }
+                    .onChange(of: appState.resultState(for: EnhancementAction.searchID)) { _, _ in
+                        scrollSearchThreadToLatest(proxy)
+                    }
+                }
+            } else {
+                measured
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .top)
+            }
         }
     }
 
@@ -176,6 +199,8 @@ struct PanelView: View {
     }
 
     func publishLayoutHeights(_ bands: [PanelHeightBand: CGFloat]) {
+        chromeTopHeight = bands[.chromeTop] ?? 0
+        chromeBottomHeight = bands[.chromeBottom] ?? 0
         PanelControllerTrace.band("bands top=\(bands[.chromeTop] ?? -1) bottom=\(bands[.chromeBottom] ?? -1) result=\(bands[.result] ?? -1)")
         guard let layout = PanelLayoutHeights.fromBands(
             top: bands[.chromeTop] ?? 0,
@@ -194,5 +219,32 @@ struct PanelView: View {
         }
         .frame(height: PanelMetrics.closeStripHeight)
         .background(PanelDragRegion())
+    }
+
+    /// Idle copy with nothing else in the result (no quote, no thread).
+    /// Drawn in a window overlay so leftover height after a tall response
+    /// still centers it between chips and composer.
+    var showsIdlePlaceholderOnly: Bool {
+        if appState.selectedActionID == EnhancementAction.searchID {
+            return appState.searchThread.isEmpty && !hasCapturedText
+        }
+        guard case .idle = appState.resultState(for: appState.selectedActionID) else {
+            return false
+        }
+        return appState.selectedActionID == EnhancementAction.describeID
+            || appState.capturedText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    /// Shift from the window center into the gap between top chrome and composer.
+    var idleCopyOffsetY: CGFloat {
+        let top = PanelMetrics.moduleInset + chromeTopHeight + PanelMetrics.moduleSpacing
+        let bottom = PanelMetrics.moduleSpacing + chromeBottomHeight + PanelMetrics.moduleInset
+        return (top - bottom) / 2
+    }
+
+    var idlePlaceholderIsInteractive: Bool {
+        !a11y.isAccessibilityTrusted
+            || (appState.selectedActionID == EnhancementAction.searchID
+                && !SettingsStore.shared.isConfigured(SettingsStore.shared.activeProvider))
     }
 }

@@ -60,42 +60,42 @@ struct SuggestionOptionCard: View {
                 HStack(spacing: BeruSpace.xs) {
                     BeruGlassButton(
                         title: writeTitle,
-                        prominent: true,
+                        secondary: true,
                         size: .compact,
-                        leadingIcon: "replace"
+                        leadingIcon: "replace",
+                        help: writeTitle
                     ) {
                         onReplace()
                     }
-                    .help("\(writeHelp) — \(title.lowercased())")
                     .accessibilityHint(writeHelp)
                     HStack(spacing: BeruSpace.hair) {
                         SearchActionButton(
                             icon: copied ? "check" : "copy",
-                            help: copied ? "Copied" : "Copy \(title)",
+                            help: copied ? "Copied" : "Copy response",
                             tint: copied ? BeruColor.positive : nil
                         ) {
                             onCopy()
                         }
-                        SearchActionButton(icon: "rotate-cw", help: "Check again — rewrites all the options") {
+                        SearchActionButton(icon: "rotate-cw", help: "Regenerate") {
                             onRegenerate()
                         }
                         SearchActionButton(
                             icon: "thumbs-up",
-                            help: "Good \(title.lowercased()) — helps Beru learn",
+                            help: "Good result",
                             active: vote == true
                         ) {
                             onVote(true)
                         }
                         SearchActionButton(
                             icon: "thumbs-down",
-                            help: "Bad \(title.lowercased()) — helps Beru learn",
+                            help: "Bad result",
                             active: vote == false
                         ) {
                             onVote(false)
                         }
                         SearchActionButton(
                             icon: pinned ? "check" : "pin",
-                            help: pinned ? "Pinned" : "Pin \(title.lowercased())",
+                            help: pinned ? "Pinned" : "Pin",
                             tint: pinned ? BeruColor.positive : nil
                         ) {
                             onPin()

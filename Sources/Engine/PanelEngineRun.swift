@@ -161,7 +161,8 @@ extension PanelEngine {
                 ? Prompts.recheckSuffix(previous: previousResult)
                 : Prompts.regenerateSuffix(previous: previousResult)
         }
-        if actionID != EnhancementAction.describeID, actionID != EnhancementAction.searchID {
+        if actionID != EnhancementAction.describeID,
+           actionID != EnhancementAction.searchID {
             let extra = resolved.extraInstruction
             if !extra.isEmpty {
                 userMessage += Prompts.additionalInstruction(extra)

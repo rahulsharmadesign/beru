@@ -189,41 +189,51 @@ struct BeruEmptyState<Actions: View>: View {
     }
 }
 
-/// Always-white menu-bar bee. Template rendering follows Light/Dark
-/// appearance, so Light mode draws the black source glyph onto a
-/// wallpaper-tinted dark bar. Bake white pixels once and show them as
-/// `.original` — the same trick we avoid for the panel mark, which must
-/// track `textPrimary`.
+/// Menu-bar mark: Black.svg in Light, White.svg in Dark. Asset appearance
+/// follows the wallpaper-tinted bar, not system appearance, so bake
+/// pixels and show them as `.original`. Recook when `signature` changes;
+/// a static image would freeze the first appearance.
 struct BeruMenuBarIcon: View {
+    @Bindable private var appearance = AppearanceObserver.shared
+
     var body: some View {
-        Image(nsImage: Self.whiteGlyph)
+        let _ = appearance.signature
+        Image(nsImage: Self.glyph(for: NSApp.effectiveAppearance))
             .renderingMode(.original)
             .accessibilityLabel("Beru")
     }
 
-    private static let whiteGlyph: NSImage = {
-        guard let source = NSImage(named: "MenuBarIcon") else {
-            return NSImage()
-        }
-        let image = NSImage(size: source.size, flipped: false) { rect in
-            source.draw(in: rect)
-            BeruColor.menuBarGlyphNSColor.setFill()
-            rect.fill(using: .sourceAtop)
+    private static func glyph(for appearance: NSAppearance) -> NSImage {
+        let side = BeruMetrics.menuBarGlyph
+        let image = NSImage(size: NSSize(width: side, height: side), flipped: false) { rect in
+            appearance.performAsCurrentDrawingAppearance {
+                NSGraphicsContext.current?.imageInterpolation = .high
+                NSImage(named: "MenuBarIcon")?.draw(
+                    in: rect,
+                    from: .zero,
+                    operation: .sourceOver,
+                    fraction: 1,
+                    respectFlipped: false,
+                    hints: [.interpolation: NSImageInterpolation.high]
+                )
+            }
             return true
         }
         image.isTemplate = false
         return image
-    }()
+    }
 }
 
-/// Menu-bar bee on a Search question. Template fill follows appearance:
-/// near-black in light mode, near-white in dark mode. Same drawing path
-/// as the status item — do not `resizable()` or wrap `NSImage`, both of
-/// which paint the dark glyph literally and hide it on the panel.
+/// Menu-bar mark on a Search question. Template fill follows appearance:
+/// near-black in light mode, near-white in dark mode. Vector asset, so
+/// size it like other template glyphs — do not wrap `NSImage`.
 struct BeruResponseMark: View {
     var body: some View {
         Image("MenuBarIcon")
             .renderingMode(.template)
+            .resizable()
+            .scaledToFit()
+            .frame(width: BeruMetrics.iconSize, height: BeruMetrics.iconSize)
             .foregroundStyle(BeruColor.textPrimary)
             .accessibilityLabel("Beru")
     }

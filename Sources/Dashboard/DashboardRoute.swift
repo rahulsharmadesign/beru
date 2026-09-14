@@ -32,7 +32,7 @@ enum DashboardRoute: String, Identifiable, CaseIterable, Hashable {
         switch self {
         case .general: return "Global preferences for Beru."
         case .models: return "Choose a local or cloud provider and the models it should use."
-        case .permissions: return "Accessibility and dictation. Required for capture and replace."
+        case .permissions: return "Accessibility and dictation."
         case .data: return "Local history, exports, and token savings."
         case .vault: return "Local notes and pins. Nothing leaves this Mac."
         case .runs: return "Every recorded invocation, with the diff and the reason."

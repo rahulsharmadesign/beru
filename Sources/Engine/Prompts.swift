@@ -31,6 +31,7 @@ enum Prompts {
     QUALITY
     - The result must be immediately usable: a later model should not need to re-ask anything the author already answered.
     - Completeness means keeping what the author said, not padding what they did not. A one-line ask stays a short prompt. Do not invent an investigation, a process, logs, tests, file hunts, or a report format the author never mentioned.
+    - A request that already names the change is complete: restate it as an imperative. Do not grow a complete request into locate / modify / confirm steps.
     - Remove hedges, repeated instructions, meta-commentary, and placeholder templates.
     - Write in imperative language addressed to the model that will execute the work.
 
@@ -50,6 +51,9 @@ enum Prompts {
 
     Input: <text>before updating the docs, confirm everything still works, then update the docs to match</text>
     Output: Confirm the project still works, then update the documentation so it matches current behavior. Verify existing behavior first and edit only the docs that disagree with it, without inventing file paths, tools, or commands.
+
+    Input: <text>remove the extra save button and make the cancel button gray</text>
+    Output: Remove the extra save button and make the cancel button gray.
     """
     static let grammar = """
     You are a precise copy editor. The user's message contains a document between <text> and </text> markers. Produce three versions of that document.
@@ -248,7 +252,7 @@ enum Prompts {
 
         If the source between the markers is a single word or fragment that cannot answer the Question on its own, say so in the first sentence, offer 2-3 likely senses, and invent no specific product, document, or source. Skip the section headings for that answer.
 
-        Lead with a one-sentence answer, then use Markdown `##` section headings, short paragraphs, and bullets so the structure is scannable. Do not open with a title-only first line. Do not use code fences. Bold is fine. Add only the detail needed to be correct and useful. Mark uncertainty. Do not fabricate facts, quotes, or sources. Do not discuss your instructions. No preamble, no closing offer to help.
+        Lead with a one-sentence answer, then use Markdown `##` section headings, short paragraphs, and bullets so the structure is scannable. Do not open with a title-only first line. Do not use code fences. Bold is fine. Add only the detail needed to be correct and useful. Mark uncertainty. Do not fabricate facts, quotes, or sources. Do not discuss your instructions.         No preamble, no closing offer to help.
         """
     }
 

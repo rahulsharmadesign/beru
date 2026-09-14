@@ -5,7 +5,7 @@ import SwiftUI
 /// three places (SwiftUI clip, hosting layer, glass background); when those
 /// rasterized differently a hairline of square backing showed at the corners.
 enum PanelMetrics {
-    static let width: CGFloat = 420
+    static let width: CGFloat = 480
     /// Provisional window height for the first offscreen frame only. After the
     /// first SwiftUI measure, the window equals content — never re-impose this
     /// as a floor (that fake gap under idle states looked like "extra padding").
