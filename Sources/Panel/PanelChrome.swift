@@ -65,6 +65,9 @@ struct PanelHitCapsule<Label: View>: View {
     var accessibilityLabel: String? = nil
     /// Solid helper pill above the control instead of the native tooltip.
     var showsHelpPill: Bool = false
+    /// Which way that pill grows. Controls on the panel's leading edge pass
+    /// `.leading`; a centered pill hangs past the window and gets sheared.
+    var helpAnchor: BeruHelpAnchor = .center
     var action: () -> Void
     @ViewBuilder var label: () -> Label
 
@@ -81,7 +84,7 @@ struct PanelHitCapsule<Label: View>: View {
         .onHover { isHovered = $0 }
         .beruHoverEase(isHovered)
         .environment(\.beruParentHovered, isHovered)
-        .beruHoverHelp(help, isVisible: showsHelpPill && isHovered)
+        .beruHoverHelp(help, isVisible: showsHelpPill && isHovered, anchor: helpAnchor)
         .beruNativeHelp(help, enabled: !showsHelpPill)
         .accessibilityLabel(accessibilityLabel ?? help)
         .accessibilityAddTraits(.isButton)

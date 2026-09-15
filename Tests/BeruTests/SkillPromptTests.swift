@@ -29,6 +29,16 @@ final class BuiltInPromptScopeTests: XCTestCase {
         XCTAssertTrue(Prompts.grammar.contains("never deleted without putting the correction"))
     }
 
+    func testGrammarPromptPreservesListMarkers() {
+        // Numbered lists came back as running paragraphs with the markers
+        // dropped — "Preserve formatting (line breaks, lists)" alone did not
+        // hold on the on-device model. The rule has to name the markers.
+        XCTAssertTrue(Prompts.grammar.contains("keeps its marker"))
+        XCTAssertTrue(Prompts.grammar.contains("Never merge list items into running paragraphs"))
+        XCTAssertTrue(Prompts.grammar.contains("keeps its item count"))
+        XCTAssertTrue(Prompts.grammar.contains("1. He doesn't know whether it's right"))
+    }
+
     func testGrammarPromptRequiresFixingEveryError() {
         // "Never add, remove, or reorder content" plus "if already correct,
         // return it verbatim" made models skip misspellings rather than risk

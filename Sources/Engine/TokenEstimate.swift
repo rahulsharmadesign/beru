@@ -31,6 +31,15 @@ enum TokenEstimate {
         }
         return total
     }
+
+    /// Inverse of the estimate above: how many characters fit in a token
+    /// budget. Used by the on-device clamp, which reasons in tokens but has
+    /// to trim a `String`. Rounds up so a budget never reports zero room for
+    /// a non-zero request.
+    static func characters(forTokens tokens: Int) -> Int {
+        guard tokens > 0 else { return 0 }
+        return Int((Double(tokens) * charactersPerToken).rounded(.up))
+    }
 }
 
 private extension Character {

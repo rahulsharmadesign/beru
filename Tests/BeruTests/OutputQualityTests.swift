@@ -217,6 +217,94 @@ final class OutputQualityTests: XCTestCase {
         XCTAssertTrue(decision.text.contains("There are three things"))
     }
 
+    // MARK: - Grammar list structure
+
+    func testGrammarRestoresDroppedListMarkers() {
+        // The reported case: eight selected items came back as bare
+        // paragraphs. Markers graft from the source verbatim, so a mid-list
+        // selection keeps `6.`, not `1.`.
+        let source = """
+        6. The avatar/User Profile are not aligned to the left.
+        7. Verified check icon should be a solid fill with blue color.
+        """
+        let raw = """
+        <grammar kind="corrected">The avatar/User Profile are not aligned to the left.\nVerified check icon should be a solid fill with blue color.</grammar>
+        <grammar kind="clearer">The avatar/User Profile are not aligned to the left.\nThe verified check icon should be a solid fill with blue color.</grammar>
+        <grammar kind="tighter">The avatar/User Profile are not aligned left.\nVerified check icon should be solid blue.</grammar>
+        """
+        let decision = evaluate(
+            actionID: EnhancementAction.grammarID,
+            raw: raw,
+            source: source,
+            canRetry: false
+        )
+        XCTAssertEqual(decision.outcome, .publish)
+        XCTAssertEqual(
+            decision.text,
+            "6. The avatar/User Profile are not aligned to the left.\n7. Verified check icon should be a solid fill with blue color."
+        )
+        XCTAssertEqual(
+            decision.grammarSuggestions.first(where: { $0.kind == .tighter })?.body,
+            "6. The avatar/User Profile are not aligned left.\n7. Verified check icon should be solid blue."
+        )
+    }
+
+    func testListMarkerDetection() {
+        XCTAssertEqual(OutputQuality.listMarkerPrefix(of: "6. Aligned left."), "6.")
+        XCTAssertEqual(OutputQuality.listMarkerPrefix(of: "  10) Indented."), "10)")
+        XCTAssertEqual(OutputQuality.listMarkerPrefix(of: "- Dash item"), "-")
+        XCTAssertEqual(OutputQuality.listMarkerPrefix(of: "* Star item"), "*")
+        XCTAssertEqual(OutputQuality.listMarkerPrefix(of: "[x] Done task"), "[x]")
+        XCTAssertNil(OutputQuality.listMarkerPrefix(of: "Plain sentence."))
+        XCTAssertNil(OutputQuality.listMarkerPrefix(of: "All icons which are 20x20 px."))
+        XCTAssertNil(OutputQuality.listMarkerPrefix(of: "10% of primary background fill."))
+        XCTAssertNil(OutputQuality.listMarkerPrefix(of: "6.No space after marker."))
+        XCTAssertNil(OutputQuality.listMarkerPrefix(of: "6.   "))
+    }
+
+    func testListMarkerRestoreLeavesNonListsAlone() {
+        // Mixed headers and list: not a pure list, untouched.
+        XCTAssertEqual(
+            OutputQuality.restoringListMarkers(
+                source: "Chats\n1. First item.\n2. Second item.",
+                body: "Chats\nFirst item.\nSecond item."
+            ),
+            "Chats\nFirst item.\nSecond item."
+        )
+        // Model kept its own markers: structure stands.
+        XCTAssertEqual(
+            OutputQuality.restoringListMarkers(
+                source: "1. First.\n2. Second.",
+                body: "1. First.\n2. Second."
+            ),
+            "1. First.\n2. Second."
+        )
+        // Counts disagree (model merged two items): no graft.
+        XCTAssertEqual(
+            OutputQuality.restoringListMarkers(
+                source: "1. First.\n2. Second.",
+                body: "First and second combined."
+            ),
+            "First and second combined."
+        )
+        // Bullets graft like numbers.
+        XCTAssertEqual(
+            OutputQuality.restoringListMarkers(
+                source: "- First.\n- Second.",
+                body: "First.\nSecond."
+            ),
+            "- First.\n- Second."
+        )
+        // Blank-line-separated paragraphs align too.
+        XCTAssertEqual(
+            OutputQuality.restoringListMarkers(
+                source: "1. First.\n2. Second.",
+                body: "First.\n\nSecond."
+            ),
+            "1. First.\n\n2. Second."
+        )
+    }
+
     // MARK: - Unchanged transform
 
     func testSummarizeUnchangedRetriesThenRejects() {

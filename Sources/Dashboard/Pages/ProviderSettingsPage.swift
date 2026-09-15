@@ -24,7 +24,7 @@ struct ProviderSettingsSections: View {
             SettingsSection(title: "Provider") {
                 SettingsRow(
                     title: "Active provider",
-                    caption: "Local Ollama stays on this Mac. Anthropic and API presets send requests to the host you configure."
+                    caption: "Apple on-device and local Ollama stay on this Mac. Anthropic and API presets send requests to the host you configure."
                 ) {
                     SettingsMenuPicker(
                         selection: Binding(
@@ -94,7 +94,7 @@ struct ProviderSettingsSections: View {
     /// raised "Beru wants to use your confidential information".
     private func hydrateKeysForActiveProvider() {
         switch settings.activeProvider {
-        case .ollama:
+        case .ollama, .apple:
             break
         case .anthropic:
             anthropicKey = settings.anthropicAPIKey ?? ""
@@ -123,6 +123,8 @@ struct ProviderSettingsSections: View {
             ) {
                 SettingsSecretField(placeholder: "sk-ant-…", text: $anthropicKey, width: BeruMetrics.wideFieldWidth)
             }
+        case .apple:
+            appleConfigurationRows
         case .custom:
             SettingsRow(
                 title: "Preset",
@@ -164,7 +166,36 @@ struct ProviderSettingsSections: View {
         }
     }
 
+    /// Apple owns the model, so there is nothing to type: one status row with
+    /// the live availability and one row naming the usage-attribution id.
+    /// Kept separate so the `switch` above stays a single view per case.
+    private var appleConfigurationRows: some View {
+        let state = AppleModelState.current()
+        return Group {
+            SettingsRow(
+                title: "On-device model",
+                caption: state.summary
+            ) {
+                SettingsStatusBadge(title: state.badge, isPositive: state.isReady)
+            }
+            SettingsRow(
+                title: "Model",
+                caption: "The system owns the model — there is nothing to install or pick."
+            ) {
+                SettingsValue(text: AppleOnDeviceProvider.modelID, mono: true)
+            }
+        }
+    }
+
     private var testCaption: String {
+        if settings.activeProvider == .apple {
+            switch testState {
+            case .idle: return "Checks whether Apple's on-device model is available on this Mac."
+            case .testing: return "Checking…"
+            case .success: return "Connected."
+            case .failure(let message): return message
+            }
+        }
         switch testState {
         case .idle: return "Sends a lightweight request to the selected provider."
         case .testing: return "Checking…"

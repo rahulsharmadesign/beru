@@ -25,9 +25,18 @@ final class SettingsStoreTests: XCTestCase {
 
     // MARK: - Defaults on a clean install
 
-    func testCleanInstallDefaultsToLocalOllama() {
+    func testCleanInstallDefaultsToOnDeviceWhenReady() {
+        XCTAssertEqual(SettingsStore.firstLaunchProvider(appleOnDeviceReady: true), .apple)
+        XCTAssertEqual(SettingsStore.firstLaunchProvider(appleOnDeviceReady: false), .ollama)
+    }
+
+    func testCleanInstallPersistsWhateverDefaultThisMacGets() {
         let store = SettingsStore(defaults: defaults)
-        XCTAssertEqual(store.activeProvider, .ollama)
+        let expected = SettingsStore.firstLaunchProvider(
+            appleOnDeviceReady: AppleModelState.isConfigured
+        )
+        XCTAssertEqual(store.activeProvider, expected)
+        XCTAssertEqual(defaults.string(forKey: "activeProvider"), expected.rawValue)
         XCTAssertEqual(store.ollamaBaseURL, "http://localhost:11434/v1")
     }
 
@@ -114,8 +123,8 @@ final class SettingsStoreTests: XCTestCase {
     }
 
     func testFirstLaunchPersistsTheProviderChoiceForNextTime() {
-        _ = SettingsStore(defaults: defaults)
-        XCTAssertEqual(defaults.string(forKey: "activeProvider"), ProviderKind.ollama.rawValue)
+        let store = SettingsStore(defaults: defaults)
+        XCTAssertEqual(defaults.string(forKey: "activeProvider"), store.activeProvider.rawValue)
         XCTAssertTrue(defaults.bool(forKey: "hasLaunchedBefore"))
     }
 
@@ -128,7 +137,10 @@ final class SettingsStoreTests: XCTestCase {
     func testAnUnrecognisedProviderFallsBackRatherThanCrashing() {
         defaults.set(true, forKey: "hasLaunchedBefore")
         defaults.set("some-provider-we-removed", forKey: "activeProvider")
-        XCTAssertEqual(SettingsStore(defaults: defaults).activeProvider, .ollama)
+        XCTAssertEqual(
+            SettingsStore(defaults: defaults).activeProvider,
+            SettingsStore.firstLaunchProvider(appleOnDeviceReady: AppleModelState.isConfigured)
+        )
     }
 
     // MARK: - Round-tripping
@@ -175,6 +187,7 @@ final class SettingsStoreTests: XCTestCase {
 
     func testModelIDFollowsTheActiveProviderAndRole() {
         let store = SettingsStore(defaults: defaults)
+        store.selectProvider(.ollama)
         store.ollamaEnhanceModel = "gemma3:1b"
         store.ollamaGrammarModel = "qwen2.5:7b"
         XCTAssertEqual(store.modelID(for: .enhance), "gemma3:1b")

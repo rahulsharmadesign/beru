@@ -26,7 +26,8 @@ final class PanelEngine {
         onRequestDictationPermission?()
     }
 
-    /// Opens Settings → Models. `preferLocal` switches the active provider to Ollama first.
+    /// Opens Settings → Models. `preferLocal` switches to the zero-install
+    /// local provider first (Apple on-device when ready, else Ollama).
     var onRequestProviderSetup: ((Bool) -> Void)?
 
     func requestProviderSetup(preferLocal: Bool) {

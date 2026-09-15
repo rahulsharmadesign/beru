@@ -162,12 +162,18 @@ final class SettingsStore {
         self.defaults = defaults
         let hasLaunchedBefore = defaults.bool(forKey: Keys.hasLaunchedBefore)
         if !hasLaunchedBefore {
-            // Dev default: zero-config free testing against local Ollama.
-            defaults.set(ProviderKind.ollama.rawValue, forKey: Keys.activeProvider)
+            // Zero-install default: Apple's on-device model when this Mac can
+            // answer, otherwise local Ollama. Either way nothing needs a key.
+            defaults.set(
+                Self.firstLaunchProvider(appleOnDeviceReady: AppleModelState.isConfigured).rawValue,
+                forKey: Keys.activeProvider
+            )
             defaults.set(true, forKey: Keys.hasLaunchedBefore)
         }
 
-        activeProvider = defaults.string(forKey: Keys.activeProvider).flatMap(ProviderKind.init(rawValue:)) ?? .ollama
+        activeProvider = defaults.string(forKey: Keys.activeProvider)
+            .flatMap(ProviderKind.init(rawValue:))
+            ?? Self.firstLaunchProvider(appleOnDeviceReady: AppleModelState.isConfigured)
         ollamaBaseURL = defaults.string(forKey: Keys.ollamaBaseURL) ?? "http://localhost:11434/v1"
         ollamaEnhanceModel = defaults.string(forKey: Keys.ollamaEnhanceModel)
             ?? RecommendedOllamaModel.defaultID
@@ -226,6 +232,14 @@ final class SettingsStore {
         }
     }
 
+    /// Which provider a fresh install (or an unrecognised stored value) lands
+    /// on. Apple on-device when this Mac can answer — zero install, nothing
+    /// leaves the Mac — otherwise local Ollama. Pure so the mapping stays
+    /// pinnable without Apple Intelligence on the test host.
+    nonisolated static func firstLaunchProvider(appleOnDeviceReady: Bool) -> ProviderKind {
+        appleOnDeviceReady ? .apple : .ollama
+    }
+
     /// Whether a provider has enough settings to attempt a request.
     ///
     /// Non-empty was too weak a test: a base URL of `" "` or `hello` passed, so
@@ -239,6 +253,10 @@ final class SettingsStore {
                 && Self.isUsableModel(ollamaGrammarModel)
         case .anthropic:
             return Self.isUsableKey(resolvedAnthropicAPIKey)
+        case .apple:
+            // No key, no URL, no download: "configured" means Apple's model
+            // answers on this Mac, which is purely a system state.
+            return AppleModelState.isConfigured
         case .custom:
             // Remote hosts (Groq, OpenAI, …) need a key; loopback servers often don't.
             guard Self.isUsableBaseURL(customBaseURL),
@@ -315,6 +333,8 @@ final class SettingsStore {
             return role == .enhance
                 ? AnthropicProvider.Constants.enhanceModel
                 : AnthropicProvider.Constants.grammarModel
+        case .apple:
+            return AppleOnDeviceProvider.modelID
         }
     }
 

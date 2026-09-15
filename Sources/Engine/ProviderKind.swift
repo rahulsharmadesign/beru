@@ -8,12 +8,17 @@ enum ProviderKind: String, CaseIterable, Codable {
     case ollama
     case anthropic
     case custom
+    /// Apple's on-device model (Foundation Models). Zero install, no key, and
+    /// selected text never leaves this Mac. The first-launch default wherever
+    /// this Mac can answer; Ollama stays the fallback.
+    case apple
 
     var title: String {
         switch self {
         case .ollama: return "Ollama (local)"
         case .anthropic: return "Anthropic"
         case .custom: return "API (Groq, OpenAI, …)"
+        case .apple: return "Apple · on-device"
         }
     }
 }

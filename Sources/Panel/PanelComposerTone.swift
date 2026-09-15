@@ -155,6 +155,7 @@ extension ProviderKind {
         case .ollama: return "Ollama"
         case .anthropic: return "Anthropic"
         case .custom: return "API"
+        case .apple: return "Apple"
         }
     }
 
@@ -163,6 +164,7 @@ extension ProviderKind {
         case .ollama: return "cpu"
         case .anthropic: return "sparkle"
         case .custom: return "cloud"
+        case .apple: return "memory"
         }
     }
 }

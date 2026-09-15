@@ -62,7 +62,11 @@ final class AppCoordinator {
         }
         engine.onRequestProviderSetup = { [weak self] preferLocal in
             if preferLocal {
-                SettingsStore.shared.selectProvider(.ollama)
+                // "Use a local model": the zero-install one when this Mac can
+                // answer, otherwise Ollama.
+                SettingsStore.shared.selectProvider(
+                    AppleModelState.isConfigured ? .apple : .ollama
+                )
             }
             self?.showDashboard(route: .models)
         }

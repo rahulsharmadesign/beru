@@ -60,6 +60,14 @@ enum BeruType {
     static let captionMedium = font(11, weight: .medium)
     static let captionSemibold = font(11, weight: .semibold)
 
+    // MARK: Panel empty states
+
+    /// Floating panel's empty-state block: a heading over one line of helper
+    /// copy ("Ask a question" / "Type below and press Return."). A step above
+    /// the panel body so the idle state reads as an invitation, not a caption.
+    static let placeholderTitle = font(17, weight: .medium)
+    static let placeholderHelper = font(14)
+
     static let mono = Font.system(size: 13, design: .monospaced)
     /// Keyboard-chip mono: the dense floor at monospaced design.
     static let monoCaption = Font.system(size: 12, design: .monospaced)

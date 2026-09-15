@@ -128,24 +128,35 @@ enum OutputQuality {
         canRetry: Bool
     ) -> Decision {
         let parsed = GrammarSuggestions.parseWithStatus(raw)
+        // Small models sometimes return list items as bare paragraphs with
+        // every marker dropped. Markers are known strings from the source, so
+        // they graft back exactly; anything that does not align 1:1 is left
+        // alone. Runs before paraphrase scoring so the score sees the text
+        // that will actually publish.
+        let repaired = parsed.suggestions.map {
+            GrammarSuggestion(
+                kind: $0.kind,
+                body: restoringListMarkers(source: source, body: $0.body)
+            )
+        }
         if parsed.usedFallback {
-            if canRetry, !parsed.suggestions.isEmpty {
+            if canRetry, !repaired.isEmpty {
                 return Decision(
                     outcome: .retry(previousResult: nil, hint: parseHint),
                     text: raw
                 )
             }
-            let kind = parsed.suggestions.first?.kind ?? .corrected
-            let body = parsed.suggestions.first?.body ?? raw
+            let kind = repaired.first?.kind ?? .corrected
+            let body = repaired.first?.body ?? raw
             return Decision(
                 outcome: .publish,
                 text: body,
-                grammarSuggestions: parsed.suggestions,
+                grammarSuggestions: repaired,
                 selectedGrammarKind: kind
             )
         }
 
-        var suggestions = parsed.suggestions
+        var suggestions = repaired
         let preferred = preferredKind ?? .corrected
         var kind = suggestions.contains(where: { $0.kind == preferred })
             ? preferred
@@ -194,6 +205,80 @@ enum OutputQuality {
             guard score <= grammarParaphraseCeiling else { return nil }
             return item
         }
+    }
+
+    // MARK: - Grammar list structure
+
+    /// Leading marker of one list item line (`1.` `2)` `-` `*` `•` `[ ]`
+    /// `[x]`), or nil when the line is not a list item. A marker needs
+    /// trailing whitespace and real text after it, so `20x20 px`, `10% of`,
+    /// and `[UIKit]` never read as markers.
+    static func listMarkerPrefix(of line: String) -> String? {
+        var rest = line[line.startIndex...]
+        while rest.first?.isWhitespace == true { rest = rest.dropFirst() }
+        if rest.hasPrefix("[ ] ") || rest.hasPrefix("[x] ") || rest.hasPrefix("[X] ") {
+            return String(rest.prefix(3))
+        }
+        if let first = rest.first, "-*•‣".contains(first) {
+            let after = rest.dropFirst()
+            guard after.first?.isWhitespace == true,
+                  after.dropFirst().contains(where: { !$0.isWhitespace })
+            else { return nil }
+            return String(first)
+        }
+        let digits = rest.prefix(while: \.isNumber)
+        guard !digits.isEmpty else { return nil }
+        var tail = rest.dropFirst(digits.count)
+        guard tail.first == "." || tail.first == ")" else { return nil }
+        let punct = tail.first!
+        tail = tail.dropFirst()
+        guard tail.first?.isWhitespace == true,
+              tail.dropFirst().contains(where: { !$0.isWhitespace })
+        else { return nil }
+        return String(digits) + String(punct)
+    }
+
+    /// Puts back list markers the model dropped. Only when every non-empty
+    /// source line carries a marker, the body holds the same number of
+    /// markerless paragraphs, and none of them kept a marker: then each
+    /// paragraph is the corrected item with its marker missing, and the
+    /// source markers go back on verbatim — a mid-list selection keeps `6.`,
+    /// not `1.`. Anything else returns the body untouched.
+    static func restoringListMarkers(source: String, body: String) -> String {
+        let sourceLines = source
+            .components(separatedBy: .newlines)
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
+        guard !sourceLines.isEmpty else { return body }
+        var markers: [String] = []
+        for line in sourceLines {
+            guard let marker = listMarkerPrefix(of: line) else { return body }
+            markers.append(marker)
+        }
+        // Blank-line blocks first (the shape Grammar emits), else one item
+        // per non-empty line.
+        let blocks = body
+            .components(separatedBy: "\n\n")
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+        let lines = body
+            .components(separatedBy: .newlines)
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
+        let units: [String]
+        let joiner: String
+        if blocks.count == markers.count {
+            units = blocks
+            joiner = "\n\n"
+        } else if lines.count == markers.count {
+            units = lines
+            joiner = "\n"
+        } else {
+            return body
+        }
+        // Never double-mark: if the model kept any marker, its structure stands.
+        guard !units.contains(where: { listMarkerPrefix(of: $0) != nil }) else { return body }
+        return zip(markers, units).map { "\($0) \($1)" }.joined(separator: joiner)
     }
 
     // MARK: - Summarize / Explain / Instruction

@@ -158,7 +158,10 @@ extension PanelView {
             PanelHitCapsule(
                 help: primaryFooterHoverHelp,
                 accessibilityLabel: primaryFooterTitle,
-                showsHelpPill: true
+                showsHelpPill: true,
+                // Leading element of the footer row: a centered pill hangs
+                // past the panel's left inset and the hosting view crops it.
+                helpAnchor: .leading
             ) {
                 performReplace()
             } label: {

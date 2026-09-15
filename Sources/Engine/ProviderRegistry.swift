@@ -20,6 +20,8 @@ enum ProviderRegistry {
                 enhanceModel: settings.customEnhanceModel,
                 grammarModel: settings.customGrammarModel
             )
+        case .apple:
+            return AppleOnDeviceProvider()
         }
     }
 }

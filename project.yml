@@ -26,7 +26,7 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.rahul.beru
         MARKETING_VERSION: "1.1.18"
-        CURRENT_PROJECT_VERSION: "24"
+        CURRENT_PROJECT_VERSION: "26"
         SWIFT_VERSION: "5.10"
         # Signed with the machine's Apple Development certificate, MANUALLY and
         # with no provisioning profile.

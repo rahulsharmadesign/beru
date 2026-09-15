@@ -32,13 +32,36 @@ struct BeruHelpPill: View {
     }
 }
 
+/// Which way a hover helper pill grows out of its control.
+///
+/// Centered is the default. A centered pill is wider than the control it
+/// describes, so half of the difference hangs past the control's leading
+/// edge. For a control parked on the panel's leading inset that lands outside
+/// the window, and the clipping hosting view shears the cap off — which is
+/// what the Replace footer action did. Controls on an edge opt into
+/// `.leading` / `.trailing` so the pill grows inward instead.
+enum BeruHelpAnchor {
+    case center
+    case leading
+    case trailing
+
+    var overlayAlignment: Alignment {
+        switch self {
+        case .center: return .top
+        case .leading: return .topLeading
+        case .trailing: return .topTrailing
+        }
+    }
+}
+
 private struct BeruHoverHelp: ViewModifier {
     let text: String
     let isVisible: Bool
+    var anchor: BeruHelpAnchor = .center
 
     func body(content: Content) -> some View {
         content
-            .overlay(alignment: .top) {
+            .overlay(alignment: anchor.overlayAlignment) {
                 BeruHelpPill(text: text)
                     .offset(y: -BeruMetrics.helpPillOffset)
                     .opacity(isVisible && !text.isEmpty ? 1 : 0)
@@ -48,9 +71,13 @@ private struct BeruHoverHelp: ViewModifier {
 
 extension View {
     /// Paints `BeruHelpPill` above this view while `isVisible`. Does not
-    /// change layout height.
-    func beruHoverHelp(_ text: String, isVisible: Bool) -> some View {
-        modifier(BeruHoverHelp(text: text, isVisible: isVisible))
+    /// change layout height. Pass `anchor` for a control on a window edge.
+    func beruHoverHelp(
+        _ text: String,
+        isVisible: Bool,
+        anchor: BeruHelpAnchor = .center
+    ) -> some View {
+        modifier(BeruHoverHelp(text: text, isVisible: isVisible, anchor: anchor))
     }
 
     @ViewBuilder
