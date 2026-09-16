@@ -87,9 +87,10 @@ enum BeruMetrics {
     static let menuDropdownWidth: CGFloat = 320
     /// Brand mark in the menu-bar header. Off the grid on purpose.
     static let brandMark: CGFloat = 30
-    /// Status-item glyph. 18 × 1.25 × 1.10 = 24.75 so the SVG mark
-    /// reads at a glance. Off the grid on purpose.
-    static let menuBarGlyph: CGFloat = 24.75
+    /// Status-item glyph. The macOS standard 18pt, matching neighboring
+    /// menu-bar icons. The SVG carries its own ~10% internal padding, so the
+    /// optical mark lands where system glyphs sit.
+    static let menuBarGlyph: CGFloat = 18
     /// Haze glyph size. 16 across the app; 12-14 allowed only inside
     /// dense chips, cites, and kbd.
     static let iconSize: CGFloat = 16

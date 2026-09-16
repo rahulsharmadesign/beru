@@ -184,6 +184,9 @@ struct MenuBarContent: View {
     }
 }
 
+/// AppKit delivers every delegate callback on the main thread, so the class
+/// is MainActor-isolated and owns the MainActor-bound coordinator directly.
+@MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     let coordinator = AppCoordinator()
 

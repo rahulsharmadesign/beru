@@ -1,23 +1,27 @@
 import Foundation
 
 /// Encodes / decodes a vault note as markdown with a small YAML frontmatter block.
+///
+/// Formatters are minted per call rather than shared: `ISO8601DateFormatter`
+/// is not Sendable, and vault saves/loads are user-paced, so a fresh instance
+/// costs nothing and keeps this enum safe from any isolation.
 enum VaultNoteCodec {
-    private static let isoFormatter: ISO8601DateFormatter = {
+    private static func isoFormatter() -> ISO8601DateFormatter {
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         return formatter
-    }()
+    }
 
-    private static let isoFormatterFallback: ISO8601DateFormatter = {
+    private static func isoFormatterFallback() -> ISO8601DateFormatter {
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime]
         return formatter
-    }()
+    }
 
     static func encode(_ note: VaultNote) -> String {
         let title = escapeYAML(note.title)
-        let created = isoFormatter.string(from: note.createdAt)
-        let updated = isoFormatter.string(from: note.updatedAt)
+        let created = isoFormatter().string(from: note.createdAt)
+        let updated = isoFormatter().string(from: note.updatedAt)
         // Body is concatenated so the template cannot inject a trailing newline
         // the user never typed.
         return """
@@ -84,7 +88,7 @@ enum VaultNoteCodec {
 
     private static func parseDate(_ raw: String?) -> Date? {
         guard let raw, !raw.isEmpty else { return nil }
-        return isoFormatter.date(from: raw) ?? isoFormatterFallback.date(from: raw)
+        return isoFormatter().date(from: raw) ?? isoFormatterFallback().date(from: raw)
     }
 
     private static func unquote(_ value: String) -> String {

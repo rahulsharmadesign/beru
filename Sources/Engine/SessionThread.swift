@@ -36,7 +36,8 @@ final class SessionThread {
     /// Runaway-loop guard only. The prompt budget, not this, is what the model sees.
     static let storageCap = 100
     /// The whole block, so history can never crowd out the actual request.
-    static let blockCharBudget = 8000
+    /// Nonisolated: an immutable count read from nonisolated prompt code.
+    nonisolated static let blockCharBudget = 8000
     /// Per-turn output for Enhance and Describe. The shape of a previous
     /// answer is the useful signal; the whole of it is not.
     static let outputCharBudget = 400

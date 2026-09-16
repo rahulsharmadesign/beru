@@ -151,6 +151,9 @@ final class GrowingComposerTextView: NSTextView {
         isAutomaticLinkDetectionEnabled = false
         isAutomaticDataDetectionEnabled = false
         isAutomaticTextCompletionEnabled = false
+        // Beru IS the writing tool here: a "Write with Siri" pill over this
+        // field is pure noise on top of the panel that already answers it.
+        writingToolsBehavior = .none
     }
 
     @available(*, unavailable)

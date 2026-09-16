@@ -18,7 +18,9 @@ extension PanelEngine {
     /// retains 0.55, a short grammar pass 0.52, a long one 0.80, a tone rewrite
     /// 0.48 — while the reported XML-structure rewrite retained 0.27 and a total
     /// rewrite 0.06. 0.4 sits in the gap with margin on both sides.
-    static let diffLegibilityFloor = 0.4
+    ///
+    /// Nonisolated: an immutable threshold also read from nonisolated tests.
+    nonisolated static let diffLegibilityFloor = 0.4
 
     func computeDiff(actionID: String, original: String, revised: String) async {
         // Transform verbs are new documents, not edits of the selection. Skip
@@ -54,7 +56,9 @@ extension PanelEngine {
     /// Above this share of unrelated word substitutions, Grammar has rewritten
     /// rather than corrected. Corrections cluster near 0 (every replacement is a
     /// near-miss of the original word); the reported paraphrase scored 1.0.
-    static let grammarParaphraseCeiling = OutputQuality.grammarParaphraseCeiling
+    ///
+    /// Nonisolated: an immutable threshold also read from nonisolated tests.
+    nonisolated static let grammarParaphraseCeiling = OutputQuality.grammarParaphraseCeiling
 
     /// Separates the result from its explanation.
     ///

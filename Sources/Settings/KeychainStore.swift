@@ -3,7 +3,10 @@ import Security
 
 /// Thin wrapper around the Keychain Services API for storing provider API keys.
 /// This is the ONLY place in the app allowed to persist secret material.
-final class KeychainStore {
+///
+/// Sendable by construction: the only state is an immutable service string
+/// and every method is a stateless SecItem call, which is thread-safe.
+final class KeychainStore: Sendable {
     static let shared = KeychainStore()
 
     private let service = "com.beru.api"

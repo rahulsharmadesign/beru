@@ -73,7 +73,9 @@ final class DictationService {
     /// Longest single recording. A menu bar app runs all day, so the worst
     /// outcome here is a microphone left open silently; the cap bounds that even
     /// if a key-up is missed entirely.
-    static let maximumDuration: Duration = .seconds(60)
+    ///
+    /// Nonisolated: an immutable duration also read from nonisolated tests.
+    nonisolated static let maximumDuration: Duration = .seconds(60)
 
     private(set) var isRecording = false
     /// What has been heard so far. Replaced by the final text when recording

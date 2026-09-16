@@ -189,34 +189,44 @@ struct BeruEmptyState<Actions: View>: View {
     }
 }
 
-/// Menu-bar mark: Black.svg in Light, White.svg in Dark. Asset appearance
-/// follows the wallpaper-tinted bar, not system appearance, so bake
-/// pixels and show them as `.original`. Recook when `signature` changes;
-/// a static image would freeze the first appearance.
+/// Menu-bar mark: Black.svg in Light, White.svg in Dark, baked to exact
+/// pixels and shown `.original` so a wallpaper-tinted bar can never invert
+/// it like a template glyph.
+///
+/// Two lessons baked into this shape. First, the variant must come from the
+/// *view's* color scheme (the bar), never `NSApp.effectiveAppearance` (the
+/// app): a light bar over Dark mode froze the wrong variant. Second, the
+/// size must be baked too: a `MenuBarExtra` label stretches a framed SwiftUI
+/// `Image` to bar height, ignoring the frame — measured 49px on screen for
+/// an 18pt frame — while an explicitly-sized NSImage renders exactly.
+/// Reading `signature` recooks for the menu-bar invalidation gap; every
+/// other change resolves live from the scene.
 struct BeruMenuBarIcon: View {
+    @Environment(\.colorScheme) private var colorScheme
     @Bindable private var appearance = AppearanceObserver.shared
 
     var body: some View {
         let _ = appearance.signature
-        Image(nsImage: Self.glyph(for: NSApp.effectiveAppearance))
+        Image(nsImage: Self.glyph(dark: colorScheme == .dark))
             .renderingMode(.original)
             .accessibilityLabel("Beru")
     }
 
-    private static func glyph(for appearance: NSAppearance) -> NSImage {
+    private static func glyph(dark: Bool) -> NSImage {
         let side = BeruMetrics.menuBarGlyph
         let image = NSImage(size: NSSize(width: side, height: side), flipped: false) { rect in
-            appearance.performAsCurrentDrawingAppearance {
-                NSGraphicsContext.current?.imageInterpolation = .high
-                NSImage(named: "MenuBarIcon")?.draw(
-                    in: rect,
-                    from: .zero,
-                    operation: .sourceOver,
-                    fraction: 1,
-                    respectFlipped: false,
-                    hints: [.interpolation: NSImageInterpolation.high]
-                )
-            }
+            (NSAppearance(named: dark ? .darkAqua : .aqua) ?? NSAppearance.current)
+                .performAsCurrentDrawingAppearance {
+                    NSGraphicsContext.current?.imageInterpolation = .high
+                    NSImage(named: "MenuBarIcon")?.draw(
+                        in: rect,
+                        from: .zero,
+                        operation: .sourceOver,
+                        fraction: 1,
+                        respectFlipped: false,
+                        hints: [.interpolation: NSImageInterpolation.high]
+                    )
+                }
             return true
         }
         image.isTemplate = false

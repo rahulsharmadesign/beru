@@ -96,18 +96,23 @@ enum DesignSnapshot {
         window.contentView?.addSubview(anchor)
         window.makeKeyAndOrderFront(nil)
         let capture = Timer(timeInterval: 0.8, repeats: false) { _ in
-            for window in NSApp.windows {
-                let kind = String(describing: type(of: window))
-                guard kind.contains("DropdownPopup"), let content = window.contentView else { continue }
-                content.layoutSubtreeIfNeeded()
-                guard let rep = content.bitmapImageRepForCachingDisplay(in: content.bounds) else { continue }
-                content.cacheDisplay(in: content.bounds, to: rep)
-                if let png = rep.representation(using: .png, properties: [:]) {
-                    try? png.write(to: root.appendingPathComponent("menu-open.png"))
+            // Timer blocks are nonisolated; the capture touches MainActor-bound
+            // AppKit, so hop explicitly rather than annotating the closure
+            // (Timer's signature drops global-actor isolation).
+            Task { @MainActor in
+                for window in NSApp.windows {
+                    let kind = String(describing: type(of: window))
+                    guard kind.contains("DropdownPopup"), let content = window.contentView else { continue }
+                    content.layoutSubtreeIfNeeded()
+                    guard let rep = content.bitmapImageRepForCachingDisplay(in: content.bounds) else { continue }
+                    content.cacheDisplay(in: content.bounds, to: rep)
+                    if let png = rep.representation(using: .png, properties: [:]) {
+                        try? png.write(to: root.appendingPathComponent("menu-open.png"))
+                    }
+                    break
                 }
-                break
+                exit(0)
             }
-            exit(0)
         }
         RunLoop.main.add(capture, forMode: .common)
         anchor.open(

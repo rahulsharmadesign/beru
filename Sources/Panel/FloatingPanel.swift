@@ -55,7 +55,10 @@ final class FloatingPanel: NSPanel {
     private var opaqueView: RoundedPanelView?
     private var usingOpaqueMaterial = false
     private var hasInstalledMaterial = false
-    private var materialObserver: NSObjectProtocol?
+    /// Main-thread only: AppKit confines every window's life to the main
+    /// thread, so the observer is added and removed on the same thread even
+    /// though `deinit` itself is nonisolated.
+    nonisolated(unsafe) private var materialObserver: NSObjectProtocol?
 
     init(contentRect: NSRect) {
         super.init(

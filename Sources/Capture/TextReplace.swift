@@ -10,6 +10,10 @@ enum TextReplace {
     /// status at replace time so re-querying focus would find the wrong
     /// element), falling back to a simulated Cmd-V. The user's clipboard is
     /// preserved either way.
+    ///
+    /// MainActor-bound with the rest of the replace path: the AX element it
+    /// carries is MainActor-held state, and every caller already runs there.
+    @MainActor
     static func replaceSelection(with text: String, target: AXUIElement?) async {
         if let target, !isElectronHelper(target), replaceViaAccessibility(with: text, element: target) {
             logger.notice("replaced via AX on captured target")
@@ -28,6 +32,7 @@ enum TextReplace {
     /// Electron (Cursor, Claude, ChatGPT) reports `kAXSelectedText` as settable
     /// and SetAttribute as success without changing the document. Trusting that
     /// skips the Cmd-V fallback, so Replace dismisses and the text stays put.
+    @MainActor
     static func isElectronHelper(_ element: AXUIElement) -> Bool {
         var pid: pid_t = 0
         guard AXUIElementGetPid(element, &pid) == .success,
@@ -45,6 +50,7 @@ enum TextReplace {
         return after != before
     }
 
+    @MainActor
     private static func replaceViaAccessibility(with text: String, element: AXUIElement) -> Bool {
         var settable: DarwinBoolean = false
         let settableResult = AXUIElementIsAttributeSettable(element, kAXSelectedTextAttribute as CFString, &settable)
@@ -61,6 +67,7 @@ enum TextReplace {
         return mutated
     }
 
+    @MainActor
     private static func selectedText(of element: AXUIElement) -> String? {
         var value: AnyObject?
         let result = AXUIElementCopyAttributeValue(element, kAXSelectedTextAttribute as CFString, &value)
@@ -68,6 +75,7 @@ enum TextReplace {
         return value as? String
     }
 
+    @MainActor
     private static func replaceViaClipboard(with text: String, target: AXUIElement?) async {
         activateHost(owning: target)
         await KeySimulator.waitForModifierRelease()
@@ -87,6 +95,7 @@ enum TextReplace {
         guardBox.restore()
     }
 
+    @MainActor
     private static func activateHost(owning element: AXUIElement?) {
         guard let element else { return }
         var pid: pid_t = 0

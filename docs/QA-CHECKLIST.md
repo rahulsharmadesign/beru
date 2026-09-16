@@ -122,7 +122,7 @@ Vault, Actions, Targets, Runs should read as macOS Settings (source list + inspe
 
 - [ ] Change the accent color: panel and Settings both repaint immediately
 - [ ] Switch system appearance while the panel is open: it follows
-- [ ] Menu bar mark is the SVG ant at 24.75pt, black in Light and white in Dark; switching appearance updates it without relaunching. Dock, About, Get Started, and the menu extra header show the same color mark (not the old winged bee). Spotlight / Dock may cache the old icon until Beru is reinstalled or the icon cache is cleared.
+- [ ] Menu bar mark is the SVG ant at 18pt, black in Light and white in Dark, sized like its neighboring icons; switching appearance updates it without relaunching. Dock, About, Get Started, and the menu extra header show the same color mark (not the old winged bee). Spotlight / Dock may cache the old icon until Beru is reinstalled or the icon cache is cleared.
 
 ## Smart Reply
 

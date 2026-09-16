@@ -25,9 +25,9 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.rahul.beru
-        MARKETING_VERSION: "1.1.19"
-        CURRENT_PROJECT_VERSION: "27"
-        SWIFT_VERSION: "5.10"
+        MARKETING_VERSION: "1.1.20"
+        CURRENT_PROJECT_VERSION: "28"
+        SWIFT_VERSION: "6.0"
         # Signed with the machine's Apple Development certificate, MANUALLY and
         # with no provisioning profile.
         #
@@ -92,7 +92,7 @@ targets:
       - path: Tests/BeruTests
     settings:
       base:
-        SWIFT_VERSION: "5.10"
+        SWIFT_VERSION: "6.0"
         GENERATE_INFOPLIST_FILE: YES
         CODE_SIGN_STYLE: Automatic
         CODE_SIGN_IDENTITY: "-"

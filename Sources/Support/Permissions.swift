@@ -1,5 +1,9 @@
 import AppKit
-import ApplicationServices
+// Preconcurrency: `kAXTrustedCheckOptionPrompt` is a framework-owned constant
+// pointer whose header type reads as shared mutable state. The framework
+// never mutates it, so the import carries the exception rather than every
+// call site that only ever reads the key.
+@preconcurrency import ApplicationServices
 
 enum Permissions {
     static func isAccessibilityTrusted() -> Bool {
