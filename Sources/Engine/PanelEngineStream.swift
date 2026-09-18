@@ -140,7 +140,15 @@ extension PanelEngine {
                     return
                 }
 
-                let decision = OutputQuality.evaluate(
+                /// Grammar and Reply recover a mangled tag format by retrying
+                /// with `OutputQuality.parseHint`. That hint names a contract
+                /// the Apple on-device prompts deliberately do not have — they
+                /// return one plain document and the parser's fallback path is
+                /// the design, not a failure. Let the unchanged-echo retry run
+                /// (a fresh attempt is the only recovery a weak model gets),
+                /// but turn the parse-hint retry into a plain regenerate.
+                let retriesTagFormat = SettingsStore.shared.activeProvider != .apple
+                var decision = OutputQuality.evaluate(
                     actionID: request.actionID,
                     raw: final,
                     source: request.capturedText,
@@ -148,6 +156,11 @@ extension PanelEngine {
                     preferredGrammarKind: SettingsStore.shared.interactionProfile.preferredGrammarKind,
                     canRetry: self.canQualityRetry(for: request.actionID)
                 )
+                if !retriesTagFormat,
+                   case .retry(let previous, let hint) = decision.outcome,
+                   hint != nil {
+                    decision.outcome = .retry(previousResult: previous, hint: nil)
+                }
                 switch decision.outcome {
                 case .retry(let previous, let hint):
                     guard self.isLive(request.generation, for: request.actionID) else { return }

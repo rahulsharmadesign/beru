@@ -72,4 +72,36 @@ final class GrammarSuggestionsTests: XCTestCase {
         XCTAssertTrue(Prompts.grammar.contains("not a second copy-edit"))
         XCTAssertFalse(Prompts.grammar.contains("Why isn't the grammar response working?"))
     }
+
+    func testVariantsIdenticalToCorrectedCollapse() {
+        // An already-clean sentence has no clearer or tighter form; the model
+        // repeats Corrected in all three tags. Three identical cards read as a
+        // bug, so the parse keeps only the genuine rephrases.
+        let raw = """
+        <grammar kind="corrected">Two problems in the composer.</grammar>
+        <grammar kind="clearer">Two problems in the composer.</grammar>
+        <grammar kind="tighter">Two problems in the composer.</grammar>
+        """
+        let parsed = GrammarSuggestions.parse(raw)
+        XCTAssertEqual(parsed, [GrammarSuggestion(kind: .corrected, body: "Two problems in the composer.")])
+    }
+
+    func testOnlyTheIdenticalVariantDrops() {
+        let raw = """
+        <grammar kind="corrected">He doesn't know whether it's right.</grammar>
+        <grammar kind="clearer">He doesn't know whether it's right.</grammar>
+        <grammar kind="tighter">He isn't sure it's right.</grammar>
+        """
+        let parsed = GrammarSuggestions.parse(raw)
+        XCTAssertEqual(parsed.map(\.kind), [.corrected, .tighter])
+    }
+
+    func testCollapseIgnoresCaseAndWhitespace() {
+        let raw = """
+        <grammar kind="corrected">He doesn't know whether it's right.</grammar>
+        <grammar kind="clearer">he  doesn't   know whether it's right.</grammar>
+        """
+        let parsed = GrammarSuggestions.parse(raw)
+        XCTAssertEqual(parsed.map(\.kind), [.corrected])
+    }
 }

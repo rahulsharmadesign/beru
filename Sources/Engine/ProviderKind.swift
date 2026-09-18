@@ -21,6 +21,20 @@ enum ProviderKind: String, CaseIterable, Codable {
         case .apple: return "Apple · on-device"
         }
     }
+
+    /// One-line quality caveat for the Settings row, or nil when the provider
+    /// carries the full prompts. Apple on-device is the general-purpose ~3B
+    /// base model — not the task-adapted models behind Apple's own Writing
+    /// Tools — so Beru serves it the simplified prompts and says so here, the
+    /// same honesty `ModelFit` gives a small Ollama model at pick time.
+    var qualityCaption: String? {
+        switch self {
+        case .apple:
+            return "On-device runs simplified prompts: Grammar returns one corrected version and Enhance skips target, context, and explanation. For the full features, pick Anthropic or an API model."
+        case .ollama, .anthropic, .custom:
+            return nil
+        }
+    }
 }
 
 /// One-click base URL + model defaults for common OpenAI-compatible hosts.

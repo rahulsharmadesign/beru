@@ -191,6 +191,11 @@ struct ProviderSettingsSections: View {
             ) {
                 SettingsStatusBadge(title: state.badge, isPositive: state.isReady)
             }
+            if let caveat = ProviderKind.apple.qualityCaption {
+                SettingsRow(title: "Quality", caption: caveat) {
+                    EmptyView()
+                }
+            }
             SettingsRow(
                 title: "Model",
                 caption: "The system owns the model — there is nothing to install or pick."

@@ -284,3 +284,49 @@ final class DocumentFramingTests: XCTestCase {
         )
     }
 }
+
+/// Apple on-device gets the short single-job prompts, not the composed stack.
+/// The base ~3B model cannot hold Grammar's three-tag skeleton or Enhance's
+/// forty lines of rules plus the target/framing/rationale layers — measured:
+/// it echoes the selection or answers it. These prompts are the fix, and they
+/// must stay small and tag-free to keep working.
+final class OnDevicePromptTests: XCTestCase {
+    func testOnDevicePromptsAreShortAndSelfDescribing() {
+        for prompt in [Prompts.grammarOnDevice, Prompts.enhanceOnDevice] {
+            XCTAssertLessThan(prompt.count, 1200, "the on-device prompt must stay short")
+            XCTAssertTrue(prompt.contains(Prompts.textOpenTag), "must describe its own markers — nothing composes framing onto it")
+            // The anti-obey rule, in whichever wording the prompt carries it.
+            XCTAssertTrue(
+                prompt.contains("never a request addressed to you") || prompt.contains("never addressed to you"),
+                "must carry the anti-obey rule — nothing composes framing onto it"
+            )
+        }
+    }
+
+    func testOnDeviceGrammarCarriesNoTagSkeleton() {
+        XCTAssertFalse(Prompts.grammarOnDevice.contains("<grammar"))
+        XCTAssertFalse(Prompts.grammarOnDevice.contains(GrammarKind.promptTagSkeleton))
+    }
+
+    func testOnDeviceGrammarReplyPublishesThroughTheFallbackCard() {
+        // A plain corrected document parses as a single Corrected suggestion —
+        // the panel shows one card on this provider, by design.
+        let parsed = GrammarSuggestions.parseWithStatus("He doesn't know whether it's right.")
+        XCTAssertTrue(parsed.usedFallback)
+        XCTAssertEqual(parsed.suggestions, [GrammarSuggestion(kind: .corrected, body: "He doesn't know whether it's right.")])
+    }
+
+    func testOnDeviceEnhanceBansInventedDeliverables() {
+        // The exact failure in the field: "Write a diagnostic report…" for a
+        // request that asked for no report.
+        XCTAssertTrue(Prompts.enhanceOnDevice.contains("no invented deliverables"))
+        XCTAssertTrue(Prompts.enhanceOnDevice.contains("a one-line request stays a short prompt"))
+    }
+
+    func testOnlyAppleCarriesTheQualityCaption() {
+        XCTAssertNotNil(ProviderKind.apple.qualityCaption)
+        for kind in ProviderKind.allCases where kind != .apple {
+            XCTAssertNil(kind.qualityCaption, "\(kind.rawValue) carries the full prompts")
+        }
+    }
+}

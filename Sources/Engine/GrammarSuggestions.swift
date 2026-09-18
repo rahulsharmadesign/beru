@@ -70,10 +70,29 @@ enum GrammarSuggestions {
             guard !body.isEmpty else { continue }
             byKind[kind] = body
         }
-        return GrammarKind.allCases.compactMap { kind -> GrammarSuggestion? in
+        let tagged = GrammarKind.allCases.compactMap { kind -> GrammarSuggestion? in
             guard let body = byKind[kind] else { return nil }
             return GrammarSuggestion(kind: kind, body: body)
         }
+        return collapsingIdenticalVariants(tagged)
+    }
+
+    /// When the source is already clean, the model rightly returns Corrected,
+    /// Clearer, and Tighter with the same body — there is no clearer or tighter
+    /// way to say a correct sentence. Showing three identical cards reads as a
+    /// bug, so a variant that matches Corrected (ignoring case and whitespace)
+    /// drops out and only the genuine rephrases stay. Corrected itself always
+    /// survives; an all-identical result collapses to the single card.
+    static func collapsingIdenticalVariants(_ suggestions: [GrammarSuggestion]) -> [GrammarSuggestion] {
+        guard let corrected = suggestions.first(where: { $0.kind == .corrected }) else { return suggestions }
+        let reference = normalized(corrected.body)
+        return suggestions.filter {
+            $0.kind == .corrected || normalized($0.body) != reference
+        }
+    }
+
+    private static func normalized(_ text: String) -> String {
+        text.split(whereSeparator: \.isWhitespace).joined(separator: " ").lowercased()
     }
 
     static func body(in suggestions: [GrammarSuggestion], matching kind: GrammarKind) -> String? {

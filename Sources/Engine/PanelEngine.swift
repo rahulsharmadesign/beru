@@ -197,14 +197,31 @@ final class PanelEngine {
         if actionID == EnhancementAction.searchID || actionID == EnhancementAction.describeID {
             appState.selectAction(actionID)
         }
-        start(actionID: actionID, instruction: trimmed)
+        /// Typed text on a verb chip with no selection is the source document,
+        /// not an instruction — Grammar/Enhance must run on it. Handing it to
+        /// `start` as `instruction` mixes the two roles: the run reads it as
+        /// the source via `composerSnapshot`, but the field-clear below skips
+        /// verbs, so the text stays put and the composer never frees up.
+        /// Promote it here: stash it as the capture, clear the field, then run.
+        let typedIsSource = actionID != EnhancementAction.searchID
+            && actionID != EnhancementAction.describeID
+            && capturedEmpty
+        if typedIsSource {
+            appState.capturedText = trimmed
+        }
+        start(actionID: actionID, instruction: typedIsSource ? nil : trimmed)
         // The question is consumed: clear the field at submit so it is ready
         // for the next input. Retry and regenerate fall back to
         // lastDescribeInstruction, and rewrite extras (a selection is
         // present) stay put for tweaking. The end-of-stream clear in
-        // runStream is now just a safety net.
-        if actionID == EnhancementAction.searchID || actionID == EnhancementAction.describeID {
-            appState.describeInstruction = ""
+        // runStream is now just a safety net. Deferred to the next runloop:
+        // this is called from the composer's Return handler, and writing the
+        // bound text mid-`insertNewline` races `textDidChange` and resurrects
+        // the cleared string.
+        if actionID == EnhancementAction.searchID || actionID == EnhancementAction.describeID || typedIsSource {
+            Task { @MainActor [weak appState] in
+                appState?.describeInstruction = ""
+            }
         }
     }
 

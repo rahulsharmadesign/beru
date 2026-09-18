@@ -17,7 +17,7 @@ extension PanelEngine {
             qualityRetries[actionID] = 0
         }
         let role: ModelRole
-        let systemPrompt: String
+        var systemPrompt: String
         /// Whether the prompt about to run is one this app wrote. Gates the
         /// target fragment, which is only coherent on top of built-in Enhance.
         let usesBuiltInPrompt: Bool
@@ -115,6 +115,23 @@ extension PanelEngine {
         appState.selectedGrammarKind = .corrected
 
         let provider = ProviderRegistry.activeProvider()
+        /// Apple's on-device base model cannot carry the composed prompt stack:
+        /// Grammar's three-tag skeleton and Enhance's target/framing/thread/
+        /// rationale layers are where it echoes the input or invents work. On
+        /// that provider the built-in verbs swap in the short single-job prompts
+        /// and every composed layer — including the <why> rationale — is skipped.
+        /// Quality retry keeps running: an unchanged-echo retry is the one
+        /// recovery that helps a weak model. Only the parseHint retry is
+        /// pointless (the short prompts have no tags to recover), and the
+        /// provider quality gate below turns it into a plain regenerate.
+        let useOnDevicePrompts = SettingsStore.shared.activeProvider == .apple && usesBuiltInPrompt
+        if useOnDevicePrompts {
+            if actionID == EnhancementAction.grammarID {
+                systemPrompt = Prompts.grammarOnDevice
+            } else if actionID == EnhancementAction.enhanceID {
+                systemPrompt = Prompts.enhanceOnDevice
+            }
+        }
         let clipboardForRequest = appState.includeClipboard ? appState.clipboardText : nil
         var userMessage: String
         if actionID == EnhancementAction.searchID {
@@ -235,6 +252,9 @@ extension PanelEngine {
             && actionID != EnhancementAction.grammarID
             && actionID != EnhancementAction.replyID
             && !isQuickSearch
+            // The <why> request is one more format rule the on-device model
+            // would have to hold; the short prompts deliberately omit it.
+            && !useOnDevicePrompts
         let replyLanguagePolicy = actionID == EnhancementAction.replyID
             ? ReplyLanguagePolicy.analyze(capturedText)
             : nil
@@ -244,30 +264,36 @@ extension PanelEngine {
         // small model is most likely to lose, and the tail is where it keeps
         // instructions best. Only the rationale request outranks it, because it
         // has to override the "output only the result" rule above it.
-        let finalSystemPrompt = Prompts.composeWithRationale(
-            Prompts.composeWithReplyLanguage(
-                Prompts.composeWithFraming(
-                    Prompts.composeWithProfile(
-                        Prompts.composeWithInteractionProfile(
-                            Prompts.composeWithThread(
-                                Prompts.composeWithContext(
-                                    Prompts.composeWithTarget(systemPrompt, profile: activeTarget),
-                                    context: activeContext
+        let finalSystemPrompt = useOnDevicePrompts
+            // The on-device prompts describe their own markers and carry no
+            // slots for target conventions, standing context, or history — the
+            // whole point is that one short instruction is all the base model
+            // can hold. Compose nothing onto them.
+            ? systemPrompt
+            : Prompts.composeWithRationale(
+                Prompts.composeWithReplyLanguage(
+                    Prompts.composeWithFraming(
+                        Prompts.composeWithProfile(
+                            Prompts.composeWithInteractionProfile(
+                                Prompts.composeWithThread(
+                                    Prompts.composeWithContext(
+                                        Prompts.composeWithTarget(systemPrompt, profile: activeTarget),
+                                        context: activeContext
+                                    ),
+                                    turns: threadTurns
                                 ),
-                                turns: threadTurns
+                                profile: SettingsStore.shared.interactionProfile,
+                                actionID: actionID
                             ),
-                            profile: SettingsStore.shared.interactionProfile,
-                            actionID: actionID
+                            profile: activeAuthorProfile,
+                            forReply: actionID == EnhancementAction.replyID
                         ),
-                        profile: activeAuthorProfile,
-                        forReply: actionID == EnhancementAction.replyID
+                        framing: Prompts.framing(actionID: actionID, usesBuiltInPrompt: usesBuiltInPrompt)
                     ),
-                    framing: Prompts.framing(actionID: actionID, usesBuiltInPrompt: usesBuiltInPrompt)
+                    policy: replyLanguagePolicy
                 ),
-                policy: replyLanguagePolicy
-            ),
-            enabled: explainsChanges
-        )
+                enabled: explainsChanges
+            )
 
         let attempt = attempts[actionID].map { $0 + 1 } ?? 0
         attempts[actionID] = attempt
