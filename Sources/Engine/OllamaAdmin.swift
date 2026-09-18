@@ -1,12 +1,17 @@
 import Foundation
 
-/// Ollama's own management API, used for listing and installing models.
+/// Ollama's own management API, used for listing installed models.
 ///
 /// Separate from `OpenAICompatProvider`, which speaks the OpenAI-compatible
 /// subset and must keep working against Groq, LM Studio and anything else on
-/// that shape. Listing and pulling are Ollama-specific, so they are only ever
-/// attempted against a base URL that looks like Ollama's — the same restraint
+/// that shape. Listing is Ollama-specific, so it is only ever attempted
+/// against a base URL that looks like Ollama's — the same restraint
 /// `nativeGenerateURL()` already applies when warming a model.
+///
+/// Downloading used to live here too. It is gone on purpose: the Ollama app
+/// and `ollama pull` show file variants and sizes that an in-app downloader
+/// cannot, and picked-by-name pulls are how wrong models (vision, F16 giants)
+/// got installed with no questions asked.
 struct OllamaAdmin: Sendable {
     struct Model: Identifiable, Sendable, Equatable {
         var name: String
@@ -20,27 +25,6 @@ struct OllamaAdmin: Sendable {
             formatter.allowedUnits = [.useGB, .useMB]
             return formatter.string(fromByteCount: bytes)
         }
-    }
-
-    /// One line of a streamed pull.
-    struct PullProgress: Sendable, Equatable {
-        var status: String
-        var completed: Int64?
-        var total: Int64?
-        /// Ollama reports failures in-band, as an `error` key on an otherwise
-        /// ordinary progress line, so every line has to be inspected — the HTTP
-        /// status is 200 for a pull that fails halfway.
-        var errorMessage: String?
-
-        /// Nil until the server reports both figures — the first few lines are
-        /// manifest work with no byte counts, and showing 0% for those would
-        /// read as a stalled download.
-        var fraction: Double? {
-            guard let completed, let total, total > 0 else { return nil }
-            return min(1, Double(completed) / Double(total))
-        }
-
-        var isDone: Bool { status == "success" }
     }
 
     enum AdminError: LocalizedError {
@@ -116,65 +100,5 @@ struct OllamaAdmin: Sendable {
             return Model(name: name, bytes: bytes)
         }
         .sorted { $0.name < $1.name }
-    }
-
-    // MARK: - Pulling
-
-    /// Streams progress while Ollama downloads a model.
-    ///
-    /// The response is newline-delimited JSON, one object per line, not SSE — so
-    /// it is parsed by line rather than by `data:` prefix.
-    func pull(model: String) -> AsyncThrowingStream<PullProgress, Error> {
-        AsyncThrowingStream { continuation in
-            let task = Task {
-                do {
-                    let url = try endpoint("api/pull")
-                    var request = URLRequest(url: url)
-                    request.httpMethod = "POST"
-                    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-                    // No overall timeout: a multi-gigabyte pull legitimately
-                    // takes many minutes, and the per-line updates are the
-                    // liveness signal.
-                    request.timeoutInterval = 3600
-                    request.httpBody = try JSONSerialization.data(
-                        withJSONObject: ["model": model, "stream": true]
-                    )
-
-                    let (bytes, response) = try await URLSession.shared.bytes(for: request)
-                    if let http = response as? HTTPURLResponse, http.statusCode >= 400 {
-                        throw AdminError.failed("The server refused to pull \(model) (HTTP \(http.statusCode)).")
-                    }
-                    for try await line in bytes.lines {
-                        if Task.isCancelled { break }
-                        guard let progress = Self.parsePullLine(line) else { continue }
-                        if let error = progress.errorMessage {
-                            throw AdminError.failed(error)
-                        }
-                        continuation.yield(progress)
-                        if progress.isDone { break }
-                    }
-                    continuation.finish()
-                } catch is CancellationError {
-                    continuation.finish()
-                } catch {
-                    continuation.finish(throwing: error)
-                }
-            }
-            continuation.onTermination = { _ in task.cancel() }
-        }
-    }
-
-    static func parsePullLine(_ line: String) -> PullProgress? {
-        let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty,
-              let data = trimmed.data(using: .utf8),
-              let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
-        else { return nil }
-        return PullProgress(
-            status: object["status"] as? String ?? "",
-            completed: (object["completed"] as? NSNumber)?.int64Value,
-            total: (object["total"] as? NSNumber)?.int64Value,
-            errorMessage: object["error"] as? String
-        )
     }
 }

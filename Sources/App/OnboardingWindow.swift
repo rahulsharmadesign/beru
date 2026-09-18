@@ -209,8 +209,12 @@ struct GetStartedView: View {
                     OnboardContinueButton("Continue") { step = .startBeru }
                 } else {
                     OnboardContinueButton("Open System Settings") {
-                        Permissions.requestAccessibilityIfNeeded()
-                        Permissions.openAccessibilitySettings()
+                        // Same conditional as Settings → Permissions: the system
+                        // prompt fires at most once, and must not be buried
+                        // under System Settings when it does appear.
+                        if !Permissions.requestAccessibilityIfNeeded() {
+                            Permissions.openAccessibilitySettings()
+                        }
                     }
                     BeruButton(title: "Continue", variant: .pill, size: .regular) {
                         step = .startBeru

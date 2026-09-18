@@ -101,11 +101,6 @@ final class SettingsStore {
         didSet { defaults.set(hasCompletedGetStarted, forKey: Keys.hasCompletedGetStarted) }
     }
 
-    /// One-time settings sidebar Tip card above About has been dismissed.
-    var hasDismissedSettingsTip: Bool {
-        didSet { defaults.set(hasDismissedSettingsTip, forKey: Keys.hasDismissedSettingsTip) }
-    }
-
     /// Accepted Insert / Replace / Copy choices on this Mac. Not usage history.
     var interactionProfile: InteractionProfile {
         didSet { persistInteractionProfile() }
@@ -154,7 +149,6 @@ final class SettingsStore {
         static let lastTargetByApp = "lastTargetByApp"
         static let hasLaunchedBefore = "hasLaunchedBefore"
         static let hasCompletedGetStarted = "hasCompletedGetStarted"
-        static let hasDismissedSettingsTip = "hasDismissedSettingsTip"
         static let interactionProfile = "interactionProfile"
     }
 
@@ -217,7 +211,6 @@ final class SettingsStore {
         lastTargetID = defaults.string(forKey: Keys.lastTargetID) ?? TargetProfile.genericID
         lastTargetByApp = defaults.dictionary(forKey: Keys.lastTargetByApp) as? [String: String] ?? [:]
         hasCompletedGetStarted = defaults.bool(forKey: Keys.hasCompletedGetStarted)
-        hasDismissedSettingsTip = defaults.bool(forKey: Keys.hasDismissedSettingsTip)
         if let data = defaults.data(forKey: Keys.interactionProfile),
            let decoded = try? JSONDecoder().decode(InteractionProfile.self, from: data) {
             interactionProfile = decoded

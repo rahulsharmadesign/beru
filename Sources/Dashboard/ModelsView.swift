@@ -1,11 +1,15 @@
 import SwiftUI
 
+/// Local models: what Ollama has installed, whether each one fits Beru's text
+/// roles, and one tap to point Beru at one. Downloading lives outside Beru —
+/// the Ollama app and `ollama pull <id>` in Terminal show the file variants
+/// and sizes an in-app installer cannot, which is how wrong models got
+/// installed with no questions asked.
 struct ModelsView: View {
     @Bindable private var settings = SettingsStore.shared
-    @Bindable private var pull = OllamaPullService.shared
     @State private var installed: [OllamaAdmin.Model] = []
     @State private var listState: ListState = .loading
-    @State private var setupState: OllamaSetupState = .notInstalled
+    @State private var serverReachable = false
 
     private enum ListState: Equatable {
         case loading
@@ -13,8 +17,6 @@ struct ModelsView: View {
         case unreachable(String)
         case notOllama
     }
-
-    private static let recommended = RecommendedOllamaModel.all
 
     private var admin: OllamaAdmin {
         OllamaAdmin(baseURL: settings.ollamaBaseURL)
@@ -28,21 +30,14 @@ struct ModelsView: View {
         ) {
             if settings.activeProvider == .ollama {
                 localSection
-                installSection
             }
             ProviderSettingsSections()
         }
         .task(id: "\(settings.activeProvider.rawValue)|\(settings.ollamaBaseURL)") {
             await refresh()
-            while !Task.isCancelled, settings.activeProvider == .ollama, setupState != .running {
+            while !Task.isCancelled, settings.activeProvider == .ollama, !serverReachable {
                 try? await Task.sleep(for: .seconds(2))
                 await refresh(showLoading: false)
-            }
-        }
-        // Pulls live on OllamaPullService so leaving this page does not cancel them.
-        .onChange(of: pull.pulling) { wasPulling, isPulling in
-            if wasPulling != nil, isPulling == nil {
-                Task { await refresh() }
             }
         }
     }
@@ -61,21 +56,21 @@ struct ModelsView: View {
             case .notOllama:
                 SettingsRow(
                     title: "Installed models",
-                    caption: "Model management needs an Ollama-style /v1 base URL."
+                    caption: "Model listing needs an Ollama-style /v1 base URL."
                 ) {
                     SettingsValue(text: "Unavailable")
                 }
             case .unreachable(let host):
                 SettingsRow(
                     title: "Server",
-                    caption: "Install or open Ollama below, then pick a model."
+                    caption: "Start Ollama (`ollama serve`), then pick a model below. Pull new ones with `ollama pull <id>` in Terminal."
                 ) {
                     SettingsValue(text: host)
                 }
             case .ready where installed.isEmpty:
                 SettingsRow(
                     title: "Installed models",
-                    caption: "Server is running, but nothing is installed yet."
+                    caption: "Server is running, but nothing is installed yet. Pull one with `ollama pull \(RecommendedOllamaModel.defaultID)` in Terminal."
                 ) {
                     SettingsValue(text: "None")
                 }
@@ -85,36 +80,29 @@ struct ModelsView: View {
                         title: model.name,
                         caption: modelCaption(model)
                     ) {
-                        SettingsOverflowMenu(
-                            title: "Use for",
-                            items: [
-                                DropdownItem(
-                                    title: "Enhance",
-                                    isOn: settings.ollamaEnhanceModel == model.name
-                                ) { settings.ollamaEnhanceModel = model.name },
-                                DropdownItem(
-                                    title: "Grammar",
-                                    isOn: settings.ollamaGrammarModel == model.name
-                                ) { settings.ollamaGrammarModel = model.name },
-                                DropdownItem(
-                                    title: "Both",
-                                    isOn: settings.ollamaEnhanceModel == model.name
-                                        && settings.ollamaGrammarModel == model.name
-                                ) {
-                                    settings.ollamaEnhanceModel = model.name
-                                    settings.ollamaGrammarModel = model.name
-                                },
-                            ]
-                        )
+                        if isActiveModel(model.name) {
+                            SettingsValue(text: "In use")
+                        } else {
+                            SettingsPillButton(title: "Use") {
+                                settings.ollamaEnhanceModel = model.name
+                                settings.ollamaGrammarModel = model.name
+                            }
+                        }
                     }
                 }
             }
         }
     }
 
-    /// Warns when a text role runs on a vision/embedding/speech model, with a
-    /// one-tap move to the first installed text model. Nothing renders when
-    /// both roles are well served.
+    /// One model serves both roles: two ids make Ollama swap weights on every
+    /// tab switch, so "Use" always points both at the same model.
+    private func isActiveModel(_ name: String) -> Bool {
+        settings.ollamaEnhanceModel == name && settings.ollamaGrammarModel == name
+    }
+
+    /// Warns when a text role runs on a vision/embedding/speech model or on a
+    /// model too small for the jobs, with a one-tap move to the first
+    /// installed text model. Nothing renders when both roles are well served.
     @ViewBuilder
     private var modelFitBanner: some View {
         let weakRoles = OllamaModelFit.weakRoles(
@@ -156,109 +144,26 @@ struct ModelsView: View {
     private func modelCaption(_ model: OllamaAdmin.Model) -> String {
         var parts: [String] = []
         if model.bytes > 0 { parts.append(model.sizeDescription) }
-        let roles = rolesUsing(model.name)
-        if !roles.isEmpty { parts.append(roles.joined(separator: ", ")) }
+        if isActiveModel(model.name) { parts.append("Enhance, Grammar") }
         if let warning = OllamaModelFit.fit(for: model.name).warning {
             parts.append(warning)
         }
         return parts.joined(separator: " · ")
     }
 
-    @ViewBuilder
-    private var installSection: some View {
-        SettingsSection(title: "Install a model") {
-            SettingsRow(title: "Ollama", caption: setupCaption) {
-                switch setupState {
-                case .notInstalled:
-                    SettingsPrimaryButton(title: "Download Ollama") {
-                        OllamaSetup.openDownloadPage()
-                    }
-                case .installedNotRunning:
-                    SettingsPrimaryButton(title: "Open Ollama") {
-                        try? OllamaSetup.launchApp()
-                    }
-                case .running:
-                    SettingsValue(text: "Running")
-                }
-            }
-
-            ForEach(Self.recommended) { item in
-                let isInstalled = installed.contains {
-                    $0.name == item.name || $0.name.hasPrefix(item.name + "-")
-                }
-                let isPulling = pull.pulling == item.name
-                SettingsRow(title: item.title, caption: installCaption(item, isPulling: isPulling)) {
-                    if isInstalled {
-                        SettingsValue(text: "Installed")
-                    } else if isPulling {
-                        SettingsPillButton(title: "Cancel", action: pull.cancel)
-                    } else {
-                        SettingsPillButton(
-                            title: "Install",
-                            enabled: pull.pulling == nil && (listState == .ready || setupState == .running)
-                        ) {
-                            pull.start(name: item.name, baseURL: settings.ollamaBaseURL)
-                        }
-                    }
-                }
-            }
-            if let pullError = pull.error {
-                SettingsRow(title: "Install failed", caption: pullError) {
-                    SettingsValue(text: "Error")
-                }
-            }
-        }
-    }
-
-    private var setupCaption: String {
-        switch setupState {
-        case .notInstalled:
-            return "Download and install Ollama once, then come back here."
-        case .installedNotRunning:
-            return "Ollama is installed. Open it to start the local server."
-        case .running:
-            return "Local server is running. Pick a model below."
-        }
-    }
-
-    private func installCaption(
-        _ item: RecommendedOllamaModel,
-        isPulling: Bool
-    ) -> String {
-        if isPulling { return pullStatusLine }
-        return "\(item.name) · \(item.caption)"
-    }
-
-    private func rolesUsing(_ name: String) -> [String] {
-        var roles: [String] = []
-        if settings.ollamaEnhanceModel == name { roles.append("Enhance") }
-        if settings.ollamaGrammarModel == name { roles.append("Grammar") }
-        return roles
-    }
-
-    private var pullStatusLine: String {
-        guard let progress = pull.progress else { return "Starting…" }
-        guard let completed = progress.completed, let total = progress.total, total > 0 else {
-            return progress.status.isEmpty ? "Working…" : progress.status
-        }
-        let formatter = ByteCountFormatter()
-        formatter.countStyle = .decimal
-        return "\(formatter.string(fromByteCount: completed)) of \(formatter.string(fromByteCount: total))"
-    }
-
     private func refresh(showLoading: Bool = true) async {
         guard settings.activeProvider == .ollama else { return }
         guard OllamaAdmin.nativeRoot(from: settings.ollamaBaseURL) != nil else {
             listState = .notOllama
-            setupState = OllamaSetup.resolve(serverReachable: false)
+            serverReachable = false
             return
         }
         if showLoading { listState = .loading }
-        var serverReachable = false
+        var reachable = false
         do {
             installed = try await admin.installedModels()
             listState = .ready
-            serverReachable = true
+            reachable = true
         } catch let error as OllamaAdmin.AdminError {
             if case .unreachable = error {
                 listState = .unreachable(adminHostLabel)
@@ -268,7 +173,7 @@ struct ModelsView: View {
         } catch {
             listState = .unreachable(adminHostLabel)
         }
-        setupState = OllamaSetup.resolve(serverReachable: serverReachable)
+        serverReachable = reachable
     }
 
     private var adminHostLabel: String {

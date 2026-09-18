@@ -86,7 +86,6 @@ final class SettingsStoreTests: XCTestCase {
         XCTAssertEqual(store.userName, "")
         XCTAssertFalse(store.launchAtLogin)
         XCTAssertFalse(store.hasCompletedGetStarted)
-        XCTAssertFalse(store.hasDismissedSettingsTip)
         XCTAssertTrue(store.lastTargetByApp.isEmpty)
     }
 

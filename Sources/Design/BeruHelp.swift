@@ -7,11 +7,11 @@ struct BeruHelpPill: View {
 
     var body: some View {
         Text(text)
-            .font(BeruType.controlMedium)
+            .font(BeruType.captionMedium)
             .foregroundStyle(BeruColor.textPrimary)
             .lineLimit(1)
-            .padding(.horizontal, BeruSpace.md)
-            .frame(height: BeruMetrics.pillHeight)
+            .padding(.horizontal, BeruSpace.xs)
+            .frame(height: BeruMetrics.metapillHeight)
             .background {
                 Capsule()
                     .fill(BeruColor.panelSolid)

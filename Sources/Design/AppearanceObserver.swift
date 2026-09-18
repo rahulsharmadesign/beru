@@ -34,6 +34,12 @@ final class AppearanceObserver {
         signature = Self.makeSignature()
         let appearance = NSApp.effectiveAppearance
         for window in NSApp.windows {
+            // Never pin the menu-bar windows: the bar keeps its own appearance
+            // (wallpaper tint can disagree with the app), and stamping it here
+            // froze the status-item label on the app's scheme — the "wrong
+            // variant" the menu-bar icon used to show. Same class-name match
+            // BeruApp uses to dismiss the extra.
+            guard !window.className.contains("NSStatusBar") else { continue }
             window.appearance = appearance
             (window as? FloatingPanel)?.syncAppearance(with: appearance)
         }

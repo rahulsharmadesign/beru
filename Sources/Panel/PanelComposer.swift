@@ -62,7 +62,7 @@ extension PanelView {
 
     /// Transient confirmations ("Replaced in …", "Pinned") never resize the
     /// chrome. Tabs with a footer show the text inline while the icon row
-    /// and savings hide for the 2s confirmation (that chrome is dead — the
+    /// and savings hide for the 0.8s confirmation (that chrome is dead — the
     /// panel dismisses when the toast clears). Grammar/Reply have no
     /// footer, so the toast floats over the composer spacer zone instead,
     /// ignoring clicks so the pill and mic stay usable beneath it.

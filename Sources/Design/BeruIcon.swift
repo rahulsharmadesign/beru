@@ -189,47 +189,46 @@ struct BeruEmptyState<Actions: View>: View {
     }
 }
 
-/// Menu-bar mark: Black.svg in Light, White.svg in Dark, baked to exact
-/// pixels and shown `.original` so a wallpaper-tinted bar can never invert
-/// it like a template glyph.
+/// Menu-bar mark: the ant SVG baked to exact pixels as a *template* image,
+/// so the system tints it for the bar's actual luminance — black on a light
+/// bar, white on a dark one — at draw time, on every frame.
 ///
-/// Two lessons baked into this shape. First, the variant must come from the
-/// *view's* color scheme (the bar), never `NSApp.effectiveAppearance` (the
-/// app): a light bar over Dark mode froze the wrong variant. Second, the
-/// size must be baked too: a `MenuBarExtra` label stretches a framed SwiftUI
-/// `Image` to bar height, ignoring the frame — measured 49px on screen for
-/// an 18pt frame — while an explicitly-sized NSImage renders exactly.
-/// Reading `signature` recooks for the menu-bar invalidation gap; every
-/// other change resolves live from the scene.
+/// This replaced a snapshot design that baked Black/White per the view's
+/// `colorScheme` Bool at body-evaluation time. That froze whenever the
+/// MenuBarExtra label missed an appearance invalidation, and disagreed with
+/// wallpaper-tinted bars where the bar and the app use different schemes. A
+/// template can be stale in neither way: there is no variant to pick and
+/// nothing to re-cook on a theme change.
+///
+/// Two lessons baked into this shape. First, never read the scheme here at
+/// all — not the view's, not `NSApp.effectiveAppearance`. Second, the size
+/// must be baked: a `MenuBarExtra` label stretches a framed SwiftUI `Image`
+/// to bar height, ignoring the frame — measured 49px on screen for an 18pt
+/// frame — while an explicitly-sized NSImage renders exactly.
 struct BeruMenuBarIcon: View {
-    @Environment(\.colorScheme) private var colorScheme
-    @Bindable private var appearance = AppearanceObserver.shared
-
     var body: some View {
-        let _ = appearance.signature
-        Image(nsImage: Self.glyph(dark: colorScheme == .dark))
-            .renderingMode(.original)
+        Image(nsImage: Self.glyph())
+            .renderingMode(.template)
             .accessibilityLabel("Beru")
     }
 
-    private static func glyph(dark: Bool) -> NSImage {
+    private static func glyph() -> NSImage {
         let side = BeruMetrics.menuBarGlyph
         let image = NSImage(size: NSSize(width: side, height: side), flipped: false) { rect in
-            (NSAppearance(named: dark ? .darkAqua : .aqua) ?? NSAppearance.current)
-                .performAsCurrentDrawingAppearance {
-                    NSGraphicsContext.current?.imageInterpolation = .high
-                    NSImage(named: "MenuBarIcon")?.draw(
-                        in: rect,
-                        from: .zero,
-                        operation: .sourceOver,
-                        fraction: 1,
-                        respectFlipped: false,
-                        hints: [.interpolation: NSImageInterpolation.high]
-                    )
-                }
+            NSGraphicsContext.current?.imageInterpolation = .high
+            NSImage(named: "MenuBarIcon")?.draw(
+                in: rect,
+                from: .zero,
+                operation: .sourceOver,
+                fraction: 1,
+                respectFlipped: false,
+                hints: [.interpolation: NSImageInterpolation.high]
+            )
             return true
         }
-        image.isTemplate = false
+        // Alpha is the mask; the bar supplies the color live. Either catalog
+        // variant (Black/White solid on transparent) yields the same mask.
+        image.isTemplate = true
         return image
     }
 }

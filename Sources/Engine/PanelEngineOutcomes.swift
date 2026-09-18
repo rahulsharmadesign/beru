@@ -26,7 +26,9 @@ extension PanelEngine {
         replaceToastTask?.cancel()
         replaceToastTask = Task { [weak self] in
             do {
-                try await Task.sleep(for: .seconds(2))
+                // Short confirmation only: the toast is dead chrome (the panel
+                // dismisses when it clears), so it must not hold the write.
+                try await Task.sleep(for: .milliseconds(800))
             } catch {
                 return
             }
@@ -55,7 +57,7 @@ extension PanelEngine {
         guard let text else { return }
         // hide() fades 180ms then orderOut. Cmd-V before that lands on the
         // panel's field editor. Wait until the window is gone, then paste.
-        try? await Task.sleep(for: .milliseconds(350))
+        try? await Task.sleep(for: .milliseconds(180))
         await TextReplace.replaceSelection(with: text, target: target)
     }
 

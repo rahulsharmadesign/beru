@@ -90,6 +90,19 @@ struct ProviderSettingsSections: View {
         }
     }
 
+    /// One local model for both roles, typed free so any installed id works.
+    /// Writes both stored keys together: the per-role split only ever caused
+    /// weight swaps and mismatched pickers, so editing unifies them.
+    private var localModelBinding: Binding<String> {
+        Binding(
+            get: { settings.ollamaEnhanceModel },
+            set: {
+                settings.ollamaEnhanceModel = $0
+                settings.ollamaGrammarModel = $0
+            }
+        )
+    }
+
     /// Ollama has no secrets. Hitting Keychain on every Models visit is what
     /// raised "Beru wants to use your confidential information".
     private func hydrateKeysForActiveProvider() {
@@ -110,11 +123,11 @@ struct ProviderSettingsSections: View {
             SettingsRow(title: "Base URL") {
                 SettingsField(placeholder: "http://127.0.0.1:11434/v1", text: $settings.ollamaBaseURL, width: BeruMetrics.wideFieldWidth)
             }
-            SettingsRow(title: "Enhance model") {
-                OllamaModelIDPicker(selection: $settings.ollamaEnhanceModel, accessibilityLabel: "Enhance model")
-            }
-            SettingsRow(title: "Grammar model") {
-                OllamaModelIDPicker(selection: $settings.ollamaGrammarModel, accessibilityLabel: "Grammar model")
+            SettingsRow(
+                title: "Local model",
+                caption: "One model serves Enhance and Grammar — two ids make Ollama swap weights on every tab switch. Any installed id works; pull new ones with `ollama pull <id>` in Terminal."
+            ) {
+                SettingsField(placeholder: RecommendedOllamaModel.defaultID, text: localModelBinding, width: BeruMetrics.wideFieldWidth)
             }
         case .anthropic:
             SettingsRow(

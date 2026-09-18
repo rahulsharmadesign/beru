@@ -92,6 +92,12 @@ enum Prompts {
     <grammar kind="clearer">The meeting is at 3 PM tomorrow.</grammar>
     <grammar kind="tighter">The meeting is at 3 PM tomorrow.</grammar>
 
+    Input: <text>We need to have a discussion about the plan for tomorrow</text>
+    Output:
+    <grammar kind="corrected">We need to have a discussion about the plan for tomorrow.</grammar>
+    <grammar kind="clearer">We need to discuss the plan for tomorrow.</grammar>
+    <grammar kind="tighter">We must discuss tomorrow's plan.</grammar>
+
     Input: <text>we recieved you're order, it will ship monday</text>
     Output:
     <grammar kind="corrected">We received your order; it will ship Monday.</grammar>

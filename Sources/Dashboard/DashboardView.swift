@@ -89,13 +89,6 @@ struct DashboardView: View {
                 }
                 .scrollBounceBehavior(.basedOnSize)
                 Spacer(minLength: 0)
-                if searchIsEmpty {
-                    SettingsTipCard {
-                        model.route = .models
-                    }
-                    .padding(.horizontal, BeruSpace.xs)
-                    .padding(.bottom, BeruSpace.xs)
-                }
             }
             if searchIsEmpty || !filteredFooter.isEmpty {
                 VStack(spacing: 0) {
@@ -151,9 +144,6 @@ struct DashboardView: View {
             Text(route.title)
                 .font(selected ? BeruType.sidebarSelected : BeruType.sidebar)
             Spacer(minLength: 0)
-            if route == .models {
-                ModelsDownloadBadge()
-            }
             if route == .about, updates.showsUpdateButton {
                 SidebarUpdateChip()
             }
@@ -192,60 +182,6 @@ struct DashboardView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-    }
-}
-
-/// Isolated so a pull's progress ticks do not re-layout the whole dashboard.
-private struct ModelsDownloadBadge: View {
-    @Bindable private var pull = OllamaPullService.shared
-
-    var body: some View {
-        if pull.pulling != nil {
-            Text("Downloading…")
-                .font(BeruType.footnote)
-                .lineLimit(1)
-        }
-    }
-}
-
-/// Isolated so dismissing the tip does not animate or invalidate the dashboard.
-private struct SettingsTipCard: View {
-    var onViewModels: () -> Void
-    @Bindable private var settings = SettingsStore.shared
-    @State private var revealed = false
-
-    var body: some View {
-        if !settings.hasDismissedSettingsTip {
-            VStack(alignment: .leading, spacing: BeruSpace.xs) {
-                HStack(alignment: .center, spacing: BeruSpace.xs) {
-                    Text("Tip")
-                        .font(BeruType.sidebarHeader)
-                        .foregroundStyle(BeruColor.textPrimary)
-                    Spacer(minLength: 0)
-                    SettingsIconButton(icon: "x", size: BeruMetrics.iconSizeDense, frameSize: BeruMetrics.hitTargetCompact, help: "Dismiss tip") {
-                        settings.hasDismissedSettingsTip = true
-                    }
-                }
-                Text("Gemma 3 1B is a lightweight local model (~815 MB) that fits the widget.")
-                    .font(BeruType.footnote)
-                    .foregroundStyle(BeruColor.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                SettingsPrimaryButton(title: "View models", action: onViewModels)
-            }
-            .padding(BeruSpace.sm)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background {
-                BeruRadius.shape(BeruRadius.md)
-                    .fill(BeruColor.card)
-                    .overlay {
-                        BeruRadius.shape(BeruRadius.md)
-                            .strokeBorder(BeruColor.border, lineWidth: BeruMetrics.hairline)
-                    }
-            }
-            .opacity(revealed ? 1 : 0)
-            .onAppear { revealed = true }
-            .animation(.easeOut(duration: 0.25), value: revealed)
-        }
     }
 }
 

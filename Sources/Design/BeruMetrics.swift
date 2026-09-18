@@ -17,10 +17,10 @@ enum BeruMetrics {
     static let sidebarWidth: CGFloat = 240
     /// Settings sidebar row. 36pt, on the 4pt grid.
     static let sidebarRowHeight: CGFloat = 36
-    /// Settings sidebar icon tile: 28pt well, 20pt glyph. Radius 8 matches
+    /// Settings sidebar icon tile: 28pt well, 16pt glyph. Radius 8 matches
     /// `BeruRadius.sm` so the well is a rounded square, not a circle.
     static let sidebarTileBox: CGFloat = 28
-    static let sidebarTileGlyph: CGFloat = 20
+    static let sidebarTileGlyph: CGFloat = 16
     static let sidebarTileRadius: CGFloat = 8
     /// Secondary list column inside a workspace page (Actions, Targets, Vault).
     static let workspaceListWidth: CGFloat = 280
@@ -87,10 +87,11 @@ enum BeruMetrics {
     static let menuDropdownWidth: CGFloat = 320
     /// Brand mark in the menu-bar header. Off the grid on purpose.
     static let brandMark: CGFloat = 30
-    /// Status-item glyph. The macOS standard 18pt, matching neighboring
-    /// menu-bar icons. The SVG carries its own ~10% internal padding, so the
+    /// Status-item glyph. 22.5pt — the 18pt macOS standard plus 25%, per
+    /// request, so the mark reads next to neighboring icons. Off the 4pt
+    /// grid on purpose. The SVG carries its own ~10% internal padding, so the
     /// optical mark lands where system glyphs sit.
-    static let menuBarGlyph: CGFloat = 18
+    static let menuBarGlyph: CGFloat = 22.5
     /// Haze glyph size. 16 across the app; 12-14 allowed only inside
     /// dense chips, cites, and kbd.
     static let iconSize: CGFloat = 16
@@ -131,8 +132,9 @@ enum BeruMetrics {
     /// Haze metapill height for status pills on the panel.
     static let metapillHeight: CGFloat = 26
     /// Lift the hover helper so it sits above the control. The footer row
-    /// clips a pill parked underneath (composer well covers it).
-    static var helpPillOffset: CGFloat { pillHeight + BeruSpace.xs }
+    /// clips a pill parked underneath (composer well covers it). Tracks the
+    /// compact helper height, not the control pill.
+    static var helpPillOffset: CGFloat { metapillHeight + BeruSpace.xs }
     /// Minimum height for workspace source-list rows, so one-line and
     /// two-line rows keep the same vertical rhythm.
     static let workspaceRowMinHeight: CGFloat = 48

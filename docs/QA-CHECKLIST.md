@@ -28,7 +28,7 @@ the window height fits the content:
 - [ ] Close disc and composer sit 10pt in from the window on every side; idle tabs have no gray fill; selected tab is accent
 - [ ] Open the panel and switch Search ↔ Enhance: inset does not collapse then snap; composer never crops
 - [ ] In Cursor with a selection: no character count under the chips; “Using N prior turns” appears only when session context applies, and clicking it clears the thread
-- [ ] Replace: footer shows “Replaced in [app]” for ~2s, then the panel closes and the host text updates; a second click during the toast does nothing; Escape during the toast still writes
+- [ ] Replace: footer shows “Replaced in [app]” for ~0.8s, then the panel closes and the host text updates; a second click during the toast does nothing; Escape during the toast still writes
 - [ ] Select text on a webpage and invoke: **Enhance Prompt** is selected and already visible in the chip row (no horizontal swipe)
 - [ ] Each answered turn shows copy / regenerate / like / dislike / pin icons; votes persist for the session and log as training signal; pin flashes a check without dismissing
 - [ ] AI Search regenerate rewrites only the latest answer; earlier turns stay
@@ -103,10 +103,9 @@ Vault, Actions, Targets, Runs should read as macOS Settings (source list + inspe
 
 ## Models
 
-- [ ] Install a model, then navigate away from Models: download continues
-- [ ] Sidebar shows the download badge while it runs
-- [ ] Return to Models: progress is still accurate, Cancel works
-- [ ] Installed model appears in the Enhance and Grammar pickers
+- [ ] Installed Ollama models list with sizes; Use points both roles at one model (no per-role split, no weight-swap stall)
+- [ ] A weak model (vision, ≤3B, embedding/speech) serving a role shows the banner with a working "Use X for Both"
+- [ ] Typing any installed id into the Local model field works; Ollama stopped shows the start-server row
 - [ ] API preset + key in Models (or `BERU_API_KEY` when launched from a terminal): Test connection succeeds; panel provider picker enables API
 
 ## Session context (when touched)
@@ -122,7 +121,7 @@ Vault, Actions, Targets, Runs should read as macOS Settings (source list + inspe
 
 - [ ] Change the accent color: panel and Settings both repaint immediately
 - [ ] Switch system appearance while the panel is open: it follows
-- [ ] Menu bar mark is the SVG ant at 18pt, black in Light and white in Dark, sized like its neighboring icons; switching appearance updates it without relaunching. Dock, About, Get Started, and the menu extra header show the same color mark (not the old winged bee). Spotlight / Dock may cache the old icon until Beru is reinstalled or the icon cache is cleared.
+- [ ] Menu bar mark is the SVG ant at 22.5pt, black in Light and white in Dark, switching appearance without relaunching. Dock, About, Get Started, and the menu extra header show the same color mark (not the old winged bee). Spotlight / Dock may cache the old icon until Beru is reinstalled or the icon cache is cleared.
 
 ## Smart Reply
 

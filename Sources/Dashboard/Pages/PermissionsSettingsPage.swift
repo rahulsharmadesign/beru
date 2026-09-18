@@ -7,7 +7,11 @@ import SwiftUI
 // dashboard; SettingsStore stays the single place they read and write.
 
 struct PermissionsSettingsTab: View {
-    @State private var isTrusted = Permissions.isAccessibilityTrusted()
+    /// Live trust state: the distributed `com.apple.accessibility.api`
+    /// notification refreshes the badge the moment the toggle lands, without
+    /// waiting for the app to become active again. A plain `@State` snapshot
+    /// refreshed only on appear missed exactly the post-update re-grant.
+    @Bindable private var a11y = AccessibilityPreferences.shared
     @Bindable private var dictation = DictationService.shared
 
     var body: some View {
@@ -19,18 +23,24 @@ struct PermissionsSettingsTab: View {
             SettingsStatusCard(
                 icon: "accessibility",
                 title: "Accessibility",
-                badgeTitle: isTrusted ? "Granted" : "Needed",
-                isPositive: isTrusted,
-                message: "Required to read and replace text in other apps."
+                badgeTitle: a11y.isAccessibilityTrusted ? "Granted" : "Needed",
+                isPositive: a11y.isAccessibilityTrusted,
+                message: a11y.isAccessibilityTrusted
+                    ? "Required to read and replace text in other apps."
+                    : "Required to read and replace text in other apps. After an update, if the toggle won't stick, remove Beru from the list (–) and re-add it (+)."
             ) {
-                if isTrusted {
+                if a11y.isAccessibilityTrusted {
                     SettingsPillButton(title: "Open") {
                         Permissions.openAccessibilitySettings()
                     }
                 } else {
                     SettingsPrimaryButton(title: "Grant") {
-                        Permissions.requestAccessibilityIfNeeded()
-                        Permissions.openAccessibilitySettings()
+                        // The system prompt appears at most once; after an
+                        // update the stale TCC entry must be fixed by hand, so
+                        // only fall through to System Settings while untrusted.
+                        if !Permissions.requestAccessibilityIfNeeded() {
+                            Permissions.openAccessibilitySettings()
+                        }
                     }
                 }
             }
@@ -61,7 +71,7 @@ struct PermissionsSettingsTab: View {
     }
 
     private func refresh() {
-        isTrusted = Permissions.isAccessibilityTrusted()
+        AccessibilityPreferences.shared.refreshTrust()
         dictation.refreshAvailability()
     }
 }
