@@ -46,4 +46,18 @@ final class AppleProviderWiringTests: XCTestCase {
         store.selectProvider(.apple)
         XCTAssertFalse(store.fallbackProviders.contains(.apple))
     }
+
+    /// Grammar's three-in-one call echoes under greedy decoding on the
+    /// on-device model (measured with Beru's exact prompt), so it alone gets
+    /// temperature while every other role keeps the shared tuning.
+    func testGrammarSamplingAvoidsGreedy() {
+        XCTAssertEqual(
+            AppleGeneration.sampling(for: .grammar, actionID: EnhancementAction.grammarID),
+            .temperature(AppleGeneration.grammarTemperature)
+        )
+        XCTAssertEqual(
+            AppleGeneration.sampling(for: .enhance, actionID: EnhancementAction.enhanceID),
+            .temperature(ProviderTuning.temperature(for: .enhance))
+        )
+    }
 }

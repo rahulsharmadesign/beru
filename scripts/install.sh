@@ -82,6 +82,11 @@ for _ in $(seq 1 40); do
     sleep 0.1
 done
 if pgrep -x Beru >/dev/null 2>&1; then
+    echo "warning: Beru ignored SIGTERM; sending SIGKILL" >&2
+    pkill -9 -x Beru 2>/dev/null || true
+    sleep 1
+fi
+if pgrep -x Beru >/dev/null 2>&1; then
     echo "error: Beru is still running; quit it from the menu bar and retry." >&2
     exit 1
 fi

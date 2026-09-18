@@ -124,7 +124,17 @@ enum AppleGeneration {
         case temperature(Double)
     }
 
+    /// Grammar's three-in-one call needs variation *between* its rows, and
+    /// Apple's 3B-class model collapses clearer/tighter into near-verbatim
+    /// echoes under greedy decoding (measured with Beru's exact prompt:
+    /// identical triple on clean input). At temperature 0.7 the same prompt
+    /// yields genuinely different rows with corrections intact — also
+    /// measured, on error-filled input — so Grammar alone opts out of greedy
+    /// on this provider. Every other role keeps Beru's shared tuning.
+    static let grammarTemperature = 0.7
+
     static func sampling(for role: ModelRole, actionID: String) -> Sampling {
+        if role == .grammar { return .temperature(grammarTemperature) }
         let temperature = ProviderTuning.temperature(for: role, actionID: actionID)
         // Temperature 0 means "must not vary": Grammar has exactly one right
         // answer, so it gets greedy decoding rather than temperature 0 — Apple
