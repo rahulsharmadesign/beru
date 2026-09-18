@@ -13,4 +13,13 @@ final class PermissionsTests: XCTestCase {
         XCTAssertTrue(Permissions.speechRecognitionURLs.contains { $0.contains("Privacy_SpeechRecognition") })
         XCTAssertTrue(Permissions.keyboardDictationURLs.contains { $0.contains("Dictation") || $0.contains("keyboard") })
     }
+
+    func testPostUpdateNudgeFiresOnlyOnChangedBuildWithoutTrust() {
+        XCTAssertTrue(AppCoordinator.needsPostUpdateNudge(lastRunBuild: "28", currentBuild: "29", isTrusted: false))
+        XCTAssertFalse(AppCoordinator.needsPostUpdateNudge(lastRunBuild: "29", currentBuild: "29", isTrusted: false))
+        XCTAssertFalse(AppCoordinator.needsPostUpdateNudge(lastRunBuild: "28", currentBuild: "29", isTrusted: true))
+        XCTAssertFalse(AppCoordinator.needsPostUpdateNudge(lastRunBuild: nil, currentBuild: "29", isTrusted: false))
+        XCTAssertFalse(AppCoordinator.needsPostUpdateNudge(lastRunBuild: "", currentBuild: "29", isTrusted: false))
+        XCTAssertFalse(AppCoordinator.needsPostUpdateNudge(lastRunBuild: "28", currentBuild: nil, isTrusted: false))
+    }
 }

@@ -5,6 +5,38 @@ import SwiftUI
 // Voice entry points, dictation, and the onboarding and dashboard windows.
 
 extension AppCoordinator {
+    /// After an in-app update the ad-hoc signature changes identity and the
+    /// Accessibility grant silently stops applying. When the build changed
+    /// since the last run and trust is gone, land on Permissions with the
+    /// re-grant steps instead of failing silently at the next hotkey. Fires
+    /// at most once per build: the current build is always recorded.
+    func checkPostUpdateTrust() {
+        let settings = SettingsStore.shared
+        let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String
+        defer { settings.lastRunBuild = build }
+        guard Self.needsPostUpdateNudge(
+            lastRunBuild: settings.lastRunBuild,
+            currentBuild: build,
+            isTrusted: Permissions.isAccessibilityTrusted()
+        ) else { return }
+        showDashboard(route: .permissions)
+    }
+
+    /// Pure decision table for the post-update nudge. A missing build on
+    /// either side (first run, unreadable plist) never nudges — onboarding or
+    /// the invoke path owns those cases.
+    nonisolated static func needsPostUpdateNudge(
+        lastRunBuild: String?,
+        currentBuild: String?,
+        isTrusted: Bool
+    ) -> Bool {
+        guard !isTrusted,
+              let last = lastRunBuild, !last.isEmpty,
+              let current = currentBuild, !current.isEmpty
+        else { return false }
+        return last != current
+    }
+
     func invokeVoiceAsk() {
         if DictationService.shared.isRecording {
             DictationService.shared.stop()

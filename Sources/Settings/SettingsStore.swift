@@ -101,6 +101,13 @@ final class SettingsStore {
         didSet { defaults.set(hasCompletedGetStarted, forKey: Keys.hasCompletedGetStarted) }
     }
 
+    /// Build number of the last run. Compared at launch so an in-app update
+    /// that silently invalidated the Accessibility grant can route to
+    /// Permissions with the re-grant steps instead of failing at the hotkey.
+    var lastRunBuild: String? {
+        didSet { defaults.set(lastRunBuild, forKey: Keys.lastRunBuild) }
+    }
+
     /// Accepted Insert / Replace / Copy choices on this Mac. Not usage history.
     var interactionProfile: InteractionProfile {
         didSet { persistInteractionProfile() }
@@ -149,6 +156,7 @@ final class SettingsStore {
         static let lastTargetByApp = "lastTargetByApp"
         static let hasLaunchedBefore = "hasLaunchedBefore"
         static let hasCompletedGetStarted = "hasCompletedGetStarted"
+        static let lastRunBuild = "lastRunBuild"
         static let interactionProfile = "interactionProfile"
     }
 
@@ -211,6 +219,7 @@ final class SettingsStore {
         lastTargetID = defaults.string(forKey: Keys.lastTargetID) ?? TargetProfile.genericID
         lastTargetByApp = defaults.dictionary(forKey: Keys.lastTargetByApp) as? [String: String] ?? [:]
         hasCompletedGetStarted = defaults.bool(forKey: Keys.hasCompletedGetStarted)
+        lastRunBuild = defaults.string(forKey: Keys.lastRunBuild)
         if let data = defaults.data(forKey: Keys.interactionProfile),
            let decoded = try? JSONDecoder().decode(InteractionProfile.self, from: data) {
             interactionProfile = decoded

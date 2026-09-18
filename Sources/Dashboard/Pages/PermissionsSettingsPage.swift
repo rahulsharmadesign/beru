@@ -27,7 +27,7 @@ struct PermissionsSettingsTab: View {
                 isPositive: a11y.isAccessibilityTrusted,
                 message: a11y.isAccessibilityTrusted
                     ? "Required to read and replace text in other apps."
-                    : "Required to read and replace text in other apps. After an update, if the toggle won't stick, remove Beru from the list (–) and re-add it (+)."
+                    : "Required to read and replace text in other apps. If the toggle won't stick: quit Beru, keep only /Applications/Beru.app, then remove (–) and re-add (+) that copy. Still stuck: run `tccutil reset Accessibility com.rahul.beru` in Terminal and grant again."
             ) {
                 if a11y.isAccessibilityTrusted {
                     SettingsPillButton(title: "Open") {
