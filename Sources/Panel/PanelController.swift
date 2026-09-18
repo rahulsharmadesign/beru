@@ -33,7 +33,9 @@ final class PanelController {
     private var showGeneration = 0
     private var pendingResize: DispatchWorkItem?
     private var isStreaming = false
-    private var growsDownward = true
+    /// Internal, not private: the entrance/retract choreography lives in
+    /// PanelEntrance.swift and reads these.
+    var growsDownward = true
     private var pinnedTopY: CGFloat?
     private var entranceSettledAt: CFAbsoluteTime = 0
     private var isProgrammaticMove = false
@@ -49,7 +51,8 @@ final class PanelController {
     /// (footer, diff) disagree enough to jump the window otherwise.
     private var heightFrozen = false
 
-    private var a11y: AccessibilityPreferences { AccessibilityPreferences.shared }
+    /// Internal for PanelEntrance.swift, which shares the reduce-motion check.
+    var a11y: AccessibilityPreferences { AccessibilityPreferences.shared }
 
     func show(at point: CGPoint, appState: AppState, engine: PanelEngine) {
         showGeneration += 1
@@ -93,51 +96,6 @@ final class PanelController {
         DispatchQueue.main.async {
             panel.focusFirstTextField()
         }
-        animateIn(panel)
-    }
-
-    private func animateIn(_ panel: FloatingPanel) {
-        guard let layer = panel.contentView?.layer else { return }
-        layer.removeAllAnimations()
-        layer.transform = CATransform3DIdentity
-        layer.opacity = 1
-
-        guard !a11y.reduceMotion else {
-            panel.alphaValue = 0
-            NSAnimationContext.runAnimationGroup { context in
-                context.duration = 0.12
-                panel.animator().alphaValue = 1
-            }
-            return
-        }
-
-        let size = layer.bounds.size
-        let anchor = CGPoint(x: 0, y: growsDownward ? size.height : 0)
-        let spring = CASpringAnimation(keyPath: "transform")
-        spring.damping = 20
-        spring.stiffness = 160
-        spring.mass = 1
-        spring.fromValue = NSValue(caTransform3D: Self.scaleTransform(0.92, about: anchor, in: size))
-        spring.toValue = NSValue(caTransform3D: CATransform3DIdentity)
-        spring.duration = spring.settlingDuration
-        layer.add(spring, forKey: "panel.in")
-
-        let fade = CABasicAnimation(keyPath: "opacity")
-        fade.fromValue = 0
-        fade.toValue = 1
-        fade.duration = 0.28
-        fade.timingFunction = CAMediaTimingFunction(controlPoints: 0.16, 1.0, 0.3, 1.0)
-        layer.add(fade, forKey: "panel.in.opacity")
-    }
-
-    private static func scaleTransform(_ scale: CGFloat, about point: CGPoint, in size: CGSize) -> CATransform3D {
-        let center = CGPoint(x: size.width / 2, y: size.height / 2)
-        let dx = (1 - scale) * (point.x - center.x)
-        let dy = (1 - scale) * (point.y - center.y)
-        return CATransform3DConcat(
-            CATransform3DMakeScale(scale, scale, 1),
-            CATransform3DMakeTranslation(dx, dy, 0)
-        )
     }
 
     func hide() {
@@ -147,9 +105,8 @@ final class PanelController {
         appState.panelResultScrollHeight = nil
         showGeneration += 1
         let generation = showGeneration
-
         NSAnimationContext.runAnimationGroup { context in
-            context.duration = 0.18
+            context.duration = 0.12
             context.timingFunction = CAMediaTimingFunction(controlPoints: 0.4, 0.0, 0.2, 1.0)
             panel.animator().alphaValue = 0
         } completionHandler: { [weak self] in

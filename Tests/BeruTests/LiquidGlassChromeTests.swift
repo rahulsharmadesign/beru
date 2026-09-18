@@ -6,7 +6,10 @@ final class LiquidGlassChromeTests: XCTestCase {
     func testWindowSlabStaysStaticSoClicksDoNotBounceTheHUD() {
         let glass = NSGlassEffectView(frame: .zero)
         LiquidGlassChrome.prepareWindowSlab(glass)
+        // Regular plus a scrim tint: .clear let the desktop's text read
+        // straight through; untinted regular read as plain blur.
         XCTAssertEqual(glass.style, .regular)
+        XCTAssertNotNil(glass.tintColor)
         guard let interactive = LiquidGlassChrome.isInteractive(glass) else {
             return
         }

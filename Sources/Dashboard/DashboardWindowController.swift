@@ -205,15 +205,31 @@ final class DashboardWindowController: NSWindowController, NSWindowDelegate {
     }
 
     /// Quiet entrance: a short fade with a whisper of scale, so the window
-    /// does not pop. Much softer than the panel's spring — this is a large
+    /// does not pop. Much softer than the panel's unfurl — this is a large
     /// window, and big springy windows read as heavy.
     private func animateIn() {
         guard let window, !AccessibilityPreferences.shared.reduceMotion else { return }
         window.alphaValue = 0
+        // The scale rides the content layer, not the window: scaling a titled
+        // NSWindow would drag its title bar and traffic lights with it.
+        let layer = window.contentView?.layer
+        layer?.removeAllAnimations()
+        if let layer {
+            let rise = CABasicAnimation(keyPath: "transform")
+            rise.fromValue = NSValue(
+                caTransform3D: CATransform3DMakeScale(0.985, 0.985, 1)
+            )
+            rise.toValue = NSValue(caTransform3D: CATransform3DIdentity)
+            rise.duration = 0.26
+            rise.timingFunction = CAMediaTimingFunction(controlPoints: 0.16, 1.0, 0.3, 1.0)
+            layer.add(rise, forKey: "dashboard.in")
+        }
         NSAnimationContext.runAnimationGroup({ context in
             context.duration = 0.2
             context.timingFunction = CAMediaTimingFunction(controlPoints: 0.16, 1.0, 0.3, 1.0)
             window.animator().alphaValue = 1
+        }, completionHandler: { [weak window] in
+            window?.contentView?.layer?.removeAllAnimations()
         })
     }
 

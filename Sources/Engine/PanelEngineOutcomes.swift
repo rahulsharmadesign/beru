@@ -8,6 +8,7 @@ extension PanelEngine {
         guard appState.replacedFeedback == nil else { return }
         // Grab everything the record needs before dismiss clears it.
         let target = appState.capturedElement
+        let hostBundleID = appState.hostBundleID
         let vaultNoteID = appState.vaultNoteID
         let toast = OutcomeCopy.replaceToast(
             hostAppName: appState.hostAppName,
@@ -20,6 +21,7 @@ extension PanelEngine {
         }
         pendingReplaceText = text
         pendingReplaceTarget = target
+        pendingReplaceHostBundleID = hostBundleID
         pendingReplaceIsVault = vaultNoteID != nil
         pendingReplaceVaultNoteID = vaultNoteID
         appState.replacedFeedback = toast
@@ -40,10 +42,12 @@ extension PanelEngine {
     func completeReplace() async {
         let text = pendingReplaceText
         let target = pendingReplaceTarget
+        let hostBundleID = pendingReplaceHostBundleID
         let isVault = pendingReplaceIsVault
         let vaultID = pendingReplaceVaultNoteID
         pendingReplaceText = nil
         pendingReplaceTarget = nil
+        pendingReplaceHostBundleID = nil
         pendingReplaceIsVault = false
         pendingReplaceVaultNoteID = nil
         replaceToastTask = nil
@@ -58,7 +62,7 @@ extension PanelEngine {
         // hide() fades 180ms then orderOut. Cmd-V before that lands on the
         // panel's field editor. Wait until the window is gone, then paste.
         try? await Task.sleep(for: .milliseconds(180))
-        await TextReplace.replaceSelection(with: text, target: target)
+        await TextReplace.replaceSelection(with: text, target: target, hostBundleID: hostBundleID)
     }
 
     func copy(text: String) {

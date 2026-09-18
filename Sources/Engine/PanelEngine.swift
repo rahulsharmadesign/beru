@@ -71,6 +71,9 @@ final class PanelEngine {
     var replaceToastTask: Task<Void, Never>?
     var pendingReplaceText: String?
     var pendingReplaceTarget: AXUIElement?
+    /// The app Beru was invoked over, carried to the clipboard fallback so
+    /// Replace can reactivate it when there is no captured AX element.
+    var pendingReplaceHostBundleID: String?
     var pendingReplaceIsVault = false
     var pendingReplaceVaultNoteID: String?
 
@@ -87,6 +90,7 @@ final class PanelEngine {
         replaceToastTask = nil
         pendingReplaceText = nil
         pendingReplaceTarget = nil
+        pendingReplaceHostBundleID = nil
         pendingReplaceIsVault = false
         pendingReplaceVaultNoteID = nil
     }

@@ -64,7 +64,18 @@ final class DropdownPopup: NSPanel {
         hosting.layoutSubtreeIfNeeded()
         let natural = hosting.fittingSize
         let size = NSSize(width: max(natural.width, anchor.bounds.width), height: natural.height)
-        contentView = hosting
+        // Seated on the same `NSGlassEffectView` slab as the panel and
+        // Settings, so a dropdown refracts with the surface it drops out of.
+        // The opaque `panelSolid` card it used to draw read as a grey plate
+        // against the newly translucent panel.
+        let glass = NSGlassEffectView(frame: NSRect(origin: .zero, size: size))
+        glass.cornerRadius = BeruRadius.sm2
+        glass.clipsToBounds = true
+        LiquidGlassChrome.prepareWindowSlab(glass)
+        contentView = glass
+        hosting.frame = glass.bounds
+        hosting.autoresizingMask = [.width, .height]
+        glass.contentView = hosting
 
         if let window = anchor.window {
             let anchorScreen = window.convertToScreen(anchor.convert(anchor.bounds, to: nil))
@@ -115,6 +126,7 @@ private struct DropdownPopupContent: View {
     @State private var hovered: Int?
     @State private var shown = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
     var body: some View {
         VStack(alignment: .leading, spacing: BeruSpace.hair) {
@@ -156,12 +168,17 @@ private struct DropdownPopupContent: View {
         .frame(maxWidth: BeruMetrics.menuDropdownWidth, alignment: .leading)
         .fixedSize(horizontal: true, vertical: false)
         .background {
-            BeruRadius.shape(BeruRadius.sm2)
-                .fill(BeruColor.panelSolid)
-                .overlay {
-                    BeruRadius.shape(BeruRadius.sm2)
-                        .strokeBorder(BeruColor.border, lineWidth: BeruMetrics.hairline)
-                }
+            // On the glass slab the row list paints nothing — the refraction
+            // is the surface. Reduce Transparency has no glass to sit on, so
+            // it keeps the opaque plate and the hairline that defines it.
+            if reduceTransparency {
+                BeruRadius.shape(BeruRadius.sm2)
+                    .fill(BeruColor.panelSolid)
+                    .overlay {
+                        BeruRadius.shape(BeruRadius.sm2)
+                            .strokeBorder(BeruColor.border, lineWidth: BeruMetrics.hairline)
+                    }
+            }
         }
         // Launches out of its pill: quick fade with a small scale-up from
         // the top edge, mirroring the panel's entrance recipe.

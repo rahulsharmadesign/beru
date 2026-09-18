@@ -73,9 +73,12 @@ struct MenuBarContent: View {
         }
         .padding(BeruSpace.sm)
         .frame(width: BeruMetrics.menuDropdownWidth)
-        // No card fill, stroke, or shadow: the MenuBarExtra window is
-        // already system glass. Painting an opaque plate over it is what
-        // made the dropdown read as a grey card.
+        // No opaque card, stroke, or shadow: the MenuBarExtra window is
+        // already system glass, and painting a plate over it is what made
+        // the dropdown read as a grey card. This translucent scrim is the
+        // same recipe as the panel slab's tint, so the menu bar dropdown and
+        // the floating panel read as one material.
+        .background(BeruColor.glassScrim)
         .tint(BeruColor.accent)
     }
 

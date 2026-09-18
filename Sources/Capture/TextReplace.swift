@@ -11,22 +11,45 @@ enum TextReplace {
     /// element), falling back to a simulated Cmd-V. The user's clipboard is
     /// preserved either way.
     ///
+    /// `hostBundleID` is the app Beru was invoked over. It is the only way
+    /// back to the right window when there is no captured element — the
+    /// composer-as-source case, where the user typed text instead of
+    /// selecting it. Without it the clipboard fallback had nothing to
+    /// activate, Cmd-V landed on whatever happened to be key, and Replace
+    /// looked like a dead button.
+    ///
     /// MainActor-bound with the rest of the replace path: the AX element it
     /// carries is MainActor-held state, and every caller already runs there.
     @MainActor
-    static func replaceSelection(with text: String, target: AXUIElement?) async {
+    static func replaceSelection(
+        with text: String,
+        target: AXUIElement?,
+        hostBundleID: String? = nil
+    ) async {
         if let target, !isElectronHelper(target), replaceViaAccessibility(with: text, element: target) {
             logger.notice("replaced via AX on captured target")
             return
         }
         if let current = TextCapture.focusedElement(),
+           !isOwnWindow(current),
            !isElectronHelper(current),
            replaceViaAccessibility(with: text, element: current) {
             logger.notice("replaced via AX on focused element")
             return
         }
         logger.notice("AX replace skipped or unverified; falling back to clipboard")
-        await replaceViaClipboard(with: text, target: target)
+        await replaceViaClipboard(with: text, target: target, hostBundleID: hostBundleID)
+    }
+
+    /// Beru's own windows must never be treated as the write-back target. The
+    /// panel stays key while a result is on screen, so the focused-element
+    /// probe can find the panel's composer and read its text as "the failed
+    /// selection" — replacing into the field the user just typed in.
+    @MainActor
+    private static func isOwnWindow(_ element: AXUIElement) -> Bool {
+        var pid: pid_t = 0
+        guard AXUIElementGetPid(element, &pid) == .success else { return false }
+        return pid == ProcessInfo.processInfo.processIdentifier
     }
 
     /// Electron (Cursor, Claude, ChatGPT) reports `kAXSelectedText` as settable
@@ -76,8 +99,12 @@ enum TextReplace {
     }
 
     @MainActor
-    private static func replaceViaClipboard(with text: String, target: AXUIElement?) async {
-        activateHost(owning: target)
+    private static func replaceViaClipboard(
+        with text: String,
+        target: AXUIElement?,
+        hostBundleID: String? = nil
+    ) async {
+        activateHost(owning: target, bundleID: hostBundleID)
         await KeySimulator.waitForModifierRelease()
 
         let guardBox = ClipboardGuard()
@@ -95,12 +122,27 @@ enum TextReplace {
         guardBox.restore()
     }
 
+    /// Brings the write-back target forward so a simulated Cmd-V reaches it.
+    ///
+    /// The AX element is the precise route, but it is nil whenever the text
+    /// came from the composer rather than a host selection. `bundleID` is the
+    /// fallback: the app Beru was invoked over, remembered at capture time.
+    /// Without one of the two, Cmd-V had no destination and Replace did
+    /// nothing visible.
     @MainActor
-    private static func activateHost(owning element: AXUIElement?) {
-        guard let element else { return }
-        var pid: pid_t = 0
-        guard AXUIElementGetPid(element, &pid) == .success,
-              let app = NSRunningApplication(processIdentifier: pid),
+    private static func activateHost(owning element: AXUIElement?, bundleID: String? = nil) {
+        let app: NSRunningApplication? = {
+            if let element {
+                var pid: pid_t = 0
+                if AXUIElementGetPid(element, &pid) == .success,
+                   let running = NSRunningApplication(processIdentifier: pid) {
+                    return running
+                }
+            }
+            guard let bundleID else { return nil }
+            return NSRunningApplication.runningApplications(withBundleIdentifier: bundleID).first
+        }()
+        guard let app,
               app.bundleIdentifier != Bundle.main.bundleIdentifier else { return }
         app.activate()
     }

@@ -7,8 +7,17 @@ enum LiquidGlassChrome {
     /// Window-level slab. `interactive` stays off: the panel and Settings
     /// *are* the glass, and macOS 27's interactive response bounces the
     /// whole window a few pixels on every click.
+    ///
+    /// `.regular` plus a tint, not `.clear`: clear is so transparent the
+    /// desktop's text reads straight through the panel (measured — unusable),
+    /// while untinted regular is the frosted near-opaque card that reads as
+    /// plain blur. A 38% scrim tint keeps regular's refraction and edge
+    /// highlights visible but puts enough material under the type. Content
+    /// scrims (composer well, result card) sit on top; Reduce Transparency
+    /// still swaps to the opaque plate.
     static func prepareWindowSlab(_ glass: NSGlassEffectView, interactive: Bool = false) {
         glass.style = .regular
+        glass.tintColor = BeruColor.glassTintNSColor
         let setter = NSSelectorFromString("setEffectIsInteractive:")
         guard glass.responds(to: setter) else { return }
         glass.setValue(interactive, forKey: "effectIsInteractive")

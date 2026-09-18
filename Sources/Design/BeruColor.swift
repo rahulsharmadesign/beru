@@ -60,13 +60,40 @@ enum BeruColor {
 
     static var canvas: Color { Color(nsColor: canvasNSColor) }
     static var panelSolid: Color { Color(nsColor: panelSolidNSColor) }
-    /// Translucent card fill. Haze `--surface`: white 72% light,
-    /// white 5% dark.
+
+    /// Scrim tint for the clear-glass window slab. The glass style carries the
+    /// refraction; this decides how much of the desktop shows through. Dark
+    /// gets a near-black wash, light a soft white — both strong enough that a
+    /// busy background never competes with the panel's type, light enough that
+    /// the glass edge and bending still read. `NSGlassEffectView.tintColor`
+    /// expects an NSColor; the SwiftUI side never draws this.
+    static let glassTintNSColor = NSColor(name: "BeruGlassTint") { appearance in
+        let dark = appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+        return dark
+            ? NSColor.black.withAlphaComponent(0.28)
+            : NSColor.white.withAlphaComponent(0.50)
+    }
+
+    /// SwiftUI twin of the slab tint, for surfaces that sit on the system's own
+    /// material rather than an `NSGlassEffectView` — the menu bar dropdown.
+    /// Lighter than `glassTintNSColor`: the system material is already partly
+    /// opaque there, and matching the slab's full strength double-darkened it.
+    static var glassScrim: Color { Color(nsColor: glassScrimNSColor) }
+
+    static let glassScrimNSColor = NSColor(name: "BeruGlassScrim") { appearance in
+        let dark = appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+        return dark
+            ? NSColor.black.withAlphaComponent(0.16)
+            : NSColor.white.withAlphaComponent(0.30)
+    }
+    /// Translucent card fill. Haze `--surface`: white 72% light. Dark is 10%
+    /// white, up from 5%: the panel slab switched to clear glass, and a 5%
+    /// wash over it left markdown floating on the refraction.
     static var surface: Color {
         Color(nsColor: NSColor(name: "BeruSurface") { appearance in
             let traits = DisplayTraits.resolve(appearance)
             if traits.isDark {
-                return NSColor.white.withAlphaComponent(traits.isHighContrast ? 0.12 : 0.05)
+                return NSColor.white.withAlphaComponent(traits.isHighContrast ? 0.16 : 0.10)
             }
             return NSColor.white.withAlphaComponent(traits.isHighContrast ? 0.88 : 0.72)
         })
