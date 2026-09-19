@@ -11,7 +11,7 @@ enum LiquidGlassChrome {
     /// `.regular` plus a tint, not `.clear`: clear is so transparent the
     /// desktop's text reads straight through the panel (measured — unusable),
     /// while untinted regular is the frosted near-opaque card that reads as
-    /// plain blur. A 38% scrim tint keeps regular's refraction and edge
+    /// plain blur. A 45% light scrim tint keeps regular's refraction and edge
     /// highlights visible but puts enough material under the type. Content
     /// scrims (composer well, result card) sit on top; Reduce Transparency
     /// still swaps to the opaque plate.

@@ -44,9 +44,9 @@ enum BeruColor {
         Color(nsColor: NSColor(name: "BeruComposerWell") { appearance in
             let traits = DisplayTraits.resolve(appearance)
             if traits.isDark {
-                return NSColor.white.withAlphaComponent(traits.isHighContrast ? 0.16 : 0.08)
+                return NSColor.white.withAlphaComponent(traits.isHighContrast ? 0.16 : 0.02)
             }
-            return NSColor.white.withAlphaComponent(traits.isHighContrast ? 0.78 : 0.55)
+            return NSColor.white.withAlphaComponent(traits.isHighContrast ? 0.78 : 0.40)
         })
     }
     /// Opaque plate for Reduce Transparency. Haze `--panel-solid`:
@@ -70,8 +70,8 @@ enum BeruColor {
     static let glassTintNSColor = NSColor(name: "BeruGlassTint") { appearance in
         let dark = appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
         return dark
-            ? NSColor.black.withAlphaComponent(0.28)
-            : NSColor.white.withAlphaComponent(0.50)
+            ? NSColor.black.withAlphaComponent(0.36)
+            : NSColor.white.withAlphaComponent(0.45)
     }
 
     /// SwiftUI twin of the slab tint, for surfaces that sit on the system's own
@@ -83,8 +83,8 @@ enum BeruColor {
     static let glassScrimNSColor = NSColor(name: "BeruGlassScrim") { appearance in
         let dark = appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
         return dark
-            ? NSColor.black.withAlphaComponent(0.16)
-            : NSColor.white.withAlphaComponent(0.30)
+            ? NSColor.black.withAlphaComponent(0.20)
+            : NSColor.white.withAlphaComponent(0.27)
     }
     /// Translucent card fill. Haze `--surface`: white 72% light. Dark is 10%
     /// white, up from 5%: the panel slab switched to clear glass, and a 5%
@@ -93,9 +93,9 @@ enum BeruColor {
         Color(nsColor: NSColor(name: "BeruSurface") { appearance in
             let traits = DisplayTraits.resolve(appearance)
             if traits.isDark {
-                return NSColor.white.withAlphaComponent(traits.isHighContrast ? 0.16 : 0.10)
+                return NSColor.white.withAlphaComponent(traits.isHighContrast ? 0.16 : 0.02)
             }
-            return NSColor.white.withAlphaComponent(traits.isHighContrast ? 0.88 : 0.72)
+            return NSColor.white.withAlphaComponent(traits.isHighContrast ? 0.88 : 0.50)
         })
     }
     /// Pill / well fill. Haze `--surface-2`: #F3F4F7 light, white 7% dark.
