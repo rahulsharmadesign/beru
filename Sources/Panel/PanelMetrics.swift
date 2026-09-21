@@ -5,7 +5,7 @@ import SwiftUI
 /// three places (SwiftUI clip, hosting layer, glass background); when those
 /// rasterized differently a hairline of square backing showed at the corners.
 enum PanelMetrics {
-    static let width: CGFloat = 480
+    static let width: CGFloat = 440
     /// Provisional window height for the first offscreen frame only. After the
     /// first SwiftUI measure, the window equals content — never re-impose this
     /// as a floor (that fake gap under idle states looked like "extra padding").
@@ -19,6 +19,12 @@ enum PanelMetrics {
     /// result area scrolls and chrome (close / chips / composer) stays pinned.
     /// Freeze: do not change without updating PanelViewportCapTests + QA.
     static let maxViewportFraction: CGFloat = 0.75
+    /// Resting height as a fraction of the visible screen. The window never
+    /// opens shorter than this — small content leaves glass between the
+    /// result and the composer instead of hugging the text. Growth past it
+    /// up to `maxViewportFraction` is still content-driven.
+    /// Freeze: do not change without updating PanelViewportCapTests + QA.
+    static let defaultViewportFraction: CGFloat = 0.60
     /// Outer window. Haze panel radius 28 on macOS. Layer radius is the
     /// source of truth — do not use a stretchable mask, which inflates
     /// this into a capsule.
@@ -28,8 +34,18 @@ enum PanelMetrics {
     static let windowInset: CGFloat = 0
     /// Title chrome sits flush with the rounded top; only sides and bottom keep this inset.
     static let windowTopInset: CGFloat = 0
-    /// Title chrome above the inner cards — holds the close control.
-    static let closeStripHeight: CGFloat = 28
+    /// Title chrome above the inner cards — traffic discs, title, tool pill.
+    /// Full-bleed to the rounded top; only its content keeps the side inset.
+    /// 36 tall so the tool pill sits inside the strip instead of overhanging it.
+    static let closeStripHeight: CGFloat = 36
+    /// Height of the titlebar's tool pill. Icons and hit targets inside stay
+    /// at their 16/28pt sizes; only the capsule grows.
+    static let toolPillHeight: CGFloat = 36
+    /// Horizontal reservation on each side of the centered title so long
+    /// context names truncate before they slide under the discs or the pill.
+    /// Pill side governs: four 28pt hit targets plus pill padding, plus the
+    /// 10pt window inset and an 8pt breath.
+    static let titlebarTitleClearance: CGFloat = 136
     /// Kept at zero: the panel uses the window-server shadow (`hasShadow`),
     /// which draws outside the frame. A transparent inset is not needed.
     static let shadowInset: CGFloat = 0

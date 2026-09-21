@@ -7,7 +7,14 @@ struct GlassSlabBackground: ViewModifier {
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
     func body(content: Content) -> some View {
-        content.background(reduceTransparency ? BeruColor.canvas : Color.clear)
+        content
+            .background(reduceTransparency ? BeruColor.canvas : Color.clear)
+            .overlay {
+                if !reduceTransparency {
+                    BeruColor.panelShade
+                        .allowsHitTesting(false)
+                }
+            }
     }
 }
 

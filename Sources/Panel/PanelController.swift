@@ -23,29 +23,41 @@ private let layoutLog = Logger(subsystem: "com.rahul.beru", category: "panel-lay
 ///   from `NSHostingView.intrinsicContentSize` (`sizingOptions` stays empty).
 @MainActor
 final class PanelController {
-    private var panel: FloatingPanel?
-    private let appState: AppState
+    /// Internal for PanelZoom.swift, which owns the green-disc zoom state
+    /// machine while this file owns show/hide/resize.
+    var panel: FloatingPanel?
+    let appState: AppState
 
     init(appState: AppState) {
         self.appState = appState
     }
 
     private var showGeneration = 0
-    private var pendingResize: DispatchWorkItem?
+    /// Internal for PanelZoom.swift.
+    var pendingResize: DispatchWorkItem?
     private var isStreaming = false
+    /// Internal for PanelZoom.swift.
+    var preZoomFrame: NSRect?
+    /// True from hide() until the next show(). Band reports arriving mid-fade
+    /// (state clears synchronously on dismiss) must not resize a window that
+    /// is going away — that resize-during-fade is the close-button jump.
+    private var isHiding = false
     /// Internal, not private: the entrance/retract choreography lives in
     /// PanelEntrance.swift and reads these.
     var growsDownward = true
-    private var pinnedTopY: CGFloat?
+    /// Internal for PanelZoom.swift.
+    var pinnedTopY: CGFloat?
     private var entranceSettledAt: CFAbsoluteTime = 0
-    private var isProgrammaticMove = false
+    /// Internal for PanelZoom.swift.
+    var isProgrammaticMove = false
     private var moveObserver: NSObjectProtocol?
     private var isApplyingHeight = false
     private var lastAppliedHeight: CGFloat = 0
     private var lastChrome: CGFloat = 0
     private var lastResult: CGFloat = 0
     private var lastActionID: String?
-    private var lastResolvedLayout: PanelLayoutHeights?
+    /// Internal for PanelZoom.swift, which re-resolves after unzooming.
+    var lastResolvedLayout: PanelLayoutHeights?
     /// Once the user switches tabs this session, never shrink below the
     /// height already on screen. Search (no footer, thread) and Enhance
     /// (footer, diff) disagree enough to jump the window otherwise.
@@ -56,6 +68,10 @@ final class PanelController {
 
     func show(at point: CGPoint, appState: AppState, engine: PanelEngine) {
         showGeneration += 1
+        let generation = showGeneration
+        isHiding = false
+        appState.isPanelZoomed = false
+        preZoomFrame = nil
         pendingResize?.cancel()
         isStreaming = false
         lastAppliedHeight = 0
@@ -89,9 +105,16 @@ final class PanelController {
         isProgrammaticMove = true
         panel.setFrame(frame, display: false)
         isProgrammaticMove = false
-        panel.alphaValue = 1
+        Self.resetLayerState(panel)
         panel.makeKeyAndOrderFront(nil)
+        animateInFromDockEdge(panel)
         panel.invalidateShadow()
+        // A hide fade still in flight would land alpha 0 on completion and
+        // blank this show. Re-assert past its 0.12s duration.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { [weak self, weak panel] in
+            guard let self, let panel, self.showGeneration == generation, !self.isHiding else { return }
+            panel.alphaValue = 1
+        }
         panel.makeFirstResponder(nil)
         DispatchQueue.main.async {
             panel.focusFirstTextField()
@@ -100,6 +123,7 @@ final class PanelController {
 
     func hide() {
         guard let panel else { return }
+        isHiding = true
         pendingResize?.cancel()
         isStreaming = false
         appState.panelResultScrollHeight = nil
@@ -111,12 +135,20 @@ final class PanelController {
             panel.animator().alphaValue = 0
         } completionHandler: { [weak self] in
             guard let self, self.showGeneration == generation else { return }
-            self.panel?.orderOut(nil)
+            if let panel = self.panel {
+                // Order out first: resetting alpha while still front is what
+                // flashed the panel back for a frame on close.
+                panel.orderOut(nil)
+                Self.resetLayerState(panel)
+            }
         }
     }
 
     /// Chrome + result ideal heights from SwiftUI band preferences.
+    /// Ignored while hiding: dismiss clears state synchronously, and sizing
+    /// a fading window to the emptied content is the close-button jump.
     func setLayoutHeights(_ layout: PanelLayoutHeights) {
+        guard !isHiding else { return }
         let previousResult = lastResult
         guard let applied = PanelLayoutHeights.resolved(
             layout: layout,
@@ -126,6 +158,15 @@ final class PanelController {
         lastChrome = applied.lastChrome
         lastResult = applied.lastResult
         lastResolvedLayout = PanelLayoutHeights(chrome: applied.chrome, result: applied.result)
+        // Zoomed: size the result's scroll budget to the fullscreen frame,
+        // never the window itself.
+        if appState.isPanelZoomed, let panel {
+            let fill = max(PanelMetrics.resultIdleMinHeight, (panel.frame.height - applied.chrome).rounded())
+            if appState.panelResultScrollHeight != fill {
+                appState.panelResultScrollHeight = fill
+            }
+            return
+        }
         let resultGrew = applied.result > previousResult + 0.5
 
         let cap = maxPanelHeight()
@@ -141,7 +182,10 @@ final class PanelController {
             computed = min(cap, (chrome + scroll).rounded())
         } else {
             scrollHeight = nil
-            computed = min(ideal, cap).rounded()
+            // Resting floor: the window never opens shorter than 60% of the
+            // visible screen. Leftover height sits between the result and the
+            // composer per the frozen height contract.
+            computed = max(min(ideal, cap), PanelLayoutHeights.restingFloor(cap: cap)).rounded()
         }
 
         // Apply scroll budget before resizing so the next SwiftUI pass lays

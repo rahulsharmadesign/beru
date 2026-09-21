@@ -18,6 +18,8 @@ enum BeruType {
     static let heroTitle = font(22, weight: .bold)
     static let pageTitle = font(20, weight: .semibold)
     static let pageSubtitle = font(13)
+    /// The panel's Notes-style titlebar title.
+    static let titlebarTitle = font(bodySize, weight: .semibold)
     static let section = font(bodySize, weight: .semibold)
 
     // MARK: Rows and controls

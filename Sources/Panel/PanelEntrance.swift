@@ -1,41 +1,94 @@
 import AppKit
 
-// Parked. The unfurl math lives here, unused by the panel for now.
+// Entrance choreography. The unfurl math lives here; the invocation-point
+// variant (`animateIn`) stays parked, and the live show path pours the panel
+// out of the Dock edge (`animateInFromDockEdge`).
 //
-// A reveal from the invocation point ("poured out of the selection") needs the
-// transform's fixed point planted exactly on the anchor — scale, then shift by
-// (1 - s) * anchor — plus a shadow that can follow a layer transform while a
-// window reuse never leaves sticky state behind. The last live attempt hid the
-// shadow during the animation but could leave the window ordered front yet
-// fully transparent when reused, and the panel is back to an instant reveal.
-// Revisit only with resets on every path and a manual pass on a real machine.
+// macOS exposes no Dock icon rects, so the Dock contributes only its edge:
+// `dockEdge` diffs the screen frame against the visible frame (top is always
+// the menu bar, never the Dock). The panel keeps its cursor-anchored position
+// and unfurls with the Dock-side edge pinned, which reads as rising out of
+// the Dock without a full-screen fly-in on every invocation.
+//
+// Reuse safety: every show resets layer state before the reveal lands, and
+// every hide resets before ordering out — a completed or interrupted reveal
+// must never leave a transform, zero opacity, or a missing shadow behind for
+// the next show. Reduce Motion always takes the plain fade.
 
 extension PanelController {
     /// How long the reveal runs. PanelController also holds height changes
     /// until this settles: a hard resize mid-reveal is the other half of what
     /// made the entrance look broken.
-    static let revealDuration: TimeInterval = 0.32
+    static let revealDuration: TimeInterval = 0.25
     /// How long the retract runs before the panel is ordered out.
     static let retractDuration: TimeInterval = 0.16
 
-    /// Genie-style entrance: the panel unfolds out of the invocation point.
-    ///
-    /// Non-uniform on purpose. The slab is born narrower than it is short
-    /// (`narrow` < `short`) and pinned to the invocation point, so the first
-    /// frames read as material being poured out of the selection; a uniform
-    /// scale reads as a plain zoom from a corner.
-    func animateIn(_ panel: FloatingPanel, to point: CGPoint?) {
+    /// Live entrance: the panel pours out of the Dock edge. Position stays
+    /// cursor-anchored; only the unfurl's fixed point rides the Dock side.
+    func animateInFromDockEdge(_ panel: FloatingPanel) {
         guard let layer = panel.contentView?.layer else {
             // No layer, no animation: the window must still be visible.
             panel.alphaValue = 1
             return
         }
+        let screen = panel.screen ?? NSScreen.main
+        let edge: CGRectEdge
+        if let screen {
+            edge = Self.dockEdge(frame: screen.frame, visible: screen.visibleFrame) ?? .minYEdge
+        } else {
+            edge = .minYEdge
+        }
+        runUnfurl(layer: layer, panel: panel, anchor: Self.anchorForDockEdge(edge, in: layer.bounds.size))
+    }
+
+    /// Defensive reset for window reuse. Called on show (before the reveal
+    /// lands) and on hide (before ordering out) so a completed or interrupted
+    /// animation never leaks a transform, zero opacity, or a missing shadow
+    /// into the next show.
+    static func resetLayerState(_ panel: FloatingPanel) {
+        if let layer = panel.contentView?.layer {
+            layer.removeAllAnimations()
+            layer.transform = CATransform3DIdentity
+            layer.opacity = 1
+        }
+        panel.alphaValue = 1
+        panel.hasShadow = true
+    }
+
+    /// Which screen edge the Dock eats, if any. Pure geometry: the menu bar
+    /// owns the top, so only left/right/bottom insets count. Nil when the
+    /// Dock is hidden or the lone inset is the menu bar.
+    nonisolated static func dockEdge(frame: CGRect, visible: CGRect) -> CGRectEdge? {
+        let candidates: [(CGRectEdge, CGFloat)] = [
+            (.minXEdge, visible.minX - frame.minX),
+            (.maxXEdge, frame.maxX - visible.maxX),
+            (.minYEdge, visible.minY - frame.minY),
+        ]
+        guard let best = candidates.max(by: { $0.1 < $1.1 }), best.1 > 1 else { return nil }
+        return best.0
+    }
+
+    /// Slab point the unfurl pins for a Dock edge, in layer coordinates.
+    nonisolated static func anchorForDockEdge(_ edge: CGRectEdge, in size: CGSize) -> CGPoint {
+        switch edge {
+        case .minXEdge: return CGPoint(x: 0, y: size.height / 2)
+        case .maxXEdge: return CGPoint(x: size.width, y: size.height / 2)
+        case .maxYEdge: return CGPoint(x: size.width / 2, y: size.height)
+        case .minYEdge: return CGPoint(x: size.width / 2, y: 0)
+        @unknown default: return CGPoint(x: size.width / 2, y: 0)
+        }
+    }
+
+    /// Shared unfurl runner: non-uniform scale about the anchor plus a fast
+    /// fade, with the window shadow parked while the slab is small. Both the
+    /// parked invocation-point reveal and the live Dock-edge reveal run here
+    /// so the keyframes cannot drift apart.
+    private func runUnfurl(layer: CALayer, panel: FloatingPanel, anchor: CGPoint) {
         layer.removeAllAnimations()
         layer.transform = CATransform3DIdentity
         layer.opacity = 1
 
         let size = layer.bounds.size
-        let anchor = Self.clampedAnchor(point, in: size, growsDownward: growsDownward)
 
         guard !a11y.reduceMotion else {
             panel.alphaValue = 0
@@ -52,19 +105,14 @@ extension PanelController {
 
         let unfurl = CAKeyframeAnimation(keyPath: "transform")
         unfurl.values = [
-            // Born narrow and short, pinned at the point.
-            NSValue(caTransform3D: Self.scaleTransform(0.62, 0.74, about: anchor, in: size)),
-            // Unwinds across, a hair past its height.
-            NSValue(caTransform3D: Self.scaleTransform(0.92, 1.02, about: anchor, in: size)),
-            // Settles with a whisper of overshoot.
-            NSValue(caTransform3D: Self.scaleTransform(1.008, 0.998, about: anchor, in: size)),
+            // Born small, pinned at the anchor — then one clean ease to rest.
+            // No overshoot: bounce on a utility panel reads as rubber.
+            NSValue(caTransform3D: Self.scaleTransform(0.88, 0.92, about: anchor, in: size)),
             NSValue(caTransform3D: CATransform3DIdentity)
         ]
-        unfurl.keyTimes = [0, 0.46, 0.74, 1]
+        unfurl.keyTimes = [0, 1]
         unfurl.timingFunctions = [
-            CAMediaTimingFunction(controlPoints: 0.18, 0.9, 0.3, 1.0),
-            CAMediaTimingFunction(controlPoints: 0.24, 1.0, 0.36, 1.0),
-            CAMediaTimingFunction(controlPoints: 0.4, 0.0, 0.2, 1.0)
+            CAMediaTimingFunction(controlPoints: 0.16, 1.0, 0.3, 1.0)
         ]
         unfurl.duration = Self.revealDuration
         layer.add(unfurl, forKey: "panel.in")
@@ -82,6 +130,25 @@ extension PanelController {
             panel?.hasShadow = true
             panel?.invalidateShadow()
         }
+    }
+
+    /// Genie-style entrance: the panel unfolds out of the invocation point.
+    /// Parked: the live show path uses the Dock edge instead.
+    ///
+    /// Non-uniform on purpose. The slab is born narrower than it is short
+    /// (`narrow` < `short`) and pinned to the invocation point, so the first
+    /// frames read as material being poured out of the selection; a uniform
+    /// scale reads as a plain zoom from a corner.
+    func animateIn(_ panel: FloatingPanel, to point: CGPoint?) {
+        guard let layer = panel.contentView?.layer else {
+            // No layer, no animation: the window must still be visible.
+            panel.alphaValue = 1
+            return
+        }
+
+        let size = layer.bounds.size
+        let anchor = Self.clampedAnchor(point, in: size, growsDownward: growsDownward)
+        runUnfurl(layer: layer, panel: panel, anchor: anchor)
     }
 
     /// The exit half: the slab draws back toward the point it came from, so

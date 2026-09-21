@@ -43,7 +43,7 @@ struct PanelSettingsLink: View {
                 .foregroundStyle(BeruColor.textPrimary)
                 .frame(width: BeruMetrics.hitTarget, height: BeruMetrics.hitTarget)
                 .background {
-                    BeruRadius.shape(BeruRadius.sm)
+                    Circle()
                         .fill(isHovered ? BeruColor.hoverFill : Color.clear)
                 }
                 .allowsHitTesting(false)
@@ -110,7 +110,7 @@ struct PanelIconHitButton: View {
                 .opacity(enabled ? 1 : 0.45)
                 .frame(width: BeruMetrics.hitTarget, height: BeruMetrics.hitTarget)
                 .background {
-                    BeruRadius.shape(BeruRadius.sm)
+                    Circle()
                         .fill(isHovered && enabled ? BeruColor.hoverFill : Color.clear)
                 }
                 .allowsHitTesting(false)

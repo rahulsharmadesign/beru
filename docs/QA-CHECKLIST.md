@@ -10,15 +10,19 @@ Scope it: check the section for what changed, plus **Panel states** and
 ## Panel states
 
 Invoke with the hotkey and confirm nothing is clipped at the top or bottom and
-the window height fits the content:
+the window opens at 60% of the visible screen height (taller than content is
+fine; leftover glass sits between the result and the composer):
 
 - [ ] Idle, with Accessibility granted (text selected, before running)
-- [ ] Idle placeholder copy stays centered between chips and composer when leftover height grows; panel is 480pt wide
+- [ ] Idle placeholder copy stays centered between chips and composer when leftover height grows; panel is 440pt wide
 - [ ] A finished Enhance has no graduation / “why” line under the result
 - [ ] Idle, with Accessibility **not** granted (the placeholder card)
 - [ ] Loading: pixel dots in the result; send disc uses muted fill when idle, accent when the field can submit; no spinner on the button
 - [ ] Streaming: words print one by one with a blinking caret, newest word settling out of blur; Reduce Motion shows text as it arrives; composer does not bounce. Done Search answers gain markdown; history turns do not replay the typewriter
 - [ ] Long result: window grows up to **75%** of the visible screen; close disc, chips, outcome icons, and composer stay visible; only the result scrolls
+- [ ] Invoke: panel unfurls from the Dock edge with no transparent flash or missing shadow; move the Dock to another edge and invoke again; Reduce Motion: plain fade, no scale
+- [ ] Close via the red dot with a long result on screen: panel fades in place without resizing or jumping; rapid close → invoke never leaves a transparent ghost window
+- [ ] Titlebar: red closes, green toggles fullscreen zoom and back with the window intact; plus starts a fresh session on the same capture; pin dims with no result; folder opens Vault; gear opens Settings; dragging the strip gaps moves the window
 - [ ] Copy: icon morphs to a green check, then the panel closes after ~1.4s
 - [ ] Result with a diff, and result long enough to scroll
 - [ ] Error, with Retry visible

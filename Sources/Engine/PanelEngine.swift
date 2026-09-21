@@ -42,6 +42,31 @@ final class PanelEngine {
         onOpenSettings?()
     }
 
+    /// Green zoom disc. Wired by the coordinator; a nil wire is a no-op so
+    /// tests and previews never need a window.
+    var onToggleZoom: (() -> Void)?
+
+    func toggleZoom() {
+        onToggleZoom?()
+    }
+
+    /// Vault folder in the titlebar pill. Dismisses first, like Settings.
+    var onOpenVault: (() -> Void)?
+
+    func openVault() {
+        onOpenVault?()
+    }
+
+    /// Titlebar plus: a fresh conversation on the same capture, staying open.
+    /// Ends the controller's streaming state too, or a killed stream would
+    /// leave shrink-skips and the shadow refresh hanging.
+    func newSession() {
+        onStreamingEnded?()
+        resetForNewInvocation()
+        SessionThread.shared.clear()
+        appState.newSession()
+    }
+
     func applyGrammarKind(_ kind: GrammarKind) {
         appState.selectGrammarKind(kind)
         guard let body = appState.acceptedText(for: EnhancementAction.grammarID) else { return }

@@ -8,7 +8,9 @@ final class PanelCloseChromeTests: XCTestCase {
     }
 
     func testCloseStripSitsAboveTheInnerCards() {
-        XCTAssertEqual(PanelMetrics.closeStripHeight, 28)
+        XCTAssertEqual(PanelMetrics.closeStripHeight, 36)
+        XCTAssertEqual(PanelMetrics.toolPillHeight, 36)
+        XCTAssertEqual(PanelCloseChromePolicy.discGap, 10)
     }
 
     func testPanelMinHeightLeavesRoomForCloseAndComposerInset() {

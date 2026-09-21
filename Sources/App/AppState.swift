@@ -35,6 +35,9 @@ final class AppState {
     /// window is at the 75% viewport cap. Nil = result sizes intrinsically.
     /// Owned by `PanelController` from layout measures — views must not write it.
     var panelResultScrollHeight: CGFloat? = nil
+    /// Green-disc zoom fills the visible screen. Owned by `PanelController`;
+    /// views read it for the disc glyph. Reset on every show.
+    var isPanelZoomed: Bool = false
 
     var capturedText: String = ""
     /// The host app's focused AX element at capture time. Replace must target
@@ -254,6 +257,40 @@ final class AppState {
         replySuggestions = []
         grammarSuggestions = []
         selectedGrammarKind = .corrected
+    }
+
+    /// Titlebar plus: a fresh conversation on the same capture. Stops the
+    /// live run and clears conversation state; the panel stays open and the
+    /// captured text, host element, and visibility are untouched.
+    func newSession() {
+        for task in streamTasks.values { task.cancel() }
+        streamTasks.removeAll()
+        results.removeAll()
+        searchThread.removeAll()
+        searchFeedback.removeAll()
+        resultFeedback.removeAll()
+        reloadingActions.removeAll()
+        grammarVote.removeAll()
+        replyVote.removeAll()
+        pinnedRow = nil
+        savings.removeAll()
+        describeInstruction = ""
+        copiedFeedback = false
+        pinnedFeedback = false
+        replacedFeedback = nil
+        truncationNotice = false
+        vaultNoteID = nil
+        diffs.removeAll()
+        rationales.removeAll()
+        contextApplications.removeAll()
+        errorProviders.removeAll()
+        errorNeedsModelSetup.removeAll()
+        replySuggestions = []
+        grammarSuggestions = []
+        selectedGrammarKind = .corrected
+        panelResultScrollHeight = nil
+        panelSessionID = UUID()
+        invocationID = UUID()
     }
 
     func setResult(_ state: ResultState, for actionID: String) {

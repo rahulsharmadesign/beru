@@ -79,6 +79,14 @@ final class AppCoordinator {
         engine.onRevealVaultNote = { [weak self] id in
             self?.revealVaultNote(id)
         }
+        engine.onToggleZoom = { [weak self] in
+            self?.panelController.toggleZoom()
+        }
+        engine.onOpenVault = { [weak self] in
+            // Same order as Settings: the panel goes away first.
+            self?.dismiss()
+            self?.showDashboard(route: .vault)
+        }
         DictationService.shared.onText = { [weak self] text in
             self?.applyDictated(text)
         }

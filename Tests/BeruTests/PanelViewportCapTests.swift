@@ -6,6 +6,17 @@ final class PanelViewportCapTests: XCTestCase {
         XCTAssertEqual(PanelMetrics.maxViewportFraction, 0.75, accuracy: 0.0001)
     }
 
+    func testRestingFloorIsSixtyPercentOfTheViewport() {
+        XCTAssertEqual(PanelMetrics.defaultViewportFraction, 0.60, accuracy: 0.0001)
+        // A 75% cap of 750pt means a 1000pt visible screen: resting is 600pt.
+        XCTAssertEqual(PanelLayoutHeights.restingFloor(cap: 750), 600)
+        // The floor always sits below the cap it derives from.
+        XCTAssertLessThan(
+            PanelLayoutHeights.restingFloor(cap: 600),
+            600
+        )
+    }
+
     func testLayoutIdealIsChromePlusResult() {
         let layout = PanelLayoutHeights(chrome: 120, result: 400)
         XCTAssertEqual(layout.ideal, 520)

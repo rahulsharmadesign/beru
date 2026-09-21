@@ -19,7 +19,7 @@ struct BeruButton: View {
         case large
         /// Settings and dashboard. 32.
         case regular
-        /// The panel, where a 480pt width has to hold several actions. 28.
+        /// The panel, where a 440pt width has to hold several actions. 28.
         case compact
     }
 

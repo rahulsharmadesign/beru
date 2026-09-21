@@ -211,14 +211,22 @@ struct PanelView: View {
     }
 
     var closeStrip: some View {
-        HStack(spacing: BeruSpace.xxs) {
-            PanelCloseDot { engine.cancel() }
-            Spacer(minLength: 0)
-            PanelUpdateButton()
-            PanelSettingsLink { engine.openSettings() }
-        }
-        .frame(height: PanelMetrics.closeStripHeight)
-        .background(PanelDragRegion())
+        PanelTitlebar(
+            title: titlebarTitle,
+            isZoomed: appState.isPanelZoomed,
+            pinEnabled: appState.acceptedText() != nil,
+            onClose: { engine.cancel() },
+            onZoom: { engine.toggleZoom() },
+            onNewSession: { engine.newSession() },
+            onPin: { performPin() },
+            onVault: { engine.openVault() },
+            onSettings: { engine.openSettings() }
+        )
+    }
+
+    /// Centered titlebar title: the active verb, falling back to the app name.
+    var titlebarTitle: String {
+        registry.action(withID: appState.selectedActionID)?.name ?? "Beru"
     }
 
     /// Idle copy with nothing else in the result (no quote, no thread).

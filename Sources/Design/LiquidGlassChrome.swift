@@ -12,7 +12,8 @@ enum LiquidGlassChrome {
     /// desktop's text reads straight through the panel (measured — unusable),
     /// while untinted regular is the frosted near-opaque card that reads as
     /// plain blur. A 45% light scrim tint keeps regular's refraction and edge
-    /// highlights visible but puts enough material under the type. Content
+    /// highlights visible but puts enough material under the type. Dark pairs
+    /// a 30% tint with the top-down `panelShade` crown. Content
     /// scrims (composer well, result card) sit on top; Reduce Transparency
     /// still swaps to the opaque plate.
     static func prepareWindowSlab(_ glass: NSGlassEffectView, interactive: Bool = false) {

@@ -19,6 +19,12 @@ struct PanelLayoutHeights: Equatable {
 
     var ideal: CGFloat { chrome + result }
 
+    /// Resting window height for a viewport cap: 60% of the visible screen
+    /// expressed through the 75% cap the controller already resolved.
+    static func restingFloor(cap: CGFloat) -> CGFloat {
+        (cap * (PanelMetrics.defaultViewportFraction / PanelMetrics.maxViewportFraction)).rounded()
+    }
+
     /// Nil when a chrome band is still missing. Those frames used to size the
     /// window to ~40pt, then `clipsToBounds` sheared the close strip and composer.
     static func fromBands(top: CGFloat, bottom: CGFloat, result: CGFloat) -> PanelLayoutHeights? {
