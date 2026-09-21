@@ -10,7 +10,7 @@ import AppKit
 extension BeruColor {
     /// The panel's close disc.
     enum CloseDisc {
-        static let fill = NSColor(srgbRed: 1, green: 0.37, blue: 0.34, alpha: 1)
+        static let fill = NSColor(srgbRed: 1.0, green: 0.373, blue: 0.341, alpha: 1)
         static let pressedFill = NSColor(srgbRed: 0.78, green: 0.16, blue: 0.14, alpha: 1)
         static let glyph = NSColor(srgbRed: 0.30, green: 0.04, blue: 0.03, alpha: 0.88)
     }
@@ -18,7 +18,7 @@ extension BeruColor {
     /// The panel's zoom disc. Same reasoning as `CloseDisc`: a traffic-light
     /// green, fixed per appearance rather than dynamic.
     enum ZoomDisc {
-        static let fill = NSColor(srgbRed: 0.20, green: 0.78, blue: 0.31, alpha: 1)
+        static let fill = NSColor(srgbRed: 0.157, green: 0.792, blue: 0.259, alpha: 1)
         static let pressedFill = NSColor(srgbRed: 0.13, green: 0.56, blue: 0.20, alpha: 1)
         static let glyph = NSColor(srgbRed: 0.03, green: 0.30, blue: 0.09, alpha: 0.88)
     }

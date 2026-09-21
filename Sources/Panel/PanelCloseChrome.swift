@@ -4,9 +4,6 @@ import SwiftUI
 enum PanelCloseChromePolicy {
     static let discSize: CGFloat = 12
     static let hitSize: CGFloat = 28
-    /// Gap between the close and zoom discs. 10 sits off the 4pt grid on
-    /// purpose: it is the titlebar's optical spacing, not layout rhythm.
-    static let discGap: CGFloat = 10
 }
 
 /// Glyph drawn on a traffic disc when hovered or pressed. macOS shows the
@@ -19,12 +16,14 @@ enum PanelTrafficGlyph {
 }
 
 /// AppKit close so window-drag does not swallow the click.
+/// The frame hugs the 12pt visual horizontally: 28pt-wide hit boxes pushed
+/// the two discs 26pt apart. Height stays 28 for a forgiving vertical target.
 struct PanelCloseDot: View {
     let action: () -> Void
 
     var body: some View {
         PanelTrafficDiscRepresentable(kind: .cross, isZoomed: false, onPress: action)
-            .frame(width: PanelCloseChromePolicy.hitSize, height: PanelCloseChromePolicy.hitSize)
+            .frame(width: PanelCloseChromePolicy.discSize, height: PanelCloseChromePolicy.hitSize)
             .help("Close")
             .accessibilityLabel("Close")
             .accessibilityAddTraits(.isButton)
@@ -40,7 +39,7 @@ struct PanelZoomDot: View {
 
     var body: some View {
         PanelTrafficDiscRepresentable(kind: .plus, isZoomed: isZoomed, onPress: action)
-            .frame(width: PanelCloseChromePolicy.hitSize, height: PanelCloseChromePolicy.hitSize)
+            .frame(width: PanelCloseChromePolicy.discSize, height: PanelCloseChromePolicy.hitSize)
             .help(isZoomed ? "Restore" : "Zoom")
             .accessibilityLabel(isZoomed ? "Restore zoom" : "Zoom")
             .accessibilityAddTraits(.isButton)
@@ -86,7 +85,7 @@ final class PanelTrafficDisc: NSControl {
     required init?(coder: NSCoder) { nil }
 
     override var intrinsicContentSize: NSSize {
-        NSSize(width: PanelCloseChromePolicy.hitSize, height: PanelCloseChromePolicy.hitSize)
+        NSSize(width: PanelCloseChromePolicy.discSize, height: PanelCloseChromePolicy.hitSize)
     }
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
     override var mouseDownCanMoveWindow: Bool { false }
@@ -134,12 +133,15 @@ final class PanelTrafficDisc: NSControl {
     }
 
     override func draw(_ dirtyRect: NSRect) {
+        // True macOS traffic-light size: a full 12pt disc. The old rect
+        // inset half a point per side and painted 11pt, reading small next
+        // to real windows.
         let size = PanelCloseChromePolicy.discSize
         let oval = NSRect(
-            x: ((bounds.width - size) / 2) + 0.5,
-            y: ((bounds.height - size) / 2) + 0.5,
-            width: size - 1,
-            height: size - 1
+            x: (bounds.width - size) / 2,
+            y: (bounds.height - size) / 2,
+            width: size,
+            height: size
         )
         let isClose = glyph == .cross
         let fill = isClose

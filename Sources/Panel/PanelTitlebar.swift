@@ -28,7 +28,7 @@ struct PanelTitlebar: View {
                 .allowsHitTesting(false)
 
             HStack(spacing: 0) {
-                HStack(spacing: PanelCloseChromePolicy.discGap) {
+                HStack(spacing: BeruSpace.xs) {
                     PanelCloseDot(action: onClose)
                     PanelZoomDot(isZoomed: isZoomed, action: onZoom)
                 }
