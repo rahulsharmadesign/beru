@@ -1,16 +1,16 @@
 <p align="center">
-  <img src="beru-github-banner.png" alt="Beru - turn a rough idea into a prompt your LLM will follow" width="100%">
+  <img src="beru-github-banner.png" alt="Enhancify - turn a rough idea into a prompt your LLM will follow" width="100%">
 </p>
 
-# Beru
+# Enhancify
 
-Select a rough idea, press a hotkey, and Beru turns it into a prompt your LLM will actually follow, aimed at Cursor, Claude, Codex, Gemini, ChatGPT, and the rest.
+Select a rough idea, press a hotkey, and Enhancify turns it into a prompt your LLM will actually follow, aimed at Cursor, Claude, Codex, Gemini, ChatGPT, and the rest.
 
 ![macOS 26+](https://img.shields.io/badge/macOS-26%2B-blue)
 ![Swift 5.10](https://img.shields.io/badge/Swift-5.10-orange)
 ![License: MIT](https://img.shields.io/badge/license-MIT-green)
 
-Beru lives in the menu bar. It does not take over the app you are writing in. Every surface is native **Liquid Glass**: the panel floats as one refractive slab, the composer is a real glass field, the menu-bar extra sits on system glass, and Settings is a glass window with an accent-tinted sidebar. No custom frosted cards, no painted-over blur.
+Enhancify lives in the menu bar. It does not take over the app you are writing in. Every surface is native **Liquid Glass**: the panel floats as one refractive slab, the composer is a real glass field, the menu-bar extra sits on system glass, and Settings is a glass window with an accent-tinted sidebar. No custom frosted cards, no painted-over blur.
 
 ## How it works
 
@@ -18,7 +18,7 @@ Beru lives in the menu bar. It does not take over the app you are writing in. Ev
 2. Press **⌃⌥⌘P** (you can change this).
 3. Pick a chip. **Enhance Prompt** rewrites it as a clear prompt for that tool. **⌘↩ Replace** writes it back. **Copy** takes it to the clipboard.
 
-Too lazy to type? Press **⌃⌥⌘L**. Beru opens, listens on this Mac, and writes down what you say. Speak the rough idea; Enhance still turns it into a prompt. Press the shortcut again, or the mic, to stop. Audio is transcribed on-device and never leaves the machine.
+Too lazy to type? Press **⌃⌥⌘L**. Enhancify opens, listens on this Mac, and writes down what you say. Speak the rough idea; Enhance still turns it into a prompt. Press the shortcut again, or the mic, to stop. Audio is transcribed on-device and never leaves the machine.
 
 Pick the target (Cursor, Claude, ChatGPT, …) so the prompt matches how that model wants to be asked. Add Codex, Gemini, or your own in Settings → Targets.
 
@@ -30,7 +30,7 @@ Confirmations ("Replaced in …", "Pinned") float over the composer and never mo
 
 ## Pick a model that can do the job
 
-Beru's prompts are demanding instruction sets — tagged multi-output formats, layered constraints, strict output shapes. A vision or embedding model will give weak replies, ignore bans, and echo prompt vocabulary. **Use a text instruct model.**
+Enhancify's prompts are demanding instruction sets — tagged multi-output formats, layered constraints, strict output shapes. A vision or embedding model will give weak replies, ignore bans, and echo prompt vocabulary. **Use a text instruct model.**
 
 Settings → Models warns you when Enhance or Grammar runs on a vision, embedding, speech, or filter model, and offers a one-tap switch to the first installed text model. Good local choices:
 
@@ -48,19 +48,21 @@ macOS 26+ only.
 
 ### Download (recommended)
 
-1. Download **Beru-1.1.20.dmg** from [Releases](https://github.com/rahulsharmadesign/beru/releases). Only the latest release is kept; older versions and their downloads are removed.
-2. Open the DMG and drag **Beru** into **Applications**.
+1. Download the latest **Enhancify-<version>.dmg** from [Releases](https://github.com/rahulsharmadesign/beru/releases). Only the latest release is kept; older versions and their downloads are removed.
+2. Open the DMG and drag **Enhancify** (the file is still named `Beru.app`) into **Applications**.
 3. macOS will block it (unsigned). Allow it once:
 
 ```bash
 xattr -cr /Applications/Beru.app
 ```
 
-4. Open Beru from Applications.
+4. Open Enhancify from Applications.
 
 No Xcode, Homebrew, or Apple Developer account. Dependencies are inside the app.
 
-No Terminal? Control-click Beru → **Open**.
+No Terminal? Control-click Enhancify → **Open**.
+
+> **Formerly Beru.** The app was renamed to Enhancify. Behind the scenes it keeps the old bundle id (`com.rahul.beru`), file name (`Beru.app`), Keychain entries and `Application Support/Beru/` folder, so existing installs keep their settings, API keys, vault, Accessibility grant, and in-app updates.
 
 **Optional:** if you use the **Ollama** provider, install [Ollama](https://ollama.com) separately and pull a model (see above for which). Cloud providers (Groq, Anthropic, etc.) only need an API key in Settings.
 
@@ -75,7 +77,7 @@ cd beru
 ./scripts/install.sh
 ```
 
-That builds Beru, signs it on *your* Mac, installs it to `/Applications`, and launches it. The certificate script is one-time. After that, `./scripts/install.sh` is enough.
+That builds Enhancify, signs it on *your* Mac, installs it to `/Applications`, and launches it. The certificate script is one-time. After that, `./scripts/install.sh` is enough.
 
 To publish a DMG, push a version tag (`v1.1.0`). GitHub Actions builds it. Locally: `./scripts/make-dmg.sh`.
 
@@ -83,9 +85,9 @@ To publish a DMG, push a version tag (`v1.1.0`). GitHub Actions builds it. Local
 
 Three steps only. There is no microphone page.
 
-1. **Welcome** — Beru lives in the menu bar. Select text, press the shortcut, improve it in place.
+1. **Welcome** — Enhancify lives in the menu bar. Select text, press the shortcut, improve it in place.
 2. **Allow Accessibility** — required to read and replace the selection. **Open System Settings** if the grant is not there yet, then Continue.
-3. **Start Beru** — press the shortcut (default **⌃⌥⌘P**). The welcome window closes and the panel opens.
+3. **Start Enhancify** — press the shortcut (default **⌃⌥⌘P**). The welcome window closes and the panel opens.
 
 Then open **Settings** from the menu bar and choose a provider (Ollama with a pulled model, or a cloud key). Enhance and Grammar need that before they can run.
 
@@ -121,7 +123,7 @@ Always on the left: **AI Search**. Then **Enhance Prompt** and **Grammar**. New 
 
 ## Menu bar
 
-Click the Beru extra:
+Click the Enhancify extra:
 
 - **Enhance Clipboard** — runs the default action on clipboard text; empty clipboard opens Search.
 - **Dictate** — opens Search and starts listening (**⌃⌥⌘L**).
@@ -135,7 +137,7 @@ Open from the panel gear or the menu bar. Sidebar, top to bottom:
 
 ### General
 
-Name (greetings on this Mac only), accent color, **Open Beru** and **Dictate** shortcuts, launch at login, default action, **Explain what changed**, and **Remember recent turns**.
+Name (greetings on this Mac only), accent color, **Open Enhancify** and **Dictate** shortcuts, launch at login, default action, **Explain what changed**, and **Remember recent turns**.
 
 ### Models
 
@@ -151,7 +153,7 @@ Token savings from accepted results. **Record usage** is off until you turn it o
 
 ### Vault
 
-Local markdown notes and pins. Notes is a list plus editor; Pins is a list plus inspector. Pin a result or a link (`example.com` is fine; `javascript:` and `file:` are not). **Enhance this note** opens the panel; **Apply** writes the result back into that note. Export/import a zip. Point the folder at iCloud or Dropbox if you want the files to sync — Beru does not host them.
+Local markdown notes and pins. Notes is a list plus editor; Pins is a list plus inspector. Pin a result or a link (`example.com` is fine; `javascript:` and `file:` are not). **Enhance this note** opens the panel; **Apply** writes the result back into that note. Export/import a zip. Point the folder at iCloud or Dropbox if you want the files to sync — Enhancify does not host them.
 
 ### Runs
 
@@ -183,12 +185,12 @@ Have an idea? [Open a feature request](https://github.com/rahulsharmadesign/beru
 
 Everything stays on this Mac.
 
-- Settings, actions, targets, vault notes, and run history are stored locally. Nothing is uploaded to a Beru server, there isn’t one.
+- Settings, actions, targets, vault notes, and run history are stored locally. Nothing is uploaded to a Enhancify server, there isn’t one.
 - No analytics, telemetry, or crash reporting.
 - API keys live in the Keychain on this Mac.
 - Selected text goes only to the LLM provider you configure.
 - Run history is off until you turn it on, then it lives in `~/Library/Application Support/Beru/`.
-- Beru is not sandboxed. Accessibility cannot work inside the App Sandbox.
+- Enhancify is not sandboxed. Accessibility cannot work inside the App Sandbox.
 
 Cloud sync for settings and runs is a later idea, not in this build.
 
@@ -196,7 +198,7 @@ Details: [SECURITY.md](SECURITY.md).
 
 ## Support
 
-If Beru saves you time: [send a tip](https://razorpay.me/@rahulsharmadesign).
+If Enhancify saves you time: [send a tip](https://razorpay.me/@rahulsharmadesign).
 
 Bugs and ideas: [open an issue](https://github.com/rahulsharmadesign/beru/issues). Security problems: [private advisory](https://github.com/rahulsharmadesign/beru/security/advisories/new), not a public issue.
 

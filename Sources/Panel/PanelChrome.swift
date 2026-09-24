@@ -23,7 +23,7 @@ struct PanelUpdateButton: View {
                 .allowsHitTesting(false)
             }
             .fixedSize()
-            .help(updates.availableVersion.map { "Install Beru \($0)" } ?? "Install the latest Beru")
+            .help(updates.availableVersion.map { "Install Enhancify \($0)" } ?? "Install the latest Enhancify")
             .accessibilityLabel("Update")
             .accessibilityAddTraits(.isButton)
         }

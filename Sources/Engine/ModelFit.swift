@@ -30,13 +30,13 @@ enum ModelFit: Equatable {
         case .weak(let kind):
             switch kind {
             case .vision:
-                return "Vision model — weak at Beru's text tasks"
+                return "Vision model — weak at Enhancify's text tasks"
             case .embedding:
                 return "Embedding model — cannot generate text"
             case .speech:
-                return "Speech model — cannot do Beru's text tasks"
+                return "Speech model — cannot do Enhancify's text tasks"
             case .guardrail:
-                return "Filter model — cannot do Beru's text tasks"
+                return "Filter model — cannot do Enhancify's text tasks"
             case .small:
                 return "Small model — Enhance and Grammar need 7B+ for reliable results"
             }
@@ -59,7 +59,7 @@ enum ModelFit: Equatable {
             case .guardrail:
                 return "a filter model"
             case .small:
-                return "a small model for Beru's instruction-heavy tasks"
+                return "a small model for Enhancify's instruction-heavy tasks"
             }
         }
     }

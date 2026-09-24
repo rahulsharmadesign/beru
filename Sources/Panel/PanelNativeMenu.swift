@@ -142,7 +142,7 @@ extension PanelView {
             title: kind.composerTitle,
             help: "Change the active provider",
             accessibilityLabel: "Active provider, \(kind.title)",
-            accessibilityHint: "Choose which AI provider Beru sends requests to",
+            accessibilityHint: "Choose which AI provider Enhancify sends requests to",
             anchor: providerAnchor,
             onTap: presentProviderMenu
         )

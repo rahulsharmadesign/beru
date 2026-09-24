@@ -31,6 +31,11 @@ final class AppUpdateServiceTests: XCTestCase {
         XCTAssertEqual(AppUpdateFeed.dmgAsset(named: assets, preferring: "1.1.2"), "Beru-1.1.2.dmg")
     }
 
+    func testPrefersMatchingEnhancifyDMG() {
+        let assets = ["notes.txt", "Enhancify-1.2.0.dmg", "Enhancify-1.2.0.zip"]
+        XCTAssertEqual(AppUpdateFeed.dmgAsset(named: assets, preferring: "1.2.0"), "Enhancify-1.2.0.dmg")
+    }
+
     func testFallsBackToABareDMGWhenTheNameOmitsBeru() {
         XCTAssertEqual(
             AppUpdateFeed.dmgAsset(named: ["notes.txt", "V1.01_build_16.dmg"], preferring: "1.01"),

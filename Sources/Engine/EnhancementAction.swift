@@ -54,7 +54,7 @@ struct EnhancementAction: Identifiable, Codable, Equatable {
         if actionID == describeID {
             return (
                 "Give an instruction",
-                "Type what you want Beru to do, then press Return."
+                "Type what you want Enhancify to do, then press Return."
             )
         }
         return (
@@ -72,7 +72,7 @@ struct EnhancementAction: Identifiable, Codable, Equatable {
             return hasCapture ? "Ask about the selected text…" : "Ask anything — no selection needed"
         }
         if actionID == describeID {
-            return "Type what you want Beru to do"
+            return "Type what you want Enhancify to do"
         }
         if !hasCapture {
             return "Type or paste text"

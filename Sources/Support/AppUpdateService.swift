@@ -36,7 +36,11 @@ enum AppUpdateFeed {
 
     static func dmgAsset(named assets: [String], preferring version: String) -> String? {
         let allDmgs = assets.filter { $0.lowercased().hasSuffix(".dmg") }
-        let named = allDmgs.filter { $0.lowercased().contains("beru") }
+        // Releases were named Beru-x.dmg before the Enhancify rename.
+        let named = allDmgs.filter {
+            let name = $0.lowercased()
+            return name.contains("enhancify") || name.contains("beru")
+        }
         let pool = named.isEmpty ? allDmgs : named
         if let exact = pool.first(where: { $0.localizedCaseInsensitiveContains(version) }) {
             return exact
@@ -122,7 +126,7 @@ final class AppUpdateService {
         case .upToDate: return "You’re on the latest version."
         case .localBuild:
             return "This local build does not install GitHub DMGs. Install a release to get updates."
-        case .available(let version, _): return "Beru \(version) is available."
+        case .available(let version, _): return "Enhancify \(version) is available."
         case .downloading, .installing: return "Updating…"
         case .failed(let message): return message
         }
@@ -165,7 +169,7 @@ final class AppUpdateService {
         status = .checking
         do {
             var request = URLRequest(url: AppUpdateFeed.latestRelease)
-            request.setValue("Beru", forHTTPHeaderField: "User-Agent")
+            request.setValue("Enhancify", forHTTPHeaderField: "User-Agent")
             request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
             request.timeoutInterval = 15
             let (data, response) = try await URLSession.shared.data(for: request)

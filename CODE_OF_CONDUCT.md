@@ -2,7 +2,7 @@
 
 ## Pledge
 
-This project is a space for people to work on Beru without harassment. Be respectful in issues, pull requests, and discussions.
+This project is a space for people to work on Enhancify without harassment. Be respectful in issues, pull requests, and discussions.
 
 ## Standards
 
@@ -19,4 +19,4 @@ Maintainers may warn, limit, or ban anyone who breaks this standard.
 
 ## Scope
 
-This applies in the repository, issue tracker, discussions, and any official Beru presence.
+This applies in the repository, issue tracker, discussions, and any official Enhancify presence.

@@ -90,7 +90,7 @@ struct MenuBarContent: View {
                 .frame(width: BeruMetrics.brandMark, height: BeruMetrics.brandMark)
                 .clipShape(BeruRadius.shape(BeruRadius.sm))
             VStack(alignment: .leading, spacing: 0) {
-                Text("Beru").font(BeruType.controlSemibold)
+                Text("Enhancify").font(BeruType.controlSemibold)
                 if let status = headerStatus.text {
                     Text(status)
                         .font(BeruType.footnote)
@@ -102,7 +102,7 @@ struct MenuBarContent: View {
             Circle()
                 .fill(headerStatus.ready ? BeruColor.accent : BeruColor.textSecondary.opacity(0.45))
                 .frame(width: BeruSpace.xs, height: BeruSpace.xs)
-                .accessibilityLabel(headerStatus.ready ? "Beru is ready" : (headerStatus.text ?? "Beru"))
+                .accessibilityLabel(headerStatus.ready ? "Enhancify is ready" : (headerStatus.text ?? "Enhancify"))
         }
         .padding(.bottom, BeruSpace.xxs)
     }
@@ -138,7 +138,7 @@ struct MenuBarContent: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Enhance Clipboard")
-        .accessibilityHint("Run Beru on the current clipboard")
+        .accessibilityHint("Run Enhancify on the current clipboard")
     }
 
     /// `NSMenu.popUp` works in a MenuBarExtra window. SwiftUI `Menu` as an

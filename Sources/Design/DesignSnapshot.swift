@@ -92,7 +92,7 @@ enum DesignSnapshot {
             backing: .buffered,
             defer: false
         )
-        window.title = "Beru"
+        window.title = "Enhancify"
         window.contentView?.addSubview(anchor)
         window.makeKeyAndOrderFront(nil)
         let capture = Timer(timeInterval: 0.8, repeats: false) { _ in

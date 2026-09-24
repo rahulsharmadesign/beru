@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 #
-# Build a Release Beru.app and wrap it in a distributable DMG.
+# Build a Release Enhancify build (Beru.app on disk) and wrap it in a
+# distributable DMG. The bundle keeps its Beru.app file name so the in-app
+# updater of earlier releases, which looks for Beru.app, can still install it.
 #
 # Default signing is ad-hoc ("-"). That needs no Apple Developer Program.
 # Recipients clear Gatekeeper once with:
@@ -17,7 +19,7 @@ cd "$(dirname "$0")/.."
 IDENTITY="${BERU_SIGN_IDENTITY:--}"
 VERSION=$(awk '/MARKETING_VERSION/ {print $2; exit}' project.yml | tr -d '"')
 STAGE=$(mktemp -d)
-OUT="${BERU_DMG_OUT:-build/Beru-${VERSION}.dmg}"
+OUT="${BERU_DMG_OUT:-build/Enhancify-${VERSION}.dmg}"
 trap 'rm -rf "$STAGE"' EXIT
 
 if [[ "$IDENTITY" != "-" ]] \
@@ -61,23 +63,23 @@ if [[ "${NOTARIZE:-}" == "1" && "$IDENTITY" != "-" ]]; then
 fi
 
 ln -s /Applications "$STAGE/dmg/Applications"
-cat > "$STAGE/dmg/How to allow Beru.txt" <<'EOF'
+cat > "$STAGE/dmg/How to allow Enhancify.txt" <<'EOF'
 Install
-1. Drag Beru into Applications.
+1. Drag Enhancify (Beru.app) into Applications.
 2. Open Terminal and paste this once:
 
 xattr -cr /Applications/Beru.app
 
-3. Open Beru from Applications.
+3. Open Enhancify (Beru.app) from Applications.
 
 macOS blocks unsigned downloads. That one line clears the quarantine flag.
-You can also Control-click Beru and choose Open.
+You can also Control-click Beru.app and choose Open.
 EOF
 
 echo "==> building $OUT"
 mkdir -p "$(dirname "$OUT")"
 rm -f "$OUT"
-hdiutil create -volname "Beru" -srcfolder "$STAGE/dmg" -ov -format UDZO "$OUT" >/dev/null
+hdiutil create -volname "Enhancify" -srcfolder "$STAGE/dmg" -ov -format UDZO "$OUT" >/dev/null
 
 if [[ "${NOTARIZE:-}" == "1" && "$IDENTITY" != "-" ]]; then
     echo "==> notarizing DMG"
@@ -87,6 +89,6 @@ fi
 echo "==> done: $OUT ($(du -h "$OUT" | cut -f1))"
 if [[ "$IDENTITY" == "-" ]]; then
     echo ""
-    echo "==> Recipients: drag Beru to Applications, then run:"
+    echo "==> Recipients: drag Beru.app to Applications, then run:"
     echo "    xattr -cr /Applications/Beru.app"
 fi

@@ -131,7 +131,7 @@ struct VaultView: View {
 
                 Write notes here. They stay on this Mac as markdown files.
 
-                - Click **Enhance this note** to open Beru on this text
+                - Click **Enhance this note** to open Enhancify on this text
                 - **Apply** in the panel writes the result back here
                 - **Pin** saves a result or link under Pins
 

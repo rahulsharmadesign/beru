@@ -1,6 +1,6 @@
 # Security
 
-Beru reads selected text in other apps and can replace it. Treat it as a privileged utility.
+Enhancify reads selected text in other apps and can replace it. Treat it as a privileged utility.
 
 ## Report a vulnerability
 
@@ -12,7 +12,7 @@ This is the current public build. There is no older supported release line.
 
 ### Accessibility and input
 
-Beru is **not sandboxed**. It uses the Accessibility API to read the current selection and, when that fails, simulates ⌘C / ⌘V. A compromised build can read and inject text in any app.
+Enhancify is **not sandboxed**. It uses the Accessibility API to read the current selection and, when that fails, simulates ⌘C / ⌘V. A compromised build can read and inject text in any app.
 
 - Grant Accessibility only to a binary you built or that is signed with a Developer ID you trust.
 - Review changes under `Sources/Capture/` and `Sources/Support/` carefully.
@@ -20,10 +20,10 @@ Beru is **not sandboxed**. It uses the Accessibility API to read the current sel
 
 ### Data sent to providers
 
-Selected text, instructions, and playbook context are sent to the LLM provider you configure (Ollama, Anthropic, Groq, OpenAI, or a custom URL). Beru does not add analytics or a proxy.
+Selected text, instructions, and playbook context are sent to the LLM provider you configure (Ollama, Anthropic, Groq, OpenAI, or a custom URL). Enhancify does not add analytics or a proxy.
 
 - Local Ollama keeps data on the machine.
-- Cloud providers receive whatever you selected. Do not run Beru on secrets you would not paste into that provider.
+- Cloud providers receive whatever you selected. Do not run Enhancify on secrets you would not paste into that provider.
 - Custom base URLs must be `http://` or `https://`. `file:`, `unix:`, and other schemes are rejected.
 
 ### Session context
@@ -42,7 +42,7 @@ Usage recording is **off by default**. When enabled, full input and output are w
 
 `~/Library/Application Support/Beru/history/` (directory `0700`, files `0600`)
 
-The default vault lives at `~/Library/Application Support/Beru/vault/` with the same modes. A user-chosen sync folder (iCloud, Dropbox) keeps the cloud provider’s permissions on the folder itself; note files Beru writes are still `0600`.
+The default vault lives at `~/Library/Application Support/Beru/vault/` with the same modes. A user-chosen sync folder (iCloud, Dropbox) keeps the cloud provider’s permissions on the folder itself; note files Enhancify writes are still `0600`.
 
 ### Secrets
 
@@ -70,7 +70,7 @@ What it does:
 
 What it does **not** protect against:
 
-- **A compromised GitHub account or release.** Signature pinning ties the update to the same signing identity as the running app, but an ad-hoc signed build has no meaningful identity to pin. If you did not build Beru yourself, the update is only as trustworthy as the release it came from.
+- **A compromised GitHub account or release.** Signature pinning ties the update to the same signing identity as the running app, but an ad-hoc signed build has no meaningful identity to pin. If you did not build Enhancify yourself, the update is only as trustworthy as the release it came from.
 - **A local attacker who already runs code as you.** They do not need the updater; they can modify the app bundle directly. The hardening above narrows the updater as an *escalation* path, not as a defence against an already-compromised account.
 
 If you would rather not use in-app updates at all, download DMGs manually and ignore the About pane's update button.

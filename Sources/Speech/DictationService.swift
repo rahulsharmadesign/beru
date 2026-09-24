@@ -45,13 +45,13 @@ final class DictationService {
             case .ready:
                 return nil
             case .needsPermission:
-                return "Beru needs permission to use the microphone."
+                return "Enhancify needs permission to use the microphone."
             case .microphoneDenied:
-                return "Microphone access is off. Turn Beru on in System Settings › Privacy & Security › Microphone."
+                return "Microphone access is off. Turn Enhancify on in System Settings › Privacy & Security › Microphone."
             case .speechDenied:
-                return "Speech recognition is off. Turn Beru on in System Settings › Privacy & Security › Speech Recognition."
+                return "Speech recognition is off. Turn Enhancify on in System Settings › Privacy & Security › Speech Recognition."
             case .onDeviceUnavailable:
-                return "Dictation needs an on-device language. Add one in System Settings › Keyboard › Dictation — Beru will not send your voice to Apple."
+                return "Dictation needs an on-device language. Add one in System Settings › Keyboard › Dictation — Enhancify will not send your voice to Apple."
             case .noRecognizer:
                 return "macOS has no speech recogniser for this language."
             }
@@ -211,7 +211,7 @@ final class DictationService {
 
     /// Dock icon only while a real window (Settings) needs to stay in the app switcher.
     private func restoreAccessoryIfDashboardClosed() {
-        let dashboardOpen = NSApp.windows.contains { $0.isVisible && $0.title == "Beru" }
+        let dashboardOpen = NSApp.windows.contains { $0.isVisible && $0.title == "Enhancify" }
         if !dashboardOpen {
             NSApp.setActivationPolicy(.accessory)
         }

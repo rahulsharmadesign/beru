@@ -42,8 +42,8 @@ the window height fits the content:
 
 Reset by clearing `hasCompletedGetStarted` (or a fresh install):
 
-- [ ] Three steps only: Welcome → Allow Accessibility → Start Beru. No microphone page
-- [ ] After Start Beru, first mic click (or ⌃⌥⌘L) shows the system Microphone prompt; Allow starts listening. Settings → Permissions is not opened first
+- [ ] Three steps only: Welcome → Allow Accessibility → Start Enhancify. No microphone page
+- [ ] After Start Enhancify, first mic click (or ⌃⌥⌘L) shows the system Microphone prompt; Allow starts listening. Settings → Permissions is not opened first
 
 ## Liquid Glass
 
@@ -68,11 +68,11 @@ Open Settings and visit every sidebar route twice, in this order:
 
 - [ ] General, Models, Actions, Targets, Vault, Runs, Data, Permissions, About
 - [ ] Permissions: Accessibility and Dictation show Granted/Needed badges; Needed shows a primary Grant; Open after a grant. Toggle Accessibility in System Settings, click back — badge updates without waiting
-- [ ] No "Beru wants to use your confidential information" prompt at any point
+- [ ] No "Enhancify wants to use your confidential information" prompt at any point
 - [ ] No beachball or lag when landing on Models
 - [ ] Resize the window narrow: rows reflow without jumping or clipping
 - [ ] Light mode and dark mode
-- [ ] General → Open Beru / Dictate: both recorders are the same width as Name, right edges and × buttons line up
+- [ ] General → Open Enhancify / Dictate: both recorders are the same width as Name, right edges and × buttons line up
 - [ ] About → Check for Updates: latest version copy, or Install plus a download icon beside About in the sidebar; local signing explains it will not replace itself
 
 ## Runs and Vault
@@ -121,7 +121,7 @@ Vault, Actions, Targets, Runs should read as macOS Settings (source list + inspe
 
 - [ ] Change the accent color: panel and Settings both repaint immediately
 - [ ] Switch system appearance while the panel is open: it follows
-- [ ] Menu bar mark is the SVG ant at 22.5pt, black in Light and white in Dark, switching appearance without relaunching. Dock, About, Get Started, and the menu extra header show the same color mark (not the old winged bee). Spotlight / Dock may cache the old icon until Beru is reinstalled or the icon cache is cleared.
+- [ ] Menu bar mark is the SVG ant at 22.5pt, black in Light and white in Dark, switching appearance without relaunching. Dock, About, Get Started, and the menu extra header show the same color mark (not the old winged bee). Spotlight / Dock may cache the old icon until Enhancify is reinstalled or the icon cache is cleared.
 
 ## Smart Reply
 

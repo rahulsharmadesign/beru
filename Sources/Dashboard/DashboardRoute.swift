@@ -30,7 +30,7 @@ enum DashboardRoute: String, Identifiable, CaseIterable, Hashable {
 
     var pageSubtitle: String {
         switch self {
-        case .general: return "Global preferences for Beru."
+        case .general: return "Global preferences for Enhancify."
         case .models: return "Choose a local or cloud provider and the models it should use."
         case .permissions: return "Accessibility and dictation."
         case .data: return "Local history, exports, and token savings."

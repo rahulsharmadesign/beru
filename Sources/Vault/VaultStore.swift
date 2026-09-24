@@ -248,7 +248,7 @@ final class VaultStore {
     func exportZip() {
         let panel = NSSavePanel()
         panel.allowedContentTypes = [.zip]
-        panel.nameFieldStringValue = "Beru-Vault-\(Self.dayStamp()).zip"
+        panel.nameFieldStringValue = "Enhancify-Vault-\(Self.dayStamp()).zip"
         panel.canCreateDirectories = true
         panel.title = "Export Vault"
         guard panel.runModal() == .OK, let url = panel.url else { return }

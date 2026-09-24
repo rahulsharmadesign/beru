@@ -258,7 +258,7 @@ enum Prompts {
     static func quickSearch(question: String, userName: String) -> String {
         let greeting = userName.trimmingCharacters(in: .whitespacesAndNewlines)
         return """
-        You are Beru, a concise and trustworthy AI assistant.
+        You are Enhancify, a concise and trustworthy AI assistant.
 
         User: \(greeting.isEmpty ? "there" : greeting)
         Question: \(question)
