@@ -94,7 +94,7 @@ final class OnboardingWindowController: NSWindowController, NSWindowDelegate {
         guard !restoredAccessory else { return }
         restoredAccessory = true
         let dashboardOpen = NSApp.windows.contains {
-            $0.isVisible && $0.title == "Beru" && $0 !== window
+            $0.isVisible && $0.title == "Enhancify" && $0 !== window
         }
         if !dashboardOpen {
             NSApp.setActivationPolicy(.accessory)
@@ -184,8 +184,8 @@ struct GetStartedView: View {
 
     private var welcome: some View {
         stepLayout(
-            title: "Get started with Beru",
-            body: "Beru lives in your menu bar. Select text in any app, press the shortcut, and improve it instantly. Fix grammar, refine prompts, write replies, or ask questions."
+            title: "Get started with Enhancify",
+            body: "Enhancify lives in your menu bar. Select text in any app, press the shortcut, and improve it instantly. Fix grammar, refine prompts, write replies, or ask questions."
         ) {
             VStack(spacing: BeruSpace.lg) {
                 HStack(spacing: BeruSpace.xxs) {
@@ -201,7 +201,7 @@ struct GetStartedView: View {
     private var accessibility: some View {
         stepLayout(
             title: "Allow Accessibility",
-            body: "Beru needs Accessibility access to read and replace selected text in other apps. You can enable it from System Settings."
+            body: "Enhancify needs Accessibility access to read and replace selected text in other apps. You can enable it from System Settings."
         ) {
             VStack(spacing: BeruSpace.sm) {
                 if isTrusted {
@@ -229,12 +229,12 @@ struct GetStartedView: View {
 
     private var startBeru: some View {
         stepLayout(
-            title: "Start Beru",
-            body: "Press the shortcut to open Beru anytime, right from the app you're working in."
+            title: "Start Enhancify",
+            body: "Press the shortcut to open Enhancify anytime, right from the app you're working in."
         ) {
             VStack(spacing: BeruSpace.sm) {
                 BeruKbd(text: shortcutLabel)
-                OnboardContinueButton("Start Beru") {
+                OnboardContinueButton("Start Enhancify") {
                     controller?.finishAndOpenPanel()
                 }
             }

@@ -194,7 +194,7 @@ private struct SidebarUpdateChip: View {
             size: BeruMetrics.iconSizeCompact,
             frameSize: BeruMetrics.hitTargetCompact,
             enabled: !updates.isBusy,
-            help: updates.availableVersion.map { "Install Beru \($0)" } ?? "Install the latest Beru"
+            help: updates.availableVersion.map { "Install Enhancify \($0)" } ?? "Install the latest Enhancify"
         ) {
             updates.install()
         }

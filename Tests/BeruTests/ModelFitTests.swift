@@ -101,7 +101,7 @@ final class ModelFitTests: XCTestCase {
         XCTAssertNil(OllamaModelFit.fit(for: "qwen2.5:7b").warning)
         XCTAssertEqual(
             OllamaModelFit.fit(for: "qwen2.5vl:3b").warning,
-            "Vision model — weak at Beru's text tasks"
+            "Vision model — weak at Enhancify's text tasks"
         )
     }
 

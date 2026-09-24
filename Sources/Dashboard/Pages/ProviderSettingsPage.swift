@@ -132,7 +132,7 @@ struct ProviderSettingsSections: View {
         case .anthropic:
             SettingsRow(
                 title: "API key",
-                caption: "Stored in the Keychain. If empty, BERU_ANTHROPIC_API_KEY is used when Beru is launched from a terminal."
+                caption: "Stored in the Keychain. If empty, BERU_ANTHROPIC_API_KEY is used when Enhancify is launched from a terminal."
             ) {
                 SettingsSecretField(placeholder: "sk-ant-…", text: $anthropicKey, width: BeruMetrics.wideFieldWidth)
             }
@@ -164,7 +164,7 @@ struct ProviderSettingsSections: View {
             }
             SettingsRow(
                 title: "API key",
-                caption: "Stored in the Keychain. If empty, BERU_API_KEY is used when Beru is launched from a terminal."
+                caption: "Stored in the Keychain. If empty, BERU_API_KEY is used when Enhancify is launched from a terminal."
             ) {
                 SettingsSecretField(placeholder: "sk-…", text: $customKey, width: BeruMetrics.wideFieldWidth)
             }

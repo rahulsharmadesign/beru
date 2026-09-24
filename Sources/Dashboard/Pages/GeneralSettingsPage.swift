@@ -25,7 +25,7 @@ struct GeneralSettingsTab: View {
 
             SettingsSection(
                 title: "Accent",
-                subtitle: "Beru's tint across pills, selection, and the send disc."
+                subtitle: "Enhancify's tint across pills, selection, and the send disc."
             ) {
                 SettingsAccentSwatches(
                     selection: Binding(
@@ -36,23 +36,23 @@ struct GeneralSettingsTab: View {
             }
 
             SettingsSection(title: "Keyboard") {
-                SettingsRow(title: "Open Beru", caption: "Select text in another app, then press this shortcut.") {
+                SettingsRow(title: "Open Enhancify", caption: "Select text in another app, then press this shortcut.") {
                     SettingsShortcutRecorder(name: .invokeBeru)
                 }
-                SettingsRow(title: "Dictate", caption: "Opens Beru in Ask and starts listening.") {
+                SettingsRow(title: "Dictate", caption: "Opens Enhancify in Ask and starts listening.") {
                     SettingsShortcutRecorder(name: .dictateToBeru)
                 }
             }
 
             SettingsSection(title: "Startup") {
-                SettingsRow(title: "Run Beru at login") {
+                SettingsRow(title: "Run Enhancify at login") {
                     SettingsSwitch(isOn: Binding(
                         get: { settings.launchAtLogin },
                         set: { enabled in
                             settings.launchAtLogin = enabled
                             applyLaunchAtLogin(enabled)
                         }
-                    ), accessibilityLabel: "Run Beru at login")
+                    ), accessibilityLabel: "Run Enhancify at login")
                 }
             }
 
@@ -88,12 +88,12 @@ struct GeneralSettingsTab: View {
 
             SettingsSection(
                 title: "Reset",
-                subtitle: "Clear what Beru has learned from how you use it.",
+                subtitle: "Clear what Enhancify has learned from how you use it.",
                 tone: .danger
             ) {
                 SettingsRow(
                     title: "Learned preferences",
-                    caption: "Beru forgets the tone, grammar kind, and target it saw you pick last."
+                    caption: "Enhancify forgets the tone, grammar kind, and target it saw you pick last."
                 ) {
                     SettingsPillButton(title: "Clear", role: .destructive) {
                         settings.clearInteractionProfile()

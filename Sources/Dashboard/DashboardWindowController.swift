@@ -72,7 +72,7 @@ final class DashboardWindowController: NSWindowController, NSWindowDelegate {
             backing: .buffered,
             defer: false
         )
-        window.title = "Beru"
+        window.title = "Enhancify"
         window.titleVisibility = .visible
         window.titlebarAppearsTransparent = true
         // Separator is drawn in SwiftUI under the titleband so it spans the

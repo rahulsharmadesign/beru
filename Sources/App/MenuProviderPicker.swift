@@ -46,7 +46,7 @@ struct MenuProviderPicker: View {
         .buttonStyle(.plain)
         .help("Change the active provider")
         .accessibilityLabel("Active provider, \(settings.activeProvider.title)")
-        .accessibilityHint("Choose which AI provider Beru sends requests to")
+        .accessibilityHint("Choose which AI provider Enhancify sends requests to")
     }
 
     private func option(_ kind: ProviderKind) -> some View {

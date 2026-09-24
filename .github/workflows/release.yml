@@ -29,13 +29,13 @@ jobs:
       - name: Upload release artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Beru-dmg
-          path: build/Beru-*.dmg
+          name: Enhancify-dmg
+          path: build/Enhancify-*.dmg
           if-no-files-found: error
 
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          files: build/Beru-*.dmg
+          files: build/Enhancify-*.dmg
           generate_release_notes: true

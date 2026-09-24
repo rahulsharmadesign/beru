@@ -140,7 +140,7 @@ extension PanelView {
                 help: isPromptBusy ? "Working…" : "Run this intent"
             ) {}
         }
-        .accessibilityHint("Send the instruction to Beru")
+        .accessibilityHint("Send the instruction to Enhancify")
     }
 
     func submitIfReady() {

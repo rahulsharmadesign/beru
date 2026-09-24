@@ -152,7 +152,7 @@ final class ActionRegistryTests: XCTestCase {
             EnhancementAction.composerPlaceholder(
                 actionID: EnhancementAction.describeID, hasCapture: false, isQuickSearch: false
             ),
-            "Type what you want Beru to do"
+            "Type what you want Enhancify to do"
         )
         XCTAssertTrue(
             EnhancementAction.composerPlaceholder(

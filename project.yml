@@ -64,9 +64,15 @@ targets:
         CFBundleShortVersionString: "$(MARKETING_VERSION)"
         CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         CFBundleIconName: AppIcon
+        # The product is Enhancify; the target, module, bundle id, Keychain
+        # service and Application Support folder keep the original "Beru" name
+        # so existing installs keep their Accessibility grant, settings, keys,
+        # vault, and in-app updates.
+        CFBundleName: Enhancify
+        CFBundleDisplayName: Enhancify
         LSUIElement: true
         NSHumanReadableCopyright: "© 2026 Rahul Sharma"
-        NSAccessibilityUsageDescription: "Beru reads and replaces selected text in other apps so it can enhance or correct it."
+        NSAccessibilityUsageDescription: "Enhancify reads and replaces selected text in other apps so it can enhance or correct it."
         # Both strings are mandatory, not descriptive. Requesting microphone or
         # speech access without the matching key does not warn or fail — the
         # system terminates the process, so a missing string is a crash the
@@ -75,8 +81,8 @@ targets:
         # The wording says on-device because that is enforced in code:
         # DictationService refuses to record unless the recognizer supports
         # on-device recognition, and never falls back to Apple's servers.
-        NSMicrophoneUsageDescription: "Beru listens only while you hold the dictation key, so you can speak an instruction instead of typing it. Audio is transcribed on this Mac and never leaves it."
-        NSSpeechRecognitionUsageDescription: "Beru transcribes what you say on this Mac so you can speak an instruction instead of typing it. Speech is recognized on-device and is not sent to Apple’s servers."
+        NSMicrophoneUsageDescription: "Enhancify listens only while you hold the dictation key, so you can speak an instruction instead of typing it. Audio is transcribed on this Mac and never leaves it."
+        NSSpeechRecognitionUsageDescription: "Enhancify transcribes what you say on this Mac so you can speak an instruction instead of typing it. Speech is recognized on-device and is not sent to Apple’s servers."
     entitlements:
       path: Resources/Beru.entitlements
       properties:

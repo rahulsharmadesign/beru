@@ -209,7 +209,7 @@ struct BeruMenuBarIcon: View {
     var body: some View {
         Image(nsImage: Self.glyph())
             .renderingMode(.template)
-            .accessibilityLabel("Beru")
+            .accessibilityLabel("Enhancify")
     }
 
     private static func glyph() -> NSImage {
@@ -244,6 +244,6 @@ struct BeruResponseMark: View {
             .scaledToFit()
             .frame(width: BeruMetrics.iconSize, height: BeruMetrics.iconSize)
             .foregroundStyle(BeruColor.textPrimary)
-            .accessibilityLabel("Beru")
+            .accessibilityLabel("Enhancify")
     }
 }

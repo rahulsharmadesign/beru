@@ -7,7 +7,7 @@ enum VaultArchiveError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .dittoFailed(let message): return message
-        case .unreadableArchive: return "Couldn’t read that zip as a Beru vault."
+        case .unreadableArchive: return "Couldn’t read that zip as an Enhancify vault."
         }
     }
 }

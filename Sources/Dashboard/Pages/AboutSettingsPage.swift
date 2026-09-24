@@ -39,7 +39,7 @@ struct AboutSettingsTab: View {
             icon: DashboardRoute.about.lucideIcon
         ) {
             SettingsHeroCard(
-                name: "Beru",
+                name: "Enhancify",
                 tagline: "A menu bar utility that refines selected text in any app.",
                 version: "\(version) (\(build))"
             )
@@ -55,7 +55,7 @@ struct AboutSettingsTab: View {
 
             SettingsSection(
                 title: "Updates",
-                subtitle: "Checks GitHub Releases for a newer Beru DMG."
+                subtitle: "Checks GitHub Releases for a newer Enhancify DMG."
             ) {
                 if let message = updates.statusMessage {
                     SettingsFootnote(text: message)
@@ -82,7 +82,7 @@ struct AboutSettingsTab: View {
 
             SettingsSection(
                 title: "Privacy",
-                subtitle: "Beru does not phone home. Requests go only to the provider you configure."
+                subtitle: "Enhancify does not phone home. Requests go only to the provider you configure."
             ) {
                 SettingsFootnote(text: "No analytics, telemetry, or crash reporting. API keys stay in the Keychain. Usage history is off until you turn it on, and never leaves this Mac.")
             }
