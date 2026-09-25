@@ -16,10 +16,21 @@ extension PanelView {
             && !DictationService.shared.isRecording
     }
 
-    /// Fills the otherwise empty footer band while the composer is hidden, so
-    /// the two keyboard moves stay discoverable.
-    var refineHint: some View {
-        Text("Type to refine · Tab switches Enhance and Grammar")
+    /// One quiet line in the otherwise empty footer band, so the keyboard
+    /// moves stay discoverable without a headline in the middle of the panel.
+    var footerHint: String? {
+        let other = appState.selectedActionID == EnhancementAction.grammarID ? "Enhance" : "Grammar"
+        if composerCollapsed {
+            return "Type to refine · Tab switches to \(other)"
+        }
+        if idleIsCompact && showsIdlePlaceholderOnly {
+            return "Return runs · Tab switches to \(other)"
+        }
+        return nil
+    }
+
+    func hintLine(_ text: String) -> some View {
+        Text(text)
             .font(BeruType.captionMedium)
             .foregroundStyle(BeruColor.textSecondary)
             .lineLimit(1)

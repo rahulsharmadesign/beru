@@ -109,9 +109,11 @@ extension PanelView {
 
     var targetMenu: some View {
         let active = targetRegistry.profile(withID: appState.selectedTargetID)
+        // "for Claude" with a neutral icon: the target's own sparkle icon
+        // read as "Claude is answering", i.e. the model, not the destination.
         return composerPickerPill(
-            icon: active?.icon ?? "circle-dashed",
-            title: active?.name ?? "Generic",
+            icon: "target",
+            title: "for \(active?.name ?? "Generic")",
             help: "Which AI this prompt is written for",
             accessibilityLabel: "Target, \(active?.name ?? "Generic")",
             accessibilityHint: "Choose which AI this prompt is written for",

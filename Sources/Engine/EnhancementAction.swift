@@ -65,7 +65,12 @@ struct EnhancementAction: Identifiable, Codable, Equatable {
 
     /// Composer field hint. Empty-capture rewrite chips take typed text as the
     /// source; Search and Instruction stay a question / instruction.
-    static func composerPlaceholder(actionID: String, hasCapture: Bool, isQuickSearch: Bool) -> String {
+    static func composerPlaceholder(
+        actionID: String,
+        hasCapture: Bool,
+        isQuickSearch: Bool,
+        targetName: String? = nil
+    ) -> String {
         if isQuickSearch || actionID == searchID {
             // Selection-aware: the quoted source block above the thread shows
             // what the question attaches to, and the hint must agree with it.
@@ -75,7 +80,17 @@ struct EnhancementAction: Identifiable, Codable, Equatable {
             return "Type what you want Enhancify to do"
         }
         if !hasCapture {
-            return "Type or paste text"
+            switch actionID {
+            case enhanceID:
+                if let targetName, !targetName.isEmpty, targetName != "Generic" {
+                    return "Rough idea for \(targetName)…"
+                }
+                return "Rough idea to turn into a prompt…"
+            case grammarID:
+                return "Type or paste text to fix…"
+            default:
+                return "Type or paste text"
+            }
         }
         switch actionID {
         case grammarID:
