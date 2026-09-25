@@ -229,6 +229,67 @@ final class InvokeActionTests: XCTestCase {
         )
         XCTAssertFalse(AppCoordinator.isSocialFeedSelection(bundleID: nil, windowTitle: nil))
     }
+
+    // MARK: - Focused mode (Enhance + Grammar only)
+
+    private func focused(
+        host: HostApp.Info?,
+        hasCapture: Bool = true,
+        isEditableField: Bool = false,
+        source: String? = "hotkey",
+        openOnSearch: Bool = false,
+        needsSetup: Bool = false
+    ) -> String {
+        AppCoordinator.initialActionID(
+            openOnSearch: openOnSearch, needsSetup: needsSetup, host: host,
+            hasCapture: hasCapture, isEditableField: isEditableField,
+            source: source, focused: true
+        )
+    }
+
+    func testFocusedNeverLandsOnAHiddenTab() {
+        let hidden: Set<String> = [
+            EnhancementAction.searchID, EnhancementAction.describeID, EnhancementAction.replyID,
+            EnhancementAction.summarizeID, EnhancementAction.explainID
+        ]
+        for host in [nil, chrome, cursor, slack, mail] {
+            for hasCapture in [true, false] {
+                for editable in [true, false] {
+                    for openOnSearch in [true, false] {
+                        let landing = focused(
+                            host: host, hasCapture: hasCapture,
+                            isEditableField: editable, openOnSearch: openOnSearch
+                        )
+                        XCTAssertFalse(hidden.contains(landing), "\(host?.name ?? "nil") → \(landing)")
+                    }
+                }
+            }
+        }
+    }
+
+    func testFocusedNoSelectionOpensEnhanceForATypedIdea() {
+        XCTAssertEqual(focused(host: chrome, hasCapture: false), EnhancementAction.enhanceID)
+        XCTAssertEqual(focused(host: nil, hasCapture: false), EnhancementAction.enhanceID)
+    }
+
+    func testFocusedAIToolOpensEnhanceEvenInItsEditor() {
+        XCTAssertEqual(focused(host: cursor, isEditableField: true), EnhancementAction.enhanceID)
+    }
+
+    func testFocusedOwnWritingOpensGrammar() {
+        XCTAssertEqual(focused(host: chrome, isEditableField: true), EnhancementAction.grammarID)
+        XCTAssertEqual(focused(host: slack), EnhancementAction.grammarID, "Electron chat apps hide the field role")
+        XCTAssertEqual(focused(host: mail), EnhancementAction.grammarID)
+    }
+
+    func testFocusedStaticSelectionOpensEnhance() {
+        XCTAssertEqual(focused(host: chrome), EnhancementAction.enhanceID)
+    }
+
+    func testFocusedClipboardAndVaultOpenEnhance() {
+        XCTAssertEqual(focused(host: mail, isEditableField: true, source: "clipboard"), EnhancementAction.enhanceID)
+        XCTAssertEqual(focused(host: nil, source: "vault"), EnhancementAction.enhanceID)
+    }
 }
 
 /// The outcome strip must survive a Regenerate without unmounting: tearing
@@ -322,66 +383,5 @@ final class ReloadFooterTests: XCTestCase {
             state.showsFooter(for: EnhancementAction.grammarID),
             "applied context has no row home"
         )
-    }
-
-    // MARK: - Focused mode (Enhance + Grammar only)
-
-    private func focused(
-        host: HostApp.Info?,
-        hasCapture: Bool = true,
-        isEditableField: Bool = false,
-        source: String? = "hotkey",
-        openOnSearch: Bool = false,
-        needsSetup: Bool = false
-    ) -> String {
-        AppCoordinator.initialActionID(
-            openOnSearch: openOnSearch, needsSetup: needsSetup, host: host,
-            hasCapture: hasCapture, isEditableField: isEditableField,
-            source: source, focused: true
-        )
-    }
-
-    func testFocusedNeverLandsOnAHiddenTab() {
-        let hidden: Set<String> = [
-            EnhancementAction.searchID, EnhancementAction.describeID, EnhancementAction.replyID,
-            EnhancementAction.summarizeID, EnhancementAction.explainID
-        ]
-        for host in [nil, chrome, cursor, slack, mail] {
-            for hasCapture in [true, false] {
-                for editable in [true, false] {
-                    for openOnSearch in [true, false] {
-                        let landing = focused(
-                            host: host, hasCapture: hasCapture,
-                            isEditableField: editable, openOnSearch: openOnSearch
-                        )
-                        XCTAssertFalse(hidden.contains(landing), "\(host?.name ?? "nil") → \(landing)")
-                    }
-                }
-            }
-        }
-    }
-
-    func testFocusedNoSelectionOpensEnhanceForATypedIdea() {
-        XCTAssertEqual(focused(host: chrome, hasCapture: false), EnhancementAction.enhanceID)
-        XCTAssertEqual(focused(host: nil, hasCapture: false), EnhancementAction.enhanceID)
-    }
-
-    func testFocusedAIToolOpensEnhanceEvenInItsEditor() {
-        XCTAssertEqual(focused(host: cursor, isEditableField: true), EnhancementAction.enhanceID)
-    }
-
-    func testFocusedOwnWritingOpensGrammar() {
-        XCTAssertEqual(focused(host: chrome, isEditableField: true), EnhancementAction.grammarID)
-        XCTAssertEqual(focused(host: slack), EnhancementAction.grammarID, "Electron chat apps hide the field role")
-        XCTAssertEqual(focused(host: mail), EnhancementAction.grammarID)
-    }
-
-    func testFocusedStaticSelectionOpensEnhance() {
-        XCTAssertEqual(focused(host: chrome), EnhancementAction.enhanceID)
-    }
-
-    func testFocusedClipboardAndVaultOpenEnhance() {
-        XCTAssertEqual(focused(host: mail, isEditableField: true, source: "clipboard"), EnhancementAction.enhanceID)
-        XCTAssertEqual(focused(host: nil, source: "vault"), EnhancementAction.enhanceID)
     }
 }
