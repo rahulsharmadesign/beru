@@ -1,35 +1,20 @@
 import AppKit
 import Foundation
 
-// What the user does with a result: replace, copy, pin, or cancel.
+// What the user does with a result: replace, copy, or cancel.
 
 extension PanelEngine {
     func replace(text: String) {
         guard appState.replacedFeedback == nil else { return }
-        // Grab everything the record needs before dismiss clears it.
-        let target = appState.capturedElement
-        let hostBundleID = appState.hostBundleID
-        let vaultNoteID = appState.vaultNoteID
-        let toast = OutcomeCopy.replaceToast(
-            hostAppName: appState.hostAppName,
-            isVault: vaultNoteID != nil,
-            isInsert: appState.selectedActionID == EnhancementAction.replyID
-        )
-        recordDecision(.replaced, text: text)
-        if let vaultNoteID {
-            VaultStore.shared.applyResult(text, toNoteID: vaultNoteID)
-        }
         pendingReplaceText = text
-        pendingReplaceTarget = target
-        pendingReplaceHostBundleID = hostBundleID
-        pendingReplaceIsVault = vaultNoteID != nil
-        pendingReplaceVaultNoteID = vaultNoteID
-        appState.replacedFeedback = toast
+        pendingReplaceTarget = appState.capturedElement
+        pendingReplaceHostBundleID = appState.hostBundleID
+        appState.replacedFeedback = OutcomeCopy.replaceToast(hostAppName: appState.hostAppName)
         replaceToastTask?.cancel()
         replaceToastTask = Task { [weak self] in
             do {
-                // Short confirmation only: the toast is dead chrome (the panel
-                // dismisses when it clears), so it must not hold the write.
+                // Short confirmation only: the panel dismisses when the toast
+                // clears, so it must not hold the write.
                 try await Task.sleep(for: .milliseconds(800))
             } catch {
                 return
@@ -43,23 +28,14 @@ extension PanelEngine {
         let text = pendingReplaceText
         let target = pendingReplaceTarget
         let hostBundleID = pendingReplaceHostBundleID
-        let isVault = pendingReplaceIsVault
-        let vaultID = pendingReplaceVaultNoteID
         pendingReplaceText = nil
         pendingReplaceTarget = nil
         pendingReplaceHostBundleID = nil
-        pendingReplaceIsVault = false
-        pendingReplaceVaultNoteID = nil
         replaceToastTask = nil
         appState.replacedFeedback = nil
-        guard text != nil || isVault else { return }
-        onDismiss()
-        if isVault {
-            if let vaultID { onRevealVaultNote?(vaultID) }
-            return
-        }
         guard let text else { return }
-        // hide() fades 180ms then orderOut. Cmd-V before that lands on the
+        onDismiss()
+        // hide() fades then orders out. Cmd-V before that lands on the
         // panel's field editor. Wait until the window is gone, then paste.
         try? await Task.sleep(for: .milliseconds(180))
         await TextReplace.replaceSelection(with: text, target: target, hostBundleID: hostBundleID)
@@ -70,30 +46,11 @@ extension PanelEngine {
         guard !appState.copiedFeedback else { return }
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(text, forType: .string)
-        recordDecision(.copied, text: text)
         appState.copiedFeedback = true
         Task {
             try? await Task.sleep(for: .milliseconds(1400))
             appState.copiedFeedback = false
             onDismiss()
-        }
-    }
-
-    /// Saves the finished result into the vault pin board without dismissing.
-    func pin(text: String) {
-        guard appState.replacedFeedback == nil else { return }
-        let title = String(text.prefix(72))
-            .replacingOccurrences(of: "\n", with: " ")
-        VaultStore.shared.pinResult(
-            title: title,
-            body: text,
-            actionID: appState.selectedActionID,
-            noteID: appState.vaultNoteID
-        )
-        appState.pinnedFeedback = true
-        Task {
-            try? await Task.sleep(for: .milliseconds(900))
-            appState.pinnedFeedback = false
         }
     }
 
@@ -103,131 +60,14 @@ extension PanelEngine {
             Task { await completeReplace() }
             return
         }
-        var resultText: String?
-        if case .done(let text) = appState.resultState(for: appState.selectedActionID) {
-            resultText = text
-        }
-        recordDecision(.dismissed, text: resultText)
-        lastDescribeInstruction = nil
         onDismiss()
-    }
-
-    /// A like/dislike vote on a finished result. Logged as training signal.
-    /// For Smart Reply and Grammar, a like additionally teaches the existing
-    /// preference the prompt reader already consumes (preferred tone/kind);
-    /// a dislike clears a matching preference so it stops biasing. Other
-    /// actions log only — their prompts have no preference consumer yet.
-    ///
-    /// `grammarKind` lets a Grammar row vote teach that row's kind even when
-    /// another row is selected. `replyTone` does the same for Reply rows.
-    /// Nil (the footer path) votes the selection.
-    func recordResultVote(
-        actionID: String,
-        liked: Bool,
-        text: String,
-        question: String? = nil,
-        grammarKind: GrammarKind? = nil,
-        replyTone: ReplyTone? = nil
-    ) {
-        UsageLog.record {
-            UsageEvent(
-                invocationID: appState.invocationID,
-                kind: liked ? .liked : .disliked,
-                actionID: actionID,
-                instruction: question ?? appState.describeInstruction,
-                outputChars: text.count,
-                outputDigest: UsageLog.digest(text),
-                hadResult: true
-            )
-        }
-        let settings = SettingsStore.shared
-        if liked {
-            if actionID == EnhancementAction.replyID {
-                settings.recordAcceptedInteraction(
-                    actionID: actionID,
-                    replyTone: replyTone ?? appState.selectedReplyTone,
-                    grammarKind: nil,
-                    targetName: nil,
-                    instruction: nil
-                )
-            } else if actionID == EnhancementAction.grammarID {
-                settings.recordAcceptedInteraction(
-                    actionID: actionID,
-                    replyTone: nil,
-                    grammarKind: grammarKind ?? appState.selectedGrammarKind,
-                    targetName: nil,
-                    instruction: nil
-                )
-            }
-        } else {
-            if actionID == EnhancementAction.replyID,
-               settings.interactionProfile.lastReplyTone == (replyTone ?? appState.selectedReplyTone).rawValue {
-                var next = settings.interactionProfile
-                next.lastReplyTone = nil
-                settings.interactionProfile = next
-            } else if actionID == EnhancementAction.grammarID,
-                      settings.interactionProfile.lastGrammarKind
-                        == (grammarKind ?? appState.selectedGrammarKind).rawValue {
-                var next = settings.interactionProfile
-                next.lastGrammarKind = nil
-                settings.interactionProfile = next
-            }
-        }
-    }
-    /// Records a terminal user decision. Must be called BEFORE onDismiss(),
-    /// which clears the results, captured text, and savings this reads from.
-    /// Carries only a length and digest — the full output was already stored
-    /// once by the generation record it refers to.
-    ///
-    /// This is also where lifetime savings are credited: taking the result is
-    /// what makes the saving real, so Replace and Copy count and a dismissal
-    /// does not.
-    func recordDecision(_ kind: UsageEventKind, text: String?) {
-        let actionID = appState.selectedActionID
-        let invocationID = appState.invocationID
-        let attempt = attempts[actionID]
-        let accepted = kind == .replaced || kind == .copied
-        let savings = accepted ? appState.savings[actionID] : nil
-        let cumulative = savings.map { SavingsStore.shared.record($0) }
-        if let savings {
-            engineLogger.notice(
-                "accepted \(actionID) via \(kind.rawValue): saved \(savings.savedTokens) est. tokens, lifetime \(cumulative ?? 0)"
-            )
-        }
-        if accepted {
-            SettingsStore.shared.recordAcceptedInteraction(
-                actionID: actionID,
-                replyTone: actionID == EnhancementAction.replyID ? appState.selectedReplyTone : nil,
-                grammarKind: actionID == EnhancementAction.grammarID ? appState.selectedGrammarKind : nil,
-                targetName: TargetRegistry.shared.profile(withID: appState.selectedTargetID)?.name,
-                instruction: appState.describeInstruction
-            )
-        }
-        UsageLog.record {
-            UsageEvent(
-                invocationID: invocationID,
-                kind: kind,
-                actionID: actionID,
-                targetID: appState.selectedTargetID,
-                attempt: attempt,
-                outputChars: text?.count,
-                outputDigest: text.map { UsageLog.digest($0) },
-                inputTokens: savings?.inputTokens,
-                outputTokens: savings?.outputTokens,
-                savedTokens: savings?.savedTokens,
-                cumulativeSavedTokens: cumulative,
-                hadResult: text != nil
-            )
-        }
     }
 }
 
-/// Footer confirmation after Replace / Insert / Apply.
+/// Footer confirmation after Replace.
 enum OutcomeCopy {
-    static func replaceToast(hostAppName: String?, isVault: Bool, isInsert: Bool) -> String {
-        if isVault { return "Applied to note" }
+    static func replaceToast(hostAppName: String?) -> String {
         let trimmed = hostAppName?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        let host = trimmed.isEmpty ? "Mac" : trimmed
-        return isInsert ? "Inserted in \(host)" : "Replaced in \(host)"
+        return "Replaced in \(trimmed.isEmpty ? "Mac" : trimmed)"
     }
 }

@@ -1,8 +1,10 @@
 import AppKit
 
 /// Saves the user's clipboard around a simulated Cmd-C / Cmd-V operation and
-/// restores it afterward, so Beru never leaves the pasteboard modified.
+/// restores it afterward, so Enhancify never leaves the pasteboard modified.
 final class ClipboardGuard {
+    static let transientType = NSPasteboard.PasteboardType("org.nspasteboard.TransientType")
+
     private var savedItems: [NSPasteboardItem] = []
     private var savedChangeCount: Int = 0
 

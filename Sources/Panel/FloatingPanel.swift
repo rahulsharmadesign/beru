@@ -27,7 +27,7 @@ private final class RoundedPanelView: NSView {
     func refreshColors() {
         wantsLayer = true
         effectiveAppearance.performAsCurrentDrawingAppearance { [self] in
-            layer?.backgroundColor = BeruColor.canvasNSColor.cgColor
+            layer?.backgroundColor = EnhancifyColor.canvasNSColor.cgColor
         }
     }
 
@@ -107,7 +107,7 @@ final class FloatingPanel: NSPanel {
         self.appearance = appearance
         appearance.performAsCurrentDrawingAppearance { [self] in
             if usingOpaqueMaterial {
-                backgroundColor = BeruColor.canvasNSColor
+                backgroundColor = EnhancifyColor.canvasNSColor
                 opaqueView?.refreshColors()
             } else {
                 backgroundColor = .clear

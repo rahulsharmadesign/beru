@@ -14,26 +14,26 @@ struct MenuBarRow: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: BeruSpace.xs) {
-                BeruIcon(name: icon, size: BeruMetrics.iconSizeCompact, strokeWidth: 2)
-                    .foregroundStyle(BeruColor.textSecondary)
-                    .frame(width: BeruMetrics.iconSize)
+            HStack(spacing: EnhancifySpace.xs) {
+                EnhancifyIcon(name: icon, size: EnhancifyMetrics.iconSizeCompact, strokeWidth: 2)
+                    .foregroundStyle(EnhancifyColor.textSecondary)
+                    .frame(width: EnhancifyMetrics.iconSize)
                 Text(title)
-                    .font(BeruType.control)
-                    .foregroundStyle(BeruColor.textPrimary)
+                    .font(EnhancifyType.control)
+                    .foregroundStyle(EnhancifyColor.textPrimary)
                     .lineLimit(1)
-                Spacer(minLength: BeruSpace.xs)
+                Spacer(minLength: EnhancifySpace.xs)
                 if let shortcut {
                     Text(shortcut)
-                        .font(BeruType.footnote)
-                        .foregroundStyle(BeruColor.textTertiary)
+                        .font(EnhancifyType.footnote)
+                        .foregroundStyle(EnhancifyColor.textTertiary)
                 }
             }
-            .padding(.horizontal, BeruSpace.xs)
+            .padding(.horizontal, EnhancifySpace.xs)
             .frame(maxWidth: .infinity, minHeight: height, alignment: .leading)
             .background(
-                BeruRadius.shape(BeruRadius.sm)
-                    .fill(isHovered ? BeruColor.hoverFill : Color.clear)
+                EnhancifyRadius.shape(EnhancifyRadius.sm)
+                    .fill(isHovered ? EnhancifyColor.hoverFill : Color.clear)
             )
             .contentShape(Rectangle())
         }

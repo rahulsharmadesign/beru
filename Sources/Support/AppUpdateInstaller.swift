@@ -33,23 +33,20 @@ enum AppUpdateInstaller {
     /// Renders the swap script. Pure, so its shape can be asserted in tests
     /// without running anything.
     static func script(for payload: Payload) -> String {
-        // `expectedLeafName` is interpolated into a shell comparison, so it is
-        // quoted and any embedded quote is stripped rather than escaped — a
-        // certificate CN containing a quote is not worth supporting.
-        let expected = (payload.expectedLeafName ?? "").replacingOccurrences(of: "\"", with: "")
-
+        // Every value is single-quoted for the shell, so a path or certificate
+        // name containing `"`, `$`, or backticks is data, never code.
         return """
         #!/bin/bash
         set -euo pipefail
 
-        PID="\(payload.processIdentifier)"
-        DMG="\(payload.dmgPath)"
-        DEST="\(payload.destinationPath)"
-        WANT_ID="\(payload.bundleIdentifier)"
-        WANT_LEAF="\(expected)"
+        PID=\(payload.processIdentifier)
+        DMG=\(shellQuoted(payload.dmgPath))
+        DEST=\(shellQuoted(payload.destinationPath))
+        WANT_ID=\(shellQuoted(payload.bundleIdentifier))
+        WANT_LEAF=\(shellQuoted(payload.expectedLeafName ?? ""))
 
-        STAGE="$DEST.beru-staged"
-        BACKUP="$DEST.beru-backup"
+        STAGE="$DEST.enhancify-staged"
+        BACKUP="$DEST.enhancify-backup"
         MOUNT=""
 
         cleanup() {
@@ -78,7 +75,7 @@ enum AppUpdateInstaller {
         MOUNT=$(hdiutil attach -nobrowse -readonly "$DMG" | grep -o '/Volumes/[^ ]*' | tail -1)
         if [[ -z "$MOUNT" ]]; then exit 1; fi
 
-        SRC=$(find "$MOUNT" -maxdepth 2 -name 'Beru.app' -print -quit)
+        SRC=$(find "$MOUNT" -maxdepth 2 -name 'Enhancify.app' -print -quit)
         if [[ -z "$SRC" || ! -d "$SRC" ]]; then cleanup; exit 1; fi
 
         # --- verify the payload BEFORE touching the installed app -------------
@@ -116,12 +113,17 @@ enum AppUpdateInstaller {
         """
     }
 
+    /// POSIX single-quoting: wrap in `'`, and close-escape-reopen any `'`.
+    static func shellQuoted(_ value: String) -> String {
+        "'" + value.replacingOccurrences(of: "'", with: "'\\''") + "'"
+    }
+
     /// Writes the script into a freshly created private directory and returns
     /// its URL. The directory name is random and mode `0700`, so the path cannot
     /// be predicted or pre-created by another process running as the user.
     static func writeScript(_ contents: String, using fileManager: FileManager = .default) throws -> URL {
         let directory = fileManager.temporaryDirectory
-            .appendingPathComponent("beru-update-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("enhancify-update-\(UUID().uuidString)", isDirectory: true)
 
         try fileManager.createDirectory(
             at: directory,

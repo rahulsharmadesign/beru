@@ -43,22 +43,23 @@ enum PanelMetrics {
     /// Layout only — never inflate to "fix" crop.
     static let moduleInset: CGFloat = 10
     static let moduleSpacing: CGFloat = 10
-    /// Smallest chrome that still contains close + composer + the outer inset
-    /// and the two spacings around the result. Incomplete band reports land
-    /// around 40pt (insets + spacings, GeometryReaders not yet in the tree).
-    /// Floor must stay below real chrome or the window sticks at seed height.
+    /// Smallest real chrome: close strip + the footer band (the collapsed
+    /// composer contributes nothing else) + the outer inset and the two
+    /// spacings around the result. Incomplete band reports land around 40pt
+    /// (insets + spacings, GeometryReaders not yet in the tree).
+    /// Floor must stay below real chrome or the window sticks at seed height —
+    /// it used to count the full composer, so once the composer could
+    /// collapse every report was rejected and long results ran under the
+    /// footer at the 280pt seed height.
     static var minimumChromeHeight: CGFloat {
-        moduleInset * 2 + closeStripHeight + composerMinHeight + moduleSpacing * 2
+        moduleInset * 2 + closeStripHeight + footerMinHeight + moduleSpacing * 2
     }
     /// All four inner cards share this outer radius. Haze card radius.
-    static var moduleRadius: CGFloat { BeruRadius.md }
-    static var moduleShape: RoundedRectangle {
-        BeruRadius.shape(moduleRadius)
-    }
+    static var moduleRadius: CGFloat { EnhancifyRadius.md }
     /// Horizontal chip row. Haze pill height.
-    static var chipRowHeight: CGFloat { BeruMetrics.pillHeight }
-    /// Outcome-row slot above the composer. Always reserved so Search →
-    /// Enhance cannot grow the window when the icons appear. Haze pill height.
+    static var chipRowHeight: CGFloat { EnhancifyMetrics.pillHeight }
+    /// Outcome-row slot above the composer. Always reserved so a tab switch
+    /// cannot grow the window when the icons appear. Haze pill height.
     static let footerMinHeight: CGFloat = 32
     /// Composer, including its internal padding. Must stay below the real
     /// idle composer height — the window floors to this when a band report
@@ -67,7 +68,7 @@ enum PanelMetrics {
     /// Height reserved by the result area while a request is in flight.
     static let resultPlaceholderHeight: CGFloat = 120
     /// Idle result band floor. Tall enough that the opening widget breathes;
-    /// placeholder copy stays vertically centered in it. Search ↔ Enhance
+    /// placeholder copy stays vertically centered in it. Enhance ↔ Grammar
     /// placeholder swaps never change this height, so tab switches cannot
     /// crop the composer.
     static let resultIdleMinHeight: CGFloat = 172
@@ -78,46 +79,7 @@ enum PanelMetrics {
     /// Composer card only — toolbar and result stay on `moduleRadius`.
     /// Haze composer radius.
     static let composerRadius: CGFloat = 22
-    /// How far the outcome strip tucks under the composer.
-    static let composerOverlap: CGFloat = 12
     static let screenInset: CGFloat = 8
     /// Sub-point only — ignore measurement noise, not 10pt layout changes.
     static let resizeDeadband: CGFloat = 1
-    /// The single path definition. AppKit masks and SwiftUI clips both derive
-    /// from this so the two rasterizations match exactly.
-    static func cgPath(in rect: CGRect, radius: CGFloat = cornerRadius) -> CGPath {
-        CGPath(roundedRect: rect, cornerWidth: radius, cornerHeight: radius, transform: nil)
-    }
-
-    struct CardShape: InsettableShape {
-        var radius: CGFloat = PanelMetrics.cornerRadius
-        var inset: CGFloat = 0
-        func path(in rect: CGRect) -> Path {
-            Path(PanelMetrics.cgPath(in: rect.insetBy(dx: inset, dy: inset), radius: max(radius - inset, 0)))
-        }
-        func inset(by amount: CGFloat) -> Self {
-            var copy = self
-            copy.inset += amount
-            return copy
-        }
-    }
-
-    static var cardShape: CardShape { CardShape() }
-
-    /// A stretchable mask matching `cardShape`. NSVisualEffectView cannot be
-    /// clipped by SwiftUI's `.clipShape`, and its opaque region is what AppKit
-    /// derives the window shadow from — so without this the shadow stays
-    /// square even when the pixels look rounded.
-    static func roundedMaskImage(radius: CGFloat = cornerRadius) -> NSImage {
-        let diameter = radius * 2 + 1
-        let image = NSImage(size: NSSize(width: diameter, height: diameter), flipped: false) { rect in
-            NSColor.black.setFill()
-            let path = NSBezierPath(roundedRect: rect, xRadius: radius, yRadius: radius)
-            path.fill()
-            return true
-        }
-        image.capInsets = NSEdgeInsets(top: radius, left: radius, bottom: radius, right: radius)
-        image.resizingMode = .stretch
-        return image
-    }
 }

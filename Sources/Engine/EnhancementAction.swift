@@ -5,287 +5,90 @@ enum ModelRole: String, Codable {
     case grammar
 }
 
-/// One panel action: a named, icon-tagged system prompt. Grammar and Enhance
-/// are built in; users can save any number of custom verb/tone actions
-/// ("Smart Reply", "For my VP", ...) which behave identically.
-struct EnhancementAction: Identifiable, Codable, Equatable {
-    var id: String
-    var name: String
-    var icon: String
-    var role: ModelRole
-    var systemPrompt: String
-    var isBuiltIn: Bool
+/// One of the panel's two jobs. Enhance turns a rough idea into a prompt for
+/// another AI; Grammar fixes or restyles the author's own writing.
+struct EnhancementAction: Identifiable, Equatable {
+    let id: String
+    let name: String
+    let icon: String
+    let role: ModelRole
+    let systemPrompt: String
 
-    /// One-line plain-language description shown on hover in the panel and in
-    /// the Actions list, so a terse chip label never has to be learned by
-    /// running the action.
+    static let grammarID = "grammar"
+    static let enhanceID = "enhance"
+
+    static let enhance = EnhancementAction(
+        id: enhanceID,
+        name: "Enhance Prompt",
+        icon: "sparkles",
+        role: .enhance,
+        systemPrompt: Prompts.enhance
+    )
+
+    static let grammar = EnhancementAction(
+        id: grammarID,
+        name: "Grammar",
+        icon: "circle-check",
+        role: .grammar,
+        systemPrompt: Prompts.grammar
+    )
+
+    /// Tab order.
+    static let all: [EnhancementAction] = [enhance, grammar]
+
+    static func action(withID id: String) -> EnhancementAction? {
+        all.first { $0.id == id }
+    }
+
+    /// Hover text for the tab.
     var summary: String {
         switch id {
         case Self.grammarID:
             return "Fix spelling, grammar, and punctuation while keeping your meaning and tone"
-        case Self.enhanceID:
+        default:
             return "Rewrite your rough idea into a clear, effective prompt for an AI"
-        case Self.replyID:
-            return "Six reply options in your voice"
-        case Self.summarizeID:
-            return "Compress the selected text into its key facts"
-        case Self.explainID:
-            return "Explain the selected text in plain language"
-        case Self.describeID:
-            return "Run a one-off instruction on the selected text"
-        case Self.searchID:
-            return "Ask a question. No selected text required."
-        default:
-            return "Run a saved custom prompt on the selected text"
         }
     }
 
-    /// Title and body for the panel when this action has nothing to work on.
-    ///
-    /// Rewrite chips accept typed composer text as the source. Idle copy must
-    /// invite Return, not send people only to Search.
-    static func emptyCaptureCopy(actionID: String) -> (title: String, subtitle: String) {
-        if actionID == searchID {
-            return (
-                "Ask a question",
-                "Type below and press Return."
-            )
-        }
-        if actionID == describeID {
-            return (
-                "Give an instruction",
-                "Type what you want Enhancify to do, then press Return."
-            )
-        }
-        return (
-            "Type or paste text",
-            "Type below and press Return, or highlight text in another app and press the shortcut."
-        )
-    }
-
-    /// Composer field hint. Empty-capture rewrite chips take typed text as the
-    /// source; Search and Instruction stay a question / instruction.
-    static func composerPlaceholder(
-        actionID: String,
-        hasCapture: Bool,
-        isQuickSearch: Bool,
-        targetName: String? = nil
-    ) -> String {
-        if isQuickSearch || actionID == searchID {
-            // Selection-aware: the quoted source block above the thread shows
-            // what the question attaches to, and the hint must agree with it.
-            return hasCapture ? "Ask about the selected text…" : "Ask anything — no selection needed"
-        }
-        if actionID == describeID {
-            return "Type what you want Enhancify to do"
-        }
+    /// Composer hint. With nothing selected, typed text is the source; with a
+    /// selection, it is an optional refinement.
+    static func composerPlaceholder(actionID: String, hasCapture: Bool, targetName: String? = nil) -> String {
         if !hasCapture {
-            switch actionID {
-            case enhanceID:
-                if let targetName, !targetName.isEmpty, targetName != "Generic" {
-                    return "Rough idea for \(targetName)…"
-                }
-                return "Rough idea to turn into a prompt…"
-            case grammarID:
-                return "Type or paste text to fix…"
-            default:
-                return "Type or paste text"
+            if actionID == grammarID { return "Type or paste text to fix…" }
+            if let targetName, !targetName.isEmpty, targetName != "Generic" {
+                return "Rough idea for \(targetName)…"
             }
+            return "Rough idea to turn into a prompt…"
         }
-        switch actionID {
-        case grammarID:
-            return "Optional: e.g. \u{201C}keep my tone\u{201D}"
-        case enhanceID:
-            return "Optional: e.g. \u{201C}for beginners\u{201D}"
-        case replyID:
-            return "Optional: e.g. \u{201C}mention Friday\u{201D}"
-        case summarizeID, explainID:
-            return "Optional: e.g. \u{201C}in 5 bullets\u{201D}"
-        default:
-            return "Optional instruction for this action…"
-        }
+        return actionID == grammarID
+            ? "Optional: e.g. \u{201C}keep my tone\u{201D}"
+            : "Optional: e.g. \u{201C}for beginners\u{201D}"
     }
 
-    /// Chip label for an id. Search and Instruction are not in the registry.
-    static func resolvedName(actionID: String, registryName: String?) -> String {
-        if let registryName, !registryName.isEmpty { return registryName }
-        switch actionID {
-        case searchID: return search.name
-        case describeID: return describe.name
-        case grammarID: return grammar.name
-        case enhanceID: return enhance.name
-        default: return "This action"
-        }
-    }
-
-    static let grammarID = "grammar"
-    static let enhanceID = "enhance"
-    /// Reserved id for one-off intent-bar instructions.
-    static let describeID = "describe"
-    /// First panel tab. Not a rewrite skill — it answers a question.
-    static let searchID = "ai-search"
-
-    static let replyID = "verb-reply"
-    static let summarizeID = "verb-summarize"
-    static let explainID = "verb-explain"
-
-    /// Shipped verb chips whose prompts live in `Prompts` and must stay live —
-    /// UserDefaults can hold a stale copy from an older seed.
-    static func isShippedVerb(_ id: String) -> Bool {
-        id == replyID || id == summarizeID || id == explainID
-    }
-
-    /// Whether the panel should word-diff the result against the selection.
-    ///
-    /// Reply / Summarize / Explain produce a *new* document. Diffing that against
-    /// the source reuses shared nouns as `.equal` and interleaves the rest —
-    /// `Manage- yourManage` garble that looks like a failed run even when the
-    /// summary is fine. Enhance also produces a new document: rewriting a rough
-    /// idea into a structured prompt shares almost no wording with the input,
-    /// and the retention floor in `PanelEngine.computeDiff` did not hold in
-    /// practice, so Enhance renders plain like the verbs. Grammar is a true
-    /// edit of the selection and keeps the diff.
+    /// Whether the panel word-diffs the result against the selection. Only
+    /// Grammar is a true edit of the source; an enhanced prompt shares too
+    /// little wording with its rough idea for a diff to read well.
     static func showsInlineDiff(for actionID: String) -> Bool {
         actionID == grammarID
     }
 
-    /// Search and one-off instructions can run from the composer alone.
-    static func allowsEmptyCapture(_ actionID: String) -> Bool {
-        actionID == searchID || actionID == describeID
-    }
-
-    /// Transform verbs that must produce a new artifact. An unchanged copy of
-    /// the source is a failed job, not a valid result. Grammar is excluded:
-    /// returning the document as-is is correct when it has no errors.
-    static func rejectsUnchangedOutput(_ actionID: String) -> Bool {
-        actionID == summarizeID || actionID == explainID || actionID == describeID
-    }
-
-    /// How the composer and host capture combine for one run.
+    /// How the composer and the host selection combine for one run.
     ///
-    /// Rewrite skills with no capture treat typed composer text as the source
-    /// document — the same role a host selection plays — and must not also
-    /// send it as an extra instruction.
+    /// With a selection, typed text is an extra instruction. With none, typed
+    /// text is the source document itself and must not also be sent as an
+    /// instruction.
     struct ResolvedInput: Equatable {
         var sourceText: String
         var extraInstruction: String
         var usedComposerAsSource: Bool
     }
 
-    static func resolveInput(
-        actionID: String,
-        capturedText: String,
-        composerText: String
-    ) -> ResolvedInput {
+    static func resolveInput(capturedText: String, composerText: String) -> ResolvedInput {
         let captured = capturedText.trimmingCharacters(in: .whitespacesAndNewlines)
         let composer = composerText.trimmingCharacters(in: .whitespacesAndNewlines)
         if !captured.isEmpty {
-            return ResolvedInput(
-                sourceText: capturedText,
-                extraInstruction: composer,
-                usedComposerAsSource: false
-            )
+            return ResolvedInput(sourceText: capturedText, extraInstruction: composer, usedComposerAsSource: false)
         }
-        if allowsEmptyCapture(actionID) {
-            return ResolvedInput(
-                sourceText: "",
-                extraInstruction: composer,
-                usedComposerAsSource: false
-            )
-        }
-        return ResolvedInput(
-            sourceText: composer,
-            extraInstruction: "",
-            usedComposerAsSource: !composer.isEmpty
-        )
+        return ResolvedInput(sourceText: composer, extraInstruction: "", usedComposerAsSource: !composer.isEmpty)
     }
-
-    /// Current system prompt for a shipped verb, or nil for any other id.
-    static func liveSystemPrompt(for id: String) -> String? {
-        switch id {
-        case replyID: return Prompts.reply
-        case summarizeID: return Prompts.summarize
-        case explainID: return Prompts.explain
-        default: return nil
-        }
-    }
-
-    /// Prompt actually sent to the model: live shipped text wins over a stale
-    /// persisted copy on Reply / Summarize / Explain.
-    static func resolvedSystemPrompt(for action: EnhancementAction) -> String {
-        liveSystemPrompt(for: action.id) ?? action.systemPrompt
-    }
-
-    /// Built-in copy-edit skill (id stays `grammar` for history / defaults).
-    static let grammar = EnhancementAction(
-        id: grammarID,
-        name: "Grammar",
-        icon: "circle-check",
-        role: .grammar,
-        systemPrompt: Prompts.grammar,
-        isBuiltIn: true
-    )
-
-    /// Built-in prompt-authoring skill (id stays `enhance` for history / defaults).
-    static let enhance = EnhancementAction(
-        id: enhanceID,
-        name: "Enhance Prompt",
-        icon: "sparkles",
-        role: .enhance,
-        systemPrompt: Prompts.enhance,
-        isBuiltIn: true
-    )
-
-    /// Always the first chip. Not in `ActionRegistry` so Settings → Actions,
-    /// Cmd-3…9, and the default-action picker stay on rewrite skills.
-    static let search = EnhancementAction(
-        id: searchID,
-        name: "AI Search",
-        icon: "search",
-        role: .enhance,
-        systemPrompt: "",
-        isBuiltIn: true
-    )
-
-    /// Shown as a chip only while a one-off instruction is active. Deliberately
-    /// NOT part of ActionRegistry.allActions: adding it would shift the Cmd-1..9
-    /// mapping and change branch order in PanelEngine.start, which resolves the
-    /// describe prompt before any registry lookup.
-    static let describe = EnhancementAction(
-        id: describeID,
-        name: "Instruction",
-        icon: "sparkles",
-        role: .enhance,
-        systemPrompt: "",
-        isBuiltIn: true
-    )
-
-    /// Verb skills seeded for new installs (and once for existing installs that
-    /// have not received them yet). Edit or delete like any custom action.
-    static let starterVerbActions: [EnhancementAction] = [
-        EnhancementAction(
-            id: replyID,
-            name: "Smart Reply",
-            icon: "corner-up-left",
-            role: .enhance,
-            systemPrompt: Prompts.reply,
-            isBuiltIn: false
-        ),
-        EnhancementAction(
-            id: summarizeID,
-            name: "Summarize",
-            icon: "list",
-            role: .enhance,
-            systemPrompt: Prompts.summarize,
-            isBuiltIn: false
-        ),
-        EnhancementAction(
-            id: explainID,
-            name: "Explain",
-            icon: "lightbulb",
-            role: .enhance,
-            systemPrompt: Prompts.explain,
-            isBuiltIn: false
-        )
-    ]
 }

@@ -4,7 +4,7 @@ import Observation
 /// Live view of the system accessibility switches the panel must honor.
 /// `NSGlassEffectView` has no opacity control, so Reduce Transparency swaps
 /// the panel to an opaque card. Increase Contrast thickens hairlines and wells
-/// through `BeruColor.DisplayTraits`. Custom overlays and springs still need
+/// through `EnhancifyColor.DisplayTraits`. Custom overlays and springs still need
 /// this live read — the user should not have to relaunch for a change to take
 /// effect.
 ///

@@ -7,18 +7,18 @@ import SwiftUI
 extension View {
     /// Haze module card: surface fill, hairline stroke, lit top edge.
     /// The recipe behind `SettingsSection` wells and the composed cards here.
-    func settingsModule(radius: CGFloat = BeruRadius.md) -> some View {
-        let shape = BeruRadius.shape(radius)
+    func settingsModule(radius: CGFloat = EnhancifyRadius.md) -> some View {
+        let shape = EnhancifyRadius.shape(radius)
         return self
-            .background { shape.fill(BeruColor.card) }
+            .background { shape.fill(EnhancifyColor.card) }
             .overlay(alignment: .top) {
                 Rectangle()
-                    .fill(BeruColor.edge)
-                    .frame(height: BeruMetrics.hairline)
+                    .fill(EnhancifyColor.edge)
+                    .frame(height: EnhancifyMetrics.hairline)
             }
             .clipShape(shape)
             .overlay {
-                shape.strokeBorder(BeruColor.border, lineWidth: BeruMetrics.hairline)
+                shape.strokeBorder(EnhancifyColor.border, lineWidth: EnhancifyMetrics.hairline)
             }
     }
 }
@@ -30,25 +30,25 @@ struct SettingsHeroCard: View {
     let version: String
 
     var body: some View {
-        HStack(alignment: .center, spacing: BeruSpace.md) {
+        HStack(alignment: .center, spacing: EnhancifySpace.md) {
             Image("BrandMark")
                 .resizable()
                 .scaledToFit()
-                .frame(width: BeruMetrics.brandHero, height: BeruMetrics.brandHero)
-                .clipShape(BeruRadius.shape(BeruRadius.lg))
-            VStack(alignment: .leading, spacing: BeruSpace.xxs) {
+                .frame(width: EnhancifyMetrics.brandHero, height: EnhancifyMetrics.brandHero)
+                .clipShape(EnhancifyRadius.shape(EnhancifyRadius.lg))
+            VStack(alignment: .leading, spacing: EnhancifySpace.xxs) {
                 Text(name)
-                    .font(BeruType.pageTitle)
-                    .foregroundStyle(BeruColor.textPrimary)
+                    .font(EnhancifyType.pageTitle)
+                    .foregroundStyle(EnhancifyColor.textPrimary)
                 Text(tagline)
-                    .font(BeruType.body)
-                    .foregroundStyle(BeruColor.textSecondary)
+                    .font(EnhancifyType.body)
+                    .foregroundStyle(EnhancifyColor.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
             Spacer(minLength: 0)
             SettingsStatChip(label: "Version", value: version, mono: true)
         }
-        .padding(BeruSpace.md)
+        .padding(EnhancifySpace.md)
         .frame(maxWidth: .infinity, alignment: .leading)
         .settingsModule()
         .accessibilityElement(children: .combine)
@@ -67,34 +67,34 @@ struct SettingsStatusCard<Action: View>: View {
     @ViewBuilder var action: Action
 
     var body: some View {
-        HStack(alignment: .center, spacing: BeruSpace.md) {
+        HStack(alignment: .center, spacing: EnhancifySpace.md) {
             ZStack {
-                BeruRadius.shape(BeruRadius.sm)
+                EnhancifyRadius.shape(EnhancifyRadius.sm)
                     .fill(Color.clear)
                     .overlay {
-                        BeruRadius.shape(BeruRadius.sm)
-                            .strokeBorder(BeruColor.strongBorder, lineWidth: BeruMetrics.hairline)
+                        EnhancifyRadius.shape(EnhancifyRadius.sm)
+                            .strokeBorder(EnhancifyColor.strongBorder, lineWidth: EnhancifyMetrics.hairline)
                     }
-                BeruIcon(name: icon, size: BeruMetrics.iconSize)
-                    .foregroundStyle(isPositive ? BeruColor.positive : BeruColor.textSecondary)
+                EnhancifyIcon(name: icon, size: EnhancifyMetrics.iconSize)
+                    .foregroundStyle(isPositive ? EnhancifyColor.positive : EnhancifyColor.textSecondary)
             }
-            .frame(width: BeruMetrics.hitTarget, height: BeruMetrics.hitTarget)
-            VStack(alignment: .leading, spacing: BeruSpace.xxs) {
-                HStack(spacing: BeruSpace.xs) {
+            .frame(width: EnhancifyMetrics.hitTarget, height: EnhancifyMetrics.hitTarget)
+            VStack(alignment: .leading, spacing: EnhancifySpace.xxs) {
+                HStack(spacing: EnhancifySpace.xs) {
                     Text(title)
-                        .font(BeruType.rowTitle)
-                        .foregroundStyle(BeruColor.textPrimary)
+                        .font(EnhancifyType.rowTitle)
+                        .foregroundStyle(EnhancifyColor.textPrimary)
                     SettingsStatusBadge(title: badgeTitle, isPositive: isPositive)
                 }
                 Text(message)
-                    .font(BeruType.footnote)
-                    .foregroundStyle(BeruColor.textSecondary)
+                    .font(EnhancifyType.footnote)
+                    .foregroundStyle(EnhancifyColor.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            Spacer(minLength: BeruSpace.sm)
+            Spacer(minLength: EnhancifySpace.sm)
             action
         }
-        .padding(BeruSpace.md)
+        .padding(EnhancifySpace.md)
         .frame(maxWidth: .infinity, alignment: .leading)
         .settingsModule()
     }
@@ -109,23 +109,23 @@ struct SettingsStatChip: View {
     var isDestructive: Bool = false
 
     var body: some View {
-        HStack(spacing: BeruSpace.xs) {
+        HStack(spacing: EnhancifySpace.xs) {
             Text(label)
-                .font(BeruType.caption)
-                .foregroundStyle(BeruColor.textSecondary)
+                .font(EnhancifyType.caption)
+                .foregroundStyle(EnhancifyColor.textSecondary)
             Text(value)
-                .font(mono ? BeruType.mono : BeruType.captionSemibold)
-                .foregroundStyle(isDestructive ? BeruColor.destructive : BeruColor.textPrimary)
+                .font(mono ? EnhancifyType.mono : EnhancifyType.captionSemibold)
+                .foregroundStyle(isDestructive ? EnhancifyColor.destructive : EnhancifyColor.textPrimary)
                 .textSelection(.enabled)
         }
-        .padding(.horizontal, BeruSpace.xs)
-        .frame(minHeight: BeruMetrics.metapillHeight)
+        .padding(.horizontal, EnhancifySpace.xs)
+        .frame(minHeight: EnhancifyMetrics.metapillHeight)
         .background {
-            BeruRadius.shape(BeruRadius.sm)
-                .fill(BeruColor.badge)
+            EnhancifyRadius.shape(EnhancifyRadius.sm)
+                .fill(EnhancifyColor.badge)
                 .overlay {
-                    BeruRadius.shape(BeruRadius.sm)
-                        .strokeBorder(BeruColor.border, lineWidth: BeruMetrics.hairline)
+                    EnhancifyRadius.shape(EnhancifyRadius.sm)
+                        .strokeBorder(EnhancifyColor.border, lineWidth: EnhancifyMetrics.hairline)
                 }
         }
         .fixedSize()
@@ -138,7 +138,7 @@ struct SettingsAccentSwatches: View {
     @Binding var selection: PrimaryColor
 
     var body: some View {
-        WrapHStack(spacing: BeruSpace.sm) {
+        WrapHStack(spacing: EnhancifySpace.sm) {
             ForEach(PrimaryColor.allCases) { color in
                 Button {
                     selection = color
@@ -148,20 +148,20 @@ struct SettingsAccentSwatches: View {
                             .fill(color.color)
                             .overlay {
                                 Circle().strokeBorder(
-                                    BeruColor.strongBorder,
-                                    lineWidth: BeruMetrics.hairline
+                                    EnhancifyColor.strongBorder,
+                                    lineWidth: EnhancifyMetrics.hairline
                                 )
                             }
                         if color == selection {
-                            BeruIcon(name: "check", size: BeruMetrics.iconSizeDense)
-                                .foregroundStyle(BeruColor.onAccent)
+                            EnhancifyIcon(name: "check", size: EnhancifyMetrics.iconSizeDense)
+                                .foregroundStyle(EnhancifyColor.onAccent)
                         }
                     }
-                    .frame(width: BeruMetrics.chipHeight, height: BeruMetrics.chipHeight)
+                    .frame(width: EnhancifyMetrics.chipHeight, height: EnhancifyMetrics.chipHeight)
                     .contentShape(Circle())
                 }
                 .buttonStyle(.plain)
-                .shadow(color: color == selection ? BeruColor.focusGlow : .clear, radius: BeruMetrics.focusHalo)
+                .shadow(color: color == selection ? EnhancifyColor.focusGlow : .clear, radius: EnhancifyMetrics.focusHalo)
                 .accessibilityLabel(color.title)
                 .accessibilityAddTraits(color == selection ? .isSelected : [])
             }

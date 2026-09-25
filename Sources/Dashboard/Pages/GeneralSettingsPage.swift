@@ -3,14 +3,8 @@ import KeyboardShortcuts
 import ServiceManagement
 import SwiftUI
 
-// Moved out of Sources/Settings/SettingsView.swift, which held five
-// unrelated pages in one 622-line file and no longer contained a
-// SettingsView at all. These are dashboard pages, so they live with the
-// dashboard; SettingsStore stays the single place they read and write.
-
 struct GeneralSettingsTab: View {
     @Bindable private var settings = SettingsStore.shared
-    @AppStorage(PanelMode.showAllActionsKey) private var showAllActions = false
 
     var body: some View {
         SettingsPage(
@@ -18,17 +12,6 @@ struct GeneralSettingsTab: View {
             subtitle: DashboardRoute.general.pageSubtitle,
             icon: DashboardRoute.general.lucideIcon
         ) {
-            // Focused mode keeps General to what the two jobs use. The rest
-            // (name for Search greetings, default action, rationale, history,
-            // learned preferences) returns with Show all actions.
-            if showAllActions {
-                SettingsSection(title: "Account") {
-                    SettingsRow(title: "Name") {
-                        SettingsField(placeholder: "Your name", text: $settings.userName, alignment: .center)
-                    }
-                }
-            }
-
             SettingsSection(
                 title: "Accent",
                 subtitle: "Enhancify's tint across pills, selection, and the send disc."
@@ -43,10 +26,10 @@ struct GeneralSettingsTab: View {
 
             SettingsSection(title: "Keyboard") {
                 SettingsRow(title: "Open Enhancify", caption: "Select text in another app, then press this shortcut.") {
-                    SettingsShortcutRecorder(name: .invokeBeru)
+                    SettingsShortcutRecorder(name: .invokeEnhancify)
                 }
-                SettingsRow(title: "Dictate", caption: "Opens Enhancify in Ask and starts listening.") {
-                    SettingsShortcutRecorder(name: .dictateToBeru)
+                SettingsRow(title: "Dictate", caption: "Opens Enhancify and starts listening.") {
+                    SettingsShortcutRecorder(name: .dictateToEnhancify)
                 }
             }
 
@@ -60,68 +43,6 @@ struct GeneralSettingsTab: View {
                         }
                     ), accessibilityLabel: "Run Enhancify at login")
                 }
-            }
-
-            SettingsSection(title: "Panel") {
-                if showAllActions {
-                    SettingsRow(title: "Default action", caption: "Used when enhancing the clipboard or a vault note.") {
-                        SettingsMenuPicker(
-                            selection: $settings.defaultActionID,
-                            options: ActionRegistry.shared.allActions.map {
-                                SettingsPickerOption(value: $0.id, title: $0.name)
-                            },
-                            accessibilityLabel: "Default action"
-                        )
-                    }
-                }
-                SettingsRow(
-                    title: "Show all actions",
-                    caption: "Adds AI Search, Smart Reply, Summarize, Explain, and your custom actions to the panel. Off keeps it to Enhance Prompt and Grammar; Tab switches between them."
-                ) {
-                    SettingsSwitch(
-                        isOn: $showAllActions,
-                        accessibilityLabel: "Show all actions"
-                    )
-                }
-                if showAllActions {
-                    SettingsRow(
-                        title: "Explain what changed",
-                        caption: "A short rationale with the result. No extra round trip."
-                    ) {
-                        SettingsSwitch(
-                            isOn: $settings.explainChanges,
-                            accessibilityLabel: "Explain what changed"
-                        )
-                    }
-                    SettingsRow(
-                        title: "Remember recent turns",
-                        caption: "Follow-ups can build on earlier requests in the same app. Memory only, never written to disk."
-                    ) {
-                        SettingsSwitch(
-                            isOn: $settings.sessionContextEnabled,
-                            accessibilityLabel: "Remember recent turns"
-                        )
-                    }
-                }
-            }
-
-            if showAllActions {
-            SettingsSection(
-                title: "Reset",
-                subtitle: "Clear what Enhancify has learned from how you use it.",
-                tone: .danger
-            ) {
-                SettingsRow(
-                    title: "Learned preferences",
-                    caption: "Enhancify forgets the tone, grammar kind, and target it saw you pick last."
-                ) {
-                    SettingsPillButton(title: "Clear", role: .destructive) {
-                        settings.clearInteractionProfile()
-                    }
-                    .disabled(settings.interactionProfile.isEmpty)
-                    .accessibilityLabel("Clear learned preferences")
-                }
-            }
             }
         }
     }

@@ -3,11 +3,12 @@ import Foundation
 import Observation
 import Security
 
-/// GitHub Releases feed used to notice a newer Beru DMG.
+/// GitHub Releases feed used to notice a newer Enhancify DMG.
 enum AppUpdateFeed {
-    static let latestRelease = URL(string: "https://api.github.com/repos/rahulsharmadesign/beru/releases/latest")!
+    static let latestRelease = URL(string: "https://api.github.com/repos/rahulsharmadesign/enhancify/releases/latest")!
 
     static func isTrustedDownload(_ url: URL) -> Bool {
+        guard url.scheme?.lowercased() == "https" else { return false }
         let host = url.host?.lowercased() ?? ""
         return host == "github.com"
             || host.hasSuffix(".github.com")
@@ -36,11 +37,7 @@ enum AppUpdateFeed {
 
     static func dmgAsset(named assets: [String], preferring version: String) -> String? {
         let allDmgs = assets.filter { $0.lowercased().hasSuffix(".dmg") }
-        // Releases were named Beru-x.dmg before the Enhancify rename.
-        let named = allDmgs.filter {
-            let name = $0.lowercased()
-            return name.contains("enhancify") || name.contains("beru")
-        }
+        let named = allDmgs.filter { $0.lowercased().contains("enhancify") }
         let pool = named.isEmpty ? allDmgs : named
         if let exact = pool.first(where: { $0.localizedCaseInsensitiveContains(version) }) {
             return exact
@@ -223,7 +220,7 @@ final class AppUpdateService {
         do {
             let (tempURL, _) = try await URLSession.shared.download(from: downloadURL)
             let dmgURL = FileManager.default.temporaryDirectory
-                .appendingPathComponent("Beru-update-\(UUID().uuidString).dmg")
+                .appendingPathComponent("Enhancify-update-\(UUID().uuidString).dmg")
             try? FileManager.default.removeItem(at: dmgURL)
             try FileManager.default.moveItem(at: tempURL, to: dmgURL)
             status = .installing
@@ -238,7 +235,7 @@ final class AppUpdateService {
         let payload = AppUpdateInstaller.Payload(
             dmgPath: dmgURL.path,
             destinationPath: Bundle.main.bundleURL.path,
-            bundleIdentifier: Bundle.main.bundleIdentifier ?? "com.rahul.beru",
+            bundleIdentifier: Bundle.main.bundleIdentifier ?? "com.rahul.enhancify",
             processIdentifier: ProcessInfo.processInfo.processIdentifier,
             expectedLeafName: AppSigning.leafCertificateCommonName
         )
@@ -255,9 +252,9 @@ final class AppUpdateService {
 }
 
 /// Leaf certificate of the running binary. `install.sh` re-signs with
-/// "Beru Local Signing"; GitHub DMGs do not.
+/// "Enhancify Local Signing"; GitHub DMGs do not.
 enum AppSigning {
-    static let localCertificateName = "Beru Local Signing"
+    static let localCertificateName = "Enhancify Local Signing"
 
     static var isLocalDevelopmentBuild: Bool {
         leafCertificateCommonName == localCertificateName

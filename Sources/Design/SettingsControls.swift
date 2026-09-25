@@ -14,7 +14,7 @@ struct SettingsPillButton: View {
     let action: () -> Void
 
     var body: some View {
-        BeruButton(
+        EnhancifyButton(
             title: title,
             variant: .pill,
             size: .regular,
@@ -34,7 +34,7 @@ struct SettingsPrimaryButton: View {
     let action: () -> Void
 
     var body: some View {
-        BeruButton(
+        EnhancifyButton(
             title: title,
             variant: .primary,
             size: .regular,
@@ -45,49 +45,11 @@ struct SettingsPrimaryButton: View {
     }
 }
 
-/// Haze check: 16pt box, accent fill, Lucide check. Replaces `.checkbox`.
-struct SettingsTogglePill: View {
-    let title: String
-    @Binding var isOn: Bool
-
-    var body: some View {
-        Button { isOn.toggle() } label: {
-            HStack(spacing: BeruSpace.xs) {
-                ZStack {
-                    BeruRadius.shape(BeruRadius.sm)
-                        .fill(isOn ? AnyShapeStyle(BeruColor.accentGradient) : AnyShapeStyle(Color.clear))
-                        .overlay {
-                            if !isOn {
-                                BeruRadius.shape(BeruRadius.sm)
-                                    .strokeBorder(BeruColor.strongBorder, lineWidth: BeruMetrics.hairline)
-                            }
-                        }
-                    if isOn {
-                        BeruIcon(name: "check", size: BeruMetrics.iconSizeDense)
-                            .foregroundStyle(BeruColor.onAccent)
-                    }
-                }
-                .frame(width: BeruSpace.md, height: BeruSpace.md)
-                Text(title)
-                    .font(BeruType.control)
-                    .foregroundStyle(BeruColor.textPrimary)
-                    .lineLimit(1)
-            }
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .fixedSize()
-        .accessibilityLabel(title)
-        .accessibilityValue(isOn ? "On" : "Off")
-        .accessibilityAddTraits(isOn ? .isSelected : [])
-    }
-}
-
 /// Haze round button: outlined circle, hairline, Lucide glyph. Hover fills.
 struct SettingsIconButton: View {
     let icon: String
-    var size: CGFloat = BeruMetrics.iconSize
-    var frameSize: CGFloat = BeruMetrics.hitTarget
+    var size: CGFloat = EnhancifyMetrics.iconSize
+    var frameSize: CGFloat = EnhancifyMetrics.hitTarget
     var enabled: Bool = true
     let help: String
     let action: () -> Void
@@ -97,10 +59,10 @@ struct SettingsIconButton: View {
     var body: some View {
         Button(action: action) {
             ZStack {
-                Circle().fill(isHovered && enabled ? BeruColor.hoverFill : Color.clear)
-                Circle().strokeBorder(BeruColor.strongBorder, lineWidth: BeruMetrics.hairline)
-                BeruIcon(name: icon, size: size)
-                    .foregroundStyle(BeruColor.textPrimary)
+                Circle().fill(isHovered && enabled ? EnhancifyColor.hoverFill : Color.clear)
+                Circle().strokeBorder(EnhancifyColor.strongBorder, lineWidth: EnhancifyMetrics.hairline)
+                EnhancifyIcon(name: icon, size: size)
+                    .foregroundStyle(EnhancifyColor.textPrimary)
             }
             .frame(width: frameSize, height: frameSize)
             .contentShape(Circle())
@@ -112,17 +74,7 @@ struct SettingsIconButton: View {
         .help(help)
         .accessibilityLabel(help)
         .onHover { isHovered = $0 }
-        .beruHoverEase(isHovered)
-    }
-}
-
-struct SettingsInlineButton: View {
-    let title: String
-    var role: ButtonRole?
-    let action: () -> Void
-
-    var body: some View {
-        BeruButton(title: title, variant: .inline, size: .regular, role: role, action: action)
+        .enhancifyHoverEase(isHovered)
     }
 }
 
@@ -132,8 +84,8 @@ struct SettingsValue: View {
 
     var body: some View {
         Text(text)
-            .font(mono ? BeruType.mono : BeruType.control)
-            .foregroundStyle(BeruColor.textSecondary)
+            .font(mono ? EnhancifyType.mono : EnhancifyType.control)
+            .foregroundStyle(EnhancifyColor.textSecondary)
             .multilineTextAlignment(.trailing)
             .textSelection(.enabled)
     }
@@ -147,16 +99,16 @@ struct SettingsStatusBadge: View {
 
     var body: some View {
         Text(title)
-            .font(BeruType.captionMedium)
-            .foregroundStyle(isPositive ? BeruColor.positive : BeruColor.textSecondary)
-            .padding(.horizontal, BeruSpace.xs)
-            .padding(.vertical, BeruSpace.xxs)
+            .font(EnhancifyType.captionMedium)
+            .foregroundStyle(isPositive ? EnhancifyColor.positive : EnhancifyColor.textSecondary)
+            .padding(.horizontal, EnhancifySpace.xs)
+            .padding(.vertical, EnhancifySpace.xxs)
             .background {
-                BeruRadius.shape(BeruRadius.sm)
-                    .fill(BeruColor.badge)
+                EnhancifyRadius.shape(EnhancifyRadius.sm)
+                    .fill(EnhancifyColor.badge)
                     .overlay {
-                        BeruRadius.shape(BeruRadius.sm)
-                            .strokeBorder(BeruColor.border, lineWidth: BeruMetrics.hairline)
+                        EnhancifyRadius.shape(EnhancifyRadius.sm)
+                            .strokeBorder(EnhancifyColor.border, lineWidth: EnhancifyMetrics.hairline)
                     }
             }
             .accessibilityLabel(title)
@@ -164,7 +116,7 @@ struct SettingsStatusBadge: View {
 }
 
 /// Apple switch. A native `Toggle` renders the Liquid Glass control on
-/// Tahoe and later (tinted with the Beru accent when on) and adapts to
+/// Tahoe and later (tinted with the Enhancify accent when on) and adapts to
 /// Reduce Transparency and Increase Contrast on its own.
 struct SettingsSwitch: View {
     @Binding var isOn: Bool
@@ -176,7 +128,7 @@ struct SettingsSwitch: View {
         }
         .toggleStyle(.switch)
         .labelsHidden()
-        .tint(BeruColor.accent)
+        .tint(EnhancifyColor.accent)
         .accessibilityLabel(accessibilityLabel)
     }
 }

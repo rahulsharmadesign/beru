@@ -40,15 +40,10 @@ enum StreamChunk: Sendable, Equatable {
 }
 
 protocol LLMProvider: Sendable {
-    /// `expectsRationale` only sizes the output ceiling — the instruction itself
-    /// is already in the system prompt. It has to be passed explicitly because
-    /// the provider cannot otherwise know that the response carries an
-    /// explanation on top of the result.
     func stream(
         system: String,
         user: String,
         role: ModelRole,
-        expectsRationale: Bool,
         actionID: String
     ) -> AsyncThrowingStream<StreamChunk, Error>
     func testConnection() async -> Result<Void, ProviderError>
@@ -61,18 +56,9 @@ protocol LLMProvider: Sendable {
 extension LLMProvider {
     func warmUp(role: ModelRole) async {}
 
-    /// Convenience for callers with no rationale or action to account for.
+    /// Convenience for callers with no action to account for.
     func stream(system: String, user: String, role: ModelRole) -> AsyncThrowingStream<StreamChunk, Error> {
-        stream(system: system, user: user, role: role, expectsRationale: false, actionID: "")
-    }
-
-    func stream(
-        system: String,
-        user: String,
-        role: ModelRole,
-        expectsRationale: Bool
-    ) -> AsyncThrowingStream<StreamChunk, Error> {
-        stream(system: system, user: user, role: role, expectsRationale: expectsRationale, actionID: "")
+        stream(system: system, user: user, role: role, actionID: "")
     }
 }
 
@@ -80,10 +66,7 @@ extension LLMProvider {
 /// variance: grammar is fully deterministic, enhance keeps mild variation so
 /// Regenerate produces alternatives.
 enum ProviderTuning {
-    static let replyTemperature = 0.55
-
     static func temperature(for role: ModelRole, actionID: String = "") -> Double {
-        if actionID == EnhancementAction.replyID { return replyTemperature }
         switch role {
         case .enhance: return 0.3
         case .grammar: return 0.0
@@ -93,14 +76,7 @@ enum ProviderTuning {
     /// Output length tracks input length, so size the cap to the input rather
     /// than a fixed number — long selections near the 8k-char capture cap
     /// would otherwise be truncated mid-result.
-    ///
-    /// A rationale is a fixed couple of sentences whatever the input length, so
-    /// it is headroom added on top of the ceiling rather than a share of it.
-    /// Without this, Grammar's 500-token floor would clamp a short message plus
-    /// its explanation mid-sentence.
-    static let rationaleHeadroom = 200
-
-    static func maxTokens(for role: ModelRole, input: String, expectsRationale: Bool = false) -> Int {
+    static func maxTokens(for role: ModelRole, input: String) -> Int {
         let estimated = input.count / 3
         let base: Int
         switch role {
@@ -109,7 +85,7 @@ enum ProviderTuning {
         case .grammar:
             base = max(500, estimated + 200)
         }
-        return min(4000, base) + (expectsRationale ? rationaleHeadroom : 0)
+        return min(4000, base)
     }
 }
 

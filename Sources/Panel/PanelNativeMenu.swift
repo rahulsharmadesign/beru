@@ -86,7 +86,7 @@ extension PanelView {
         guard let anchor = holder.view, anchor.window != nil else { return }
         let target = MenuActionTarget(onSelect: onSelect)
         let menu = NSMenu()
-        menu.minimumWidth = BeruMetrics.menuWidth
+        menu.minimumWidth = EnhancifyMetrics.menuWidth
         for item in items {
             if item.isHeader {
                 if !menu.items.isEmpty { menu.addItem(.separator()) }
@@ -191,25 +191,25 @@ extension PanelView {
         anchor: MenuAnchorHolder,
         onTap: @escaping () -> Void
     ) -> some View {
-        BeruGlassControl(
+        EnhancifyGlassControl(
             kind: .plain,
             size: .small,
             action: onTap
         ) {
-            HStack(spacing: BeruSpace.xxs) {
-                BeruIcon(name: icon, size: BeruMetrics.iconSizeCompact, strokeWidth: 2)
-                    .foregroundStyle(BeruColor.textSecondary)
+            HStack(spacing: EnhancifySpace.xxs) {
+                EnhancifyIcon(name: icon, size: EnhancifyMetrics.iconSizeCompact, strokeWidth: 2)
+                    .foregroundStyle(EnhancifyColor.textSecondary)
                 Text(title)
-                    .font(BeruType.footnoteMedium)
-                    .foregroundStyle(BeruColor.textPrimary)
+                    .font(EnhancifyType.footnoteMedium)
+                    .foregroundStyle(EnhancifyColor.textPrimary)
                     .lineLimit(1)
-                BeruIcon(name: "chevron-down", size: BeruMetrics.iconSizeDense, strokeWidth: 2)
-                    .foregroundStyle(BeruColor.textSecondary)
+                EnhancifyIcon(name: "chevron-down", size: EnhancifyMetrics.iconSizeDense, strokeWidth: 2)
+                    .foregroundStyle(EnhancifyColor.textSecondary)
             }
-            .padding(.horizontal, BeruSpace.xs)
-            .frame(height: BeruMetrics.pillHeightSm)
+            .padding(.horizontal, EnhancifySpace.xs)
+            .frame(height: EnhancifyMetrics.pillHeightSm)
             .overlay {
-                Capsule().strokeBorder(BeruColor.strongBorder, lineWidth: BeruMetrics.hairline)
+                Capsule().strokeBorder(EnhancifyColor.strongBorder, lineWidth: EnhancifyMetrics.hairline)
             }
             .clipShape(Capsule())
             .contentShape(Capsule())

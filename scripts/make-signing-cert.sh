@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Create the local code-signing certificate Beru is signed with, and import
+# Create the local code-signing certificate Enhancify is signed with, and import
 # it into the login keychain. Run once; scripts/install.sh uses it thereafter.
 #
 # Why a certificate at all: an ad-hoc signature's designated requirement is the
@@ -14,11 +14,11 @@
 #
 # This certificate signs nothing but local builds. It is not trusted as a root, it
 # cannot vouch for anything to anyone else, and removing it is a one-liner:
-#     security delete-certificate -c "Beru Local Signing"
+#     security delete-certificate -c "Enhancify Local Signing"
 #
 set -euo pipefail
 
-NAME="Beru Local Signing"
+NAME="Enhancify Local Signing"
 KEYCHAIN="$HOME/Library/Keychains/login.keychain-db"
 
 if security find-certificate -c "$NAME" >/dev/null 2>&1; then
@@ -36,7 +36,7 @@ x509_extensions = v3
 prompt = no
 [ dn ]
 CN = $NAME
-O = Beru Local
+O = Enhancify Local
 [ v3 ]
 basicConstraints = critical,CA:false
 keyUsage = critical,digitalSignature
@@ -63,5 +63,5 @@ echo "created '$NAME'."
 echo
 echo "IMPORTANT, one time only: macOS still holds Accessibility entries for the old"
 echo "ad-hoc builds. In System Settings > Privacy & Security > Accessibility, remove"
-echo "every Beru row with '-', then add the freshly signed app with '+'."
+echo "every Enhancify row with '-', then add the freshly signed app with '+'."
 echo "From then on the grant survives rebuilds."

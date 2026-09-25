@@ -61,8 +61,8 @@ private struct MenuChevron: Shape {
 struct DropdownPill: View {
     let title: String
     let items: [DropdownItem]
-    var height: CGFloat = BeruMetrics.pillHeight
-    var horizontalPadding: CGFloat = BeruSpace.md
+    var height: CGFloat = EnhancifyMetrics.pillHeight
+    var horizontalPadding: CGFloat = EnhancifySpace.md
     var accessibilityLabel: String = ""
 
     @State private var anchor = DropdownAnchorView()
@@ -72,32 +72,32 @@ struct DropdownPill: View {
         Button {
             anchor.open(items, preferred: items.firstIndex(where: { $0.isOn }))
         } label: {
-            HStack(spacing: BeruSpace.xxs) {
+            HStack(spacing: EnhancifySpace.xxs) {
                 Text(title)
-                    .font(BeruType.control)
-                    .foregroundStyle(BeruColor.textPrimary)
+                    .font(EnhancifyType.control)
+                    .foregroundStyle(EnhancifyColor.textPrimary)
                     .lineLimit(1)
                 MenuChevron()
                     .stroke(
-                        BeruColor.textSecondary,
+                        EnhancifyColor.textSecondary,
                         style: StrokeStyle(lineWidth: 1.6, lineCap: .round, lineJoin: .round)
                     )
-                    .frame(width: BeruMetrics.iconSizeDense, height: BeruMetrics.iconSizeDense)
+                    .frame(width: EnhancifyMetrics.iconSizeDense, height: EnhancifyMetrics.iconSizeDense)
             }
             .padding(.horizontal, horizontalPadding)
             .frame(height: height)
             .background {
-                Capsule().fill(isHovered ? BeruColor.hoverFill : Color.clear)
+                Capsule().fill(isHovered ? EnhancifyColor.hoverFill : Color.clear)
             }
             .overlay {
-                Capsule().strokeBorder(BeruColor.strongBorder, lineWidth: BeruMetrics.hairline)
+                Capsule().strokeBorder(EnhancifyColor.strongBorder, lineWidth: EnhancifyMetrics.hairline)
             }
             .contentShape(Capsule())
         }
         .buttonStyle(.plain)
         .background { DropdownAnchor(view: anchor) }
         .onHover { isHovered = $0 }
-        .beruHoverEase(isHovered)
+        .enhancifyHoverEase(isHovered)
         .accessibilityLabel(accessibilityLabel.isEmpty ? title : accessibilityLabel)
         .accessibilityValue(title)
     }
@@ -177,27 +177,27 @@ struct SettingsSegmented<Value: Hashable>: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        HStack(spacing: BeruSpace.hair) {
+        HStack(spacing: EnhancifySpace.hair) {
             ForEach(options) { option in
                 let selected = selection == option.value
                 Button {
                     selection = option.value
                 } label: {
                     Text(option.title)
-                        .font(BeruType.footnoteMedium)
-                        .foregroundStyle(selected ? BeruColor.textPrimary : BeruColor.textSecondary)
+                        .font(EnhancifyType.footnoteMedium)
+                        .foregroundStyle(selected ? EnhancifyColor.textPrimary : EnhancifyColor.textSecondary)
                         .lineLimit(1)
-                        .padding(.horizontal, BeruSpace.sm)
-                        .frame(minHeight: BeruMetrics.pillHeightSm)
+                        .padding(.horizontal, EnhancifySpace.sm)
+                        .frame(minHeight: EnhancifyMetrics.pillHeightSm)
                         .background {
                             if selected {
                                 Capsule()
-                                    .fill(BeruColor.panelSolid)
+                                    .fill(EnhancifyColor.panelSolid)
                                     .overlay {
                                         // panelSolid reads white in light mode; a
                                         // plain hairline vanishes on it, so the
                                         // chip takes the strong stroke.
-                                        Capsule().strokeBorder(BeruColor.strongBorder, lineWidth: BeruMetrics.hairline)
+                                        Capsule().strokeBorder(EnhancifyColor.strongBorder, lineWidth: EnhancifyMetrics.hairline)
                                     }
                                     .matchedGeometryEffect(id: "segmentHighlight", in: segmentHighlight)
                             }
@@ -208,12 +208,12 @@ struct SettingsSegmented<Value: Hashable>: View {
                 .accessibilityAddTraits(selected ? .isSelected : [])
             }
         }
-        .padding(BeruSpace.hair)
+        .padding(EnhancifySpace.hair)
         .background {
-            Capsule().fill(BeruColor.subtleFill)
+            Capsule().fill(EnhancifyColor.subtleFill)
         }
         .fixedSize()
-        .animation(reduceMotion ? nil : BeruMotion.tabSwitchAnimation, value: selection)
+        .animation(reduceMotion ? nil : EnhancifyMotion.tabSwitchAnimation, value: selection)
         .accessibilityElement(children: .contain)
         .accessibilityLabel(accessibilityLabel)
     }

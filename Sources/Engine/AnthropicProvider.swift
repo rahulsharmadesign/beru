@@ -57,17 +57,12 @@ struct AnthropicProvider: LLMProvider {
         system: String,
         user: String,
         role: ModelRole,
-        expectsRationale: Bool = false,
         actionID: String = ""
     ) -> [String: Any] {
         let modelID = model(for: role)
         var body: [String: Any] = [
             "model": modelID,
-            "max_tokens": ProviderTuning.maxTokens(
-                for: role,
-                input: user,
-                expectsRationale: expectsRationale
-            ),
+            "max_tokens": ProviderTuning.maxTokens(for: role, input: user),
             "stream": true,
             "system": system,
             "messages": [Self.userMessageObject(text: user)]
@@ -95,7 +90,6 @@ struct AnthropicProvider: LLMProvider {
         system: String,
         user: String,
         role: ModelRole,
-        expectsRationale: Bool,
         actionID: String
     ) -> AsyncThrowingStream<StreamChunk, Error> {
         AsyncThrowingStream { continuation in
@@ -111,7 +105,6 @@ struct AnthropicProvider: LLMProvider {
                             system: system,
                             user: user,
                             role: role,
-                            expectsRationale: expectsRationale,
                             actionID: actionID
                         )
                     )

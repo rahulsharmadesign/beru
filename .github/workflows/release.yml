@@ -47,7 +47,7 @@ jobs:
 
       - name: Build DMG
         env:
-          BERU_SIGN_IDENTITY: "-"
+          ENHANCIFY_SIGN_IDENTITY: "-"
         run: |
           chmod +x scripts/*.sh
           ./scripts/make-dmg.sh

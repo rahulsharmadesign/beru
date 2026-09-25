@@ -20,7 +20,7 @@ struct ProviderSettingsSections: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: BeruSpace.xxl) {
+        VStack(alignment: .leading, spacing: EnhancifySpace.xxl) {
             SettingsSection(title: "Provider") {
                 SettingsRow(
                     title: "Active provider",
@@ -45,7 +45,7 @@ struct ProviderSettingsSections: View {
 
             SettingsSection(title: "Connection") {
                 SettingsRow(title: "Test connection", caption: testCaption) {
-                    HStack(spacing: BeruSpace.sm) {
+                    HStack(spacing: EnhancifySpace.sm) {
                         testStatusView
                         SettingsPillButton(title: "Test", enabled: testState != .testing) {
                             testConnection()
@@ -113,7 +113,7 @@ struct ProviderSettingsSections: View {
     }
 
     /// Ollama has no secrets. Hitting Keychain on every Models visit is what
-    /// raised "Beru wants to use your confidential information".
+    /// raised "Enhancify wants to use your confidential information".
     private func hydrateKeysForActiveProvider() {
         switch settings.activeProvider {
         case .ollama, .apple:
@@ -130,20 +130,20 @@ struct ProviderSettingsSections: View {
         switch settings.activeProvider {
         case .ollama:
             SettingsRow(title: "Base URL") {
-                SettingsField(placeholder: "http://127.0.0.1:11434/v1", text: $settings.ollamaBaseURL, width: BeruMetrics.wideFieldWidth)
+                SettingsField(placeholder: "http://127.0.0.1:11434/v1", text: $settings.ollamaBaseURL, width: EnhancifyMetrics.wideFieldWidth)
             }
             SettingsRow(
                 title: "Local model",
                 caption: localModelCaption
             ) {
-                SettingsField(placeholder: RecommendedOllamaModel.defaultID, text: localModelBinding, width: BeruMetrics.wideFieldWidth)
+                SettingsField(placeholder: RecommendedOllamaModel.defaultID, text: localModelBinding, width: EnhancifyMetrics.wideFieldWidth)
             }
         case .anthropic:
             SettingsRow(
                 title: "API key",
-                caption: "Stored in the Keychain. If empty, BERU_ANTHROPIC_API_KEY is used when Enhancify is launched from a terminal."
+                caption: "Stored in the Keychain. If empty, ENHANCIFY_ANTHROPIC_API_KEY is used when Enhancify is launched from a terminal."
             ) {
-                SettingsSecretField(placeholder: "sk-ant-…", text: $anthropicKey, width: BeruMetrics.wideFieldWidth)
+                SettingsSecretField(placeholder: "sk-ant-…", text: $anthropicKey, width: EnhancifyMetrics.wideFieldWidth)
             }
         case .apple:
             appleConfigurationRows
@@ -167,15 +167,15 @@ struct ProviderSettingsSections: View {
                 SettingsField(
                     placeholder: "https://api.example.com/v1",
                     text: $settings.customBaseURL,
-                    width: BeruMetrics.wideFieldWidth
+                    width: EnhancifyMetrics.wideFieldWidth
                 )
                 .id("base-\(fieldStamp)")
             }
             SettingsRow(
                 title: "API key",
-                caption: "Stored in the Keychain. If empty, BERU_API_KEY is used when Enhancify is launched from a terminal."
+                caption: "Stored in the Keychain. If empty, ENHANCIFY_API_KEY is used when Enhancify is launched from a terminal."
             ) {
-                SettingsSecretField(placeholder: "sk-…", text: $customKey, width: BeruMetrics.wideFieldWidth)
+                SettingsSecretField(placeholder: "sk-…", text: $customKey, width: EnhancifyMetrics.wideFieldWidth)
             }
             SettingsRow(title: "Model") {
                 SettingsField(placeholder: "Model id", text: $settings.customEnhanceModel)
@@ -246,13 +246,13 @@ struct ProviderSettingsSections: View {
         case .idle:
             EmptyView()
         case .testing:
-            BeruLoader.compact(tint: BeruColor.accent)
+            EnhancifyLoader.compact(tint: EnhancifyColor.accent)
         case .success:
-            BeruIcon(name: "circle-check", size: BeruMetrics.iconSize)
-                .foregroundStyle(BeruColor.positive)
+            EnhancifyIcon(name: "circle-check", size: EnhancifyMetrics.iconSize)
+                .foregroundStyle(EnhancifyColor.positive)
         case .failure:
-            BeruIcon(name: "circle-x", size: BeruMetrics.iconSize)
-                .foregroundStyle(BeruColor.destructive)
+            EnhancifyIcon(name: "circle-x", size: EnhancifyMetrics.iconSize)
+                .foregroundStyle(EnhancifyColor.destructive)
         }
     }
 

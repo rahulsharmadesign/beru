@@ -30,7 +30,7 @@ final class PanelHostingView<Content: View>: NSHostingView<Content> {
 }
 
 extension NSView {
-    func beruBeginWindowDrag(with event: NSEvent) {
+    func enhancifyBeginWindowDrag(with event: NSEvent) {
         guard let window else { return }
         let grab = event.locationInWindow
         while let next = window.nextEvent(matching: [.leftMouseDragged, .leftMouseUp]) {

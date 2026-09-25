@@ -4,7 +4,7 @@ Select text anywhere on your Mac, press a shortcut, and get a better version bac
 
 Enhancify does two jobs:
 
-- **Enhance Prompt** turns a rough idea into a clear prompt for the AI you are using: Cursor, Claude, ChatGPT, Codex, Gemini, and others.
+- **Enhance Prompt** turns a rough idea into a clear prompt for the AI you are using: Cursor, Claude, ChatGPT, Codex, Gemini, and others. It also fixes your spelling and grammar along the way, without changing what you meant.
 - **Grammar** fixes, shortens, translates, or restyles your own writing.
 
 It lives in the menu bar and never takes over the app you are writing in.
@@ -12,8 +12,6 @@ It lives in the menu bar and never takes over the app you are writing in.
 ![macOS 26+](https://img.shields.io/badge/macOS-26%2B-blue)
 ![Swift 6](https://img.shields.io/badge/Swift-6-orange)
 ![License: MIT](https://img.shields.io/badge/license-MIT-green)
-
-> **Formerly Beru.** The app was renamed to Enhancify. Behind the scenes it keeps the old bundle id (`com.rahul.beru`), file name (`Beru.app`), Keychain entries, and `~/Library/Application Support/Beru/` folder, so existing installs keep their settings, API keys, Accessibility permission, and in-app updates.
 
 ## How it works
 
@@ -33,7 +31,7 @@ With nothing selected, type or speak a rough idea and press Return.
 | **⌘L**, or start typing | Refine the result ("shorter", "mention the tests") |
 | **Esc** | Close |
 
-Results appear as clean text with changed words lightly underlined. **Show changes** reveals the full diff.
+Results type out as clean text. In Grammar, changed words are lightly underlined and **Show changes** reveals the full diff. The panel grows with the result and scrolls once it reaches the screen height.
 
 ## Grammar styles
 
@@ -49,12 +47,12 @@ Results appear as clean text with changed words lightly underlined. **Show chang
 
 macOS 26 or later.
 
-1. Download the latest **Enhancify-&lt;version&gt;.dmg** from [Releases](https://github.com/rahulsharmadesign/beru/releases).
-2. Open it and drag the app (named `Beru.app`) into **Applications**.
+1. Download the latest **Enhancify-&lt;version&gt;.dmg** from [Releases](https://github.com/rahulsharmadesign/enhancify/releases).
+2. Open it and drag **Enhancify** into **Applications**.
 3. The app is not notarized, so allow it once:
 
    ```bash
-   xattr -cr /Applications/Beru.app
+   xattr -cr /Applications/Enhancify.app
    ```
 
    Or Control-click the app and choose **Open**.
@@ -77,24 +75,24 @@ Local models share memory with every other app. On a 16 GB Mac a 7B model next t
 
 Open from the menu bar. **General** (shortcuts, launch at login, accent color), **Models**, **Permissions**, **About**.
 
-**Show all actions** (General) brings back the extra tools from earlier versions: AI Search, Smart Reply, Summarize, Explain, custom actions, targets, the notes vault, and run history.
-
 ## Privacy
 
 - No account, no server, no analytics, no telemetry.
 - Selected text goes only to the model provider you choose. With Apple on-device or Ollama it never leaves your Mac.
 - API keys are stored in the macOS Keychain.
-- Usage history is off unless you turn it on, and it stays in `~/Library/Application Support/Beru/`.
+- Nothing you select or type is written to disk. Settings live in the app's preferences; there is no history.
+- Replace pastes through the clipboard only as a fallback, marks that paste as transient so clipboard managers skip it, and restores your clipboard afterward.
+- In-app updates download only over HTTPS from this repository's Releases, and the new app's code signature and bundle id are checked before it replaces the old one.
 - Enhancify is not sandboxed, because Accessibility cannot work inside the App Sandbox.
 
-Found a security problem? Report it privately through a [security advisory](https://github.com/rahulsharmadesign/beru/security/advisories/new), not a public issue.
+Found a security problem? Report it privately through a [security advisory](https://github.com/rahulsharmadesign/enhancify/security/advisories/new), not a public issue.
 
 ## Build from source
 
 ```bash
 brew install xcodegen
-git clone https://github.com/rahulsharmadesign/beru.git
-cd beru
+git clone https://github.com/rahulsharmadesign/enhancify.git
+cd enhancify
 ./scripts/make-signing-cert.sh   # once: a local certificate so Accessibility survives rebuilds
 ./scripts/install.sh             # build, sign, install to /Applications, launch
 ```
@@ -105,7 +103,7 @@ cd beru
 
 ## Support
 
-Bugs and ideas: [open an issue](https://github.com/rahulsharmadesign/beru/issues). If Enhancify saves you time, [send a tip](https://razorpay.me/@rahulsharmadesign).
+Bugs and ideas: [open an issue](https://github.com/rahulsharmadesign/enhancify/issues). If Enhancify saves you time, [send a tip](https://razorpay.me/@rahulsharmadesign).
 
 ## License
 

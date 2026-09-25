@@ -1,25 +1,23 @@
 #!/usr/bin/env bash
 #
-# Build a Release Enhancify build (Beru.app on disk) and wrap it in a
-# distributable DMG. The bundle keeps its Beru.app file name so the in-app
-# updater of earlier releases, which looks for Beru.app, can still install it.
+# Build a Release Enhancify.app and wrap it in a distributable DMG.
 #
 # Default signing is ad-hoc ("-"). That needs no Apple Developer Program.
 # Recipients clear Gatekeeper once with:
 #
-#     xattr -cr /Applications/Beru.app
+#     xattr -cr /Applications/Enhancify.app
 #
-# Optional: BERU_SIGN_IDENTITY for a local cert or Developer ID.
+# Optional: ENHANCIFY_SIGN_IDENTITY for a local cert or Developer ID.
 # Optional: NOTARIZE=1 plus Apple notary credentials.
 #
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-IDENTITY="${BERU_SIGN_IDENTITY:--}"
+IDENTITY="${ENHANCIFY_SIGN_IDENTITY:--}"
 VERSION=$(awk '/MARKETING_VERSION/ {print $2; exit}' project.yml | tr -d '"')
 STAGE=$(mktemp -d)
-OUT="${BERU_DMG_OUT:-build/Enhancify-${VERSION}.dmg}"
+OUT="${ENHANCIFY_DMG_OUT:-build/Enhancify-${VERSION}.dmg}"
 trap 'rm -rf "$STAGE"' EXIT
 
 if [[ "$IDENTITY" != "-" ]] \
@@ -41,39 +39,39 @@ fi
 "$XCODEGEN" generate >/dev/null
 
 echo "==> building Release (identity: $IDENTITY)"
-ARCHIVE="$STAGE/Beru.xcarchive"
-xcodebuild -scheme Beru -configuration Release archive \
+ARCHIVE="$STAGE/Enhancify.xcarchive"
+xcodebuild -scheme Enhancify -configuration Release archive \
     -archivePath "$ARCHIVE" -destination 'generic/platform=macOS' \
-    >/tmp/beru-dmg-build.log 2>&1 \
-    || { tail -30 /tmp/beru-dmg-build.log; exit 1; }
+    >/tmp/enhancify-dmg-build.log 2>&1 \
+    || { tail -30 /tmp/enhancify-dmg-build.log; exit 1; }
 
-APP="$ARCHIVE/Products/Applications/Beru.app"
+APP="$ARCHIVE/Products/Applications/Enhancify.app"
 
-echo "==> signing Beru.app"
+echo "==> signing Enhancify.app"
 mkdir -p "$STAGE/dmg"
-cp -R "$APP" "$STAGE/dmg/Beru.app"
+cp -R "$APP" "$STAGE/dmg/Enhancify.app"
 codesign -f -s "$IDENTITY" --deep --options runtime \
-    --entitlements Resources/Beru.entitlements \
-    "$STAGE/dmg/Beru.app"
-codesign --verify --verbose=2 "$STAGE/dmg/Beru.app"
+    --entitlements Resources/Enhancify.entitlements \
+    "$STAGE/dmg/Enhancify.app"
+codesign --verify --verbose=2 "$STAGE/dmg/Enhancify.app"
 
 if [[ "${NOTARIZE:-}" == "1" && "$IDENTITY" != "-" ]]; then
-    echo "==> notarizing Beru.app before packaging"
-    ./scripts/notarize.sh "$STAGE/dmg/Beru.app"
+    echo "==> notarizing Enhancify.app before packaging"
+    ./scripts/notarize.sh "$STAGE/dmg/Enhancify.app"
 fi
 
 ln -s /Applications "$STAGE/dmg/Applications"
 cat > "$STAGE/dmg/How to allow Enhancify.txt" <<'EOF'
 Install
-1. Drag Enhancify (Beru.app) into Applications.
+1. Drag Enhancify into Applications.
 2. Open Terminal and paste this once:
 
-xattr -cr /Applications/Beru.app
+xattr -cr /Applications/Enhancify.app
 
-3. Open Enhancify (Beru.app) from Applications.
+3. Open Enhancify from Applications.
 
 macOS blocks unsigned downloads. That one line clears the quarantine flag.
-You can also Control-click Beru.app and choose Open.
+You can also Control-click Enhancify.app and choose Open.
 EOF
 
 echo "==> building $OUT"
@@ -89,6 +87,6 @@ fi
 echo "==> done: $OUT ($(du -h "$OUT" | cut -f1))"
 if [[ "$IDENTITY" == "-" ]]; then
     echo ""
-    echo "==> Recipients: drag Beru.app to Applications, then run:"
-    echo "    xattr -cr /Applications/Beru.app"
+    echo "==> Recipients: drag Enhancify.app to Applications, then run:"
+    echo "    xattr -cr /Applications/Enhancify.app"
 fi

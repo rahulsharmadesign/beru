@@ -7,33 +7,25 @@ struct PanelView: View {
     var onLayoutHeights: ((PanelLayoutHeights) -> Void)?
     @FocusState var describeFieldFocused: Bool
 
-    @Bindable var registry = ActionRegistry.shared
     @Bindable var targetRegistry = TargetRegistry.shared
     @Bindable var a11y = AccessibilityPreferences.shared
     @Bindable var settings = SettingsStore.shared
     @Bindable var appearance = AppearanceObserver.shared
-    @Bindable var thread = SessionThread.shared
     /// AppKit anchors behind the composer pills. `NSMenu.popUp` needs a view
     /// in the panel window to attach to; the holders carry it without ever
     /// invalidating SwiftUI state.
     @State var targetAnchor = MenuAnchorHolder()
     @State var providerAnchor = MenuAnchorHolder()
-    @State var toneAnchor = MenuAnchorHolder()
     @State var styleAnchor = MenuAnchorHolder()
-    /// Search answer showing the copied check. Resets after a beat.
-    @State var copiedTurnID: UUID? = nil
-    /// Identity of the composer first-run beam lap. Regenerated whenever the
-    /// beam should run again (fresh open, or returning to the AI Search tab).
-    @State var beamRunID = UUID()
     /// Shared by verb chips so the accent fill can travel between them.
     @Namespace var tabHighlight
-    /// Last measured chrome bands, used to center idle copy in leftover height.
     /// Set by ⌘L or the Refine button to show the collapsed composer. Reset
     /// on every open because the view is re-identified per panel session.
     @State var composerExpanded = false
     /// Result shows clean text with changed words lightly marked; this flips
     /// it to the full red/green diff. Per panel open.
     @State var showsFullDiff = false
+    /// Last measured chrome bands, used to center idle copy in leftover height.
     @State var chromeTopHeight: CGFloat = 0
     @State var chromeBottomHeight: CGFloat = 0
 
@@ -92,12 +84,10 @@ struct PanelView: View {
                 }
             }
             .ignoresSafeArea()
-            .tint(BeruColor.accent)
+            .tint(EnhancifyColor.accent)
             .id(appState.panelSessionID)
             .onPreferenceChange(PanelBandHeightKey.self, perform: publishLayoutHeights)
             .onChange(of: appState.selectedActionID) { _, actionID in
-                guard actionID != EnhancementAction.describeID,
-                      actionID != EnhancementAction.searchID else { return }
                 engine.startIfNeeded(actionID: actionID)
             }
             .onKeyPress(.escape) {
@@ -108,8 +98,7 @@ struct PanelView: View {
                     PanelKeyBinding.resolveReturn(
                         modifiers: PanelKeyModifiers(press: press),
                         canSubmit: canSubmitDescribe,
-                        hasAcceptableResult: appState.acceptedText() != nil,
-                        allowsReplace: showsHostWriteAction
+                        hasAcceptableResult: appState.acceptedText() != nil
                     )
                 )
             }
@@ -169,7 +158,6 @@ struct PanelView: View {
     /// Result band: intrinsic below the cap; fixed-height ScrollView at the cap
     /// so pinned chrome never leaves the window. `reportsPanelBand` measures the
     /// unconstrained card so a short seed window cannot lock the height.
-    /// Search threads pin to the latest turn so follow-ups stay in view.
     @ViewBuilder
     var resultSlot: some View {
         if showsIdlePlaceholderOnly {
@@ -184,41 +172,16 @@ struct PanelView: View {
             let measured = resultModule.reportsPanelBand(.result)
 
             if let scrollHeight = appState.panelResultScrollHeight {
-                ScrollViewReader { proxy in
-                    ScrollView {
-                        measured
-                    }
-                    .scrollBounceBehavior(.basedOnSize)
-                    .frame(height: scrollHeight)
-                    .frame(maxWidth: .infinity)
-                    // Cap touchdown mounts a fresh ScrollView at offset zero —
-                    // without this the thread flashes its first turn ("jump to
-                    // the top") until the next chunk scrolls down. Pin instantly.
-                    .onAppear {
-                        scrollSearchThreadToLatest(proxy, animated: false)
-                    }
-                    .onChange(of: appState.searchThread.count) { _, _ in
-                        scrollSearchThreadToLatest(proxy)
-                    }
-                    .onChange(of: appState.resultState(for: EnhancementAction.searchID)) { _, _ in
-                        scrollSearchThreadToLatest(proxy)
-                    }
+                ScrollView {
+                    measured
                 }
+                .scrollBounceBehavior(.basedOnSize)
+                .frame(height: scrollHeight)
+                .frame(maxWidth: .infinity)
             } else {
                 measured
                     .fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: .infinity, alignment: .top)
-            }
-        }
-    }
-
-    func scrollSearchThreadToLatest(_ proxy: ScrollViewProxy, animated: Bool = true) {
-        guard appState.selectedActionID == EnhancementAction.searchID,
-              let last = appState.searchThread.last else { return }
-        let animation: Animation? = (animated && !a11y.reduceMotion) ? .easeOut(duration: 0.15) : nil
-        DispatchQueue.main.async {
-            withAnimation(animation) {
-                proxy.scrollTo(last.id, anchor: .bottom)
             }
         }
     }
@@ -236,7 +199,7 @@ struct PanelView: View {
     }
 
     var closeStrip: some View {
-        HStack(spacing: BeruSpace.xxs) {
+        HStack(spacing: EnhancifySpace.xxs) {
             PanelCloseDot { engine.cancel() }
             Spacer(minLength: 0)
             PanelUpdateButton()
@@ -246,26 +209,21 @@ struct PanelView: View {
         .background(PanelDragRegion())
     }
 
-    /// Idle copy with nothing else in the result (no quote, no thread).
-    /// Drawn in a window overlay so leftover height after a tall response
-    /// still centers it between chips and composer.
+    /// Nothing to show yet: no selection and no run. Drawn in a window
+    /// overlay so leftover height after a tall response still centers it
+    /// between chips and composer.
     var showsIdlePlaceholderOnly: Bool {
-        if appState.selectedActionID == EnhancementAction.searchID {
-            return appState.searchThread.isEmpty && !hasCapturedText
-        }
         guard case .idle = appState.resultState(for: appState.selectedActionID) else {
             return false
         }
-        return appState.selectedActionID == EnhancementAction.describeID
-            || appState.capturedText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        return !hasCapturedText
     }
 
-    /// Focused mode drops the centered "Type or paste text" headline: it only
-    /// repeated the composer's own placeholder over a 172pt gap. Setup and
-    /// Accessibility notices still get the full band — they need the room.
+    /// The composer is the empty state, so the idle band collapses to a
+    /// sliver. Setup and Accessibility notices still get the full band —
+    /// they need the room.
     var idleIsCompact: Bool {
-        PanelMode.isFocused
-            && a11y.isAccessibilityTrusted
+        a11y.isAccessibilityTrusted
             && SettingsStore.shared.isConfigured(SettingsStore.shared.activeProvider)
     }
 
@@ -276,9 +234,8 @@ struct PanelView: View {
         return (top - bottom) / 2
     }
 
+    /// The notices carry buttons (Open System Settings, Connect a provider).
     var idlePlaceholderIsInteractive: Bool {
-        !a11y.isAccessibilityTrusted
-            || (appState.selectedActionID == EnhancementAction.searchID
-                && !SettingsStore.shared.isConfigured(SettingsStore.shared.activeProvider))
+        !idleIsCompact
     }
 }

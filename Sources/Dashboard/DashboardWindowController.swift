@@ -9,26 +9,9 @@ import SwiftUI
 @Observable
 final class DashboardModel {
     var route: DashboardRoute
-    /// Opens the panel on arbitrary text (vault notes, pinned runs).
-    let enhanceText: (String) -> Void
-    /// Opens the panel on a vault note and writes Replace back into that note.
-    let enhanceNote: (String) -> Void
-    /// When set, Vault selects this note on the next appear.
-    var pendingVaultNoteID: String?
 
-    init(
-        route: DashboardRoute = .general,
-        enhanceText: @escaping (String) -> Void = { _ in },
-        enhanceNote: @escaping (String) -> Void = { _ in }
-    ) {
+    init(route: DashboardRoute = .general) {
         self.route = route
-        self.enhanceText = enhanceText
-        self.enhanceNote = enhanceNote
-    }
-
-    func openVaultNote(_ id: String) {
-        pendingVaultNoteID = id
-        route = .vault
     }
 }
 
@@ -53,20 +36,14 @@ final class DashboardWindowController: NSWindowController, NSWindowDelegate {
     /// though `deinit` itself is nonisolated.
     nonisolated(unsafe) private var materialObserver: NSObjectProtocol?
 
-    init(
-        enhanceText: @escaping (String) -> Void,
-        enhanceNote: @escaping (String) -> Void
-    ) {
-        model = DashboardModel(
-            enhanceText: enhanceText,
-            enhanceNote: enhanceNote
-        )
+    init() {
+        model = DashboardModel()
         let window = NSWindow(
             contentRect: NSRect(
                 x: 0,
                 y: 0,
-                width: BeruMetrics.windowWidth,
-                height: BeruMetrics.windowHeight
+                width: EnhancifyMetrics.windowWidth,
+                height: EnhancifyMetrics.windowHeight
             ),
             styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
             backing: .buffered,
@@ -85,7 +62,7 @@ final class DashboardWindowController: NSWindowController, NSWindowDelegate {
         window.backgroundColor = .clear
         window.isReleasedWhenClosed = false
         window.minSize = NSSize(width: 880, height: 560)
-        window.setFrameAutosaveName("BeruDashboardFixed")
+        window.setFrameAutosaveName("EnhancifyDashboardFixed")
         window.center()
         super.init(window: window)
         window.delegate = self
@@ -151,7 +128,7 @@ final class DashboardWindowController: NSWindowController, NSWindowDelegate {
             window.contentView = canvas
             window.isOpaque = true
             usingOpaqueMaterial = true
-            window.backgroundColor = BeruColor.canvasNSColor
+            window.backgroundColor = EnhancifyColor.canvasNSColor
             host.frame = canvas.bounds
             canvas.addSubview(host)
             canvas.refreshColors()
@@ -233,12 +210,6 @@ final class DashboardWindowController: NSWindowController, NSWindowDelegate {
         })
     }
 
-    /// Apply from a vault note: select that note and bring Vault forward.
-    func revealVaultNote(_ id: String) {
-        model.openVaultNote(id)
-        show(route: .vault)
-    }
-
     /// Drop back to accessory so closing the dashboard removes the Dock icon
     /// and returns the app to being a menu bar utility.
     func windowWillClose(_ notification: Notification) {
@@ -272,7 +243,7 @@ private final class DashboardCanvasView: NSView {
     func refreshColors() {
         wantsLayer = true
         effectiveAppearance.performAsCurrentDrawingAppearance { [self] in
-            layer?.backgroundColor = BeruColor.canvasNSColor.cgColor
+            layer?.backgroundColor = EnhancifyColor.canvasNSColor.cgColor
         }
     }
 }

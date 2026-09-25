@@ -2,7 +2,7 @@ import AppKit
 import ApplicationServices
 import os.log
 
-private let logger = Logger(subsystem: "com.rahul.beru", category: "capture")
+private let logger = Logger(subsystem: "com.rahul.enhancify", category: "capture")
 
 enum TextReplace {
     /// Replaces the selection with `text`: first via the Accessibility API on
@@ -11,7 +11,7 @@ enum TextReplace {
     /// element), falling back to a simulated Cmd-V. The user's clipboard is
     /// preserved either way.
     ///
-    /// `hostBundleID` is the app Beru was invoked over. It is the only way
+    /// `hostBundleID` is the app Enhancify was invoked over. It is the only way
     /// back to the right window when there is no captured element — the
     /// composer-as-source case, where the user typed text instead of
     /// selecting it. Without it the clipboard fallback had nothing to
@@ -41,7 +41,7 @@ enum TextReplace {
         await replaceViaClipboard(with: text, target: target, hostBundleID: hostBundleID)
     }
 
-    /// Beru's own windows must never be treated as the write-back target. The
+    /// Enhancify's own windows must never be treated as the write-back target. The
     /// panel stays key while a result is on screen, so the focused-element
     /// probe can find the panel's composer and read its text as "the failed
     /// selection" — replacing into the field the user just typed in.
@@ -112,6 +112,9 @@ enum TextReplace {
 
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(text, forType: .string)
+        // nspasteboard.org convention: clipboard-history apps skip transient
+        // items, so the temporary paste is not recorded.
+        NSPasteboard.general.setData(Data(), forType: ClipboardGuard.transientType)
 
         KeySimulator.simulateCommandV()
 
@@ -126,7 +129,7 @@ enum TextReplace {
     ///
     /// The AX element is the precise route, but it is nil whenever the text
     /// came from the composer rather than a host selection. `bundleID` is the
-    /// fallback: the app Beru was invoked over, remembered at capture time.
+    /// fallback: the app Enhancify was invoked over, remembered at capture time.
     /// Without one of the two, Cmd-V had no destination and Replace did
     /// nothing visible.
     @MainActor

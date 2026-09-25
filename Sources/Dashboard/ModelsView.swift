@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// Local models: what Ollama has installed, whether each one fits Beru's text
-/// roles, and one tap to point Beru at one. Downloading lives outside Beru —
+/// Local models: what Ollama has installed, whether each one fits Enhancify's text
+/// roles, and one tap to point Enhancify at one. Downloading lives outside Enhancify —
 /// the Ollama app and `ollama pull <id>` in Terminal show the file variants
 /// and sizes an in-app installer cannot, which is how wrong models got
 /// installed with no questions asked.
@@ -51,7 +51,7 @@ struct ModelsView: View {
             switch listState {
             case .loading:
                 SettingsRow(title: "Installed models", caption: "Looking for models on the local server.") {
-                    BeruLoader.compact()
+                    EnhancifyLoader.compact()
                 }
             case .notOllama:
                 SettingsRow(

@@ -39,51 +39,9 @@ final class SettingsStore {
     var launchAtLogin: Bool {
         didSet { defaults.set(launchAtLogin, forKey: Keys.launchAtLogin) }
     }
-    /// Local display name used only for Beru greetings and never sent by itself.
-    var userName: String {
-        didSet { defaults.set(userName, forKey: Keys.userName) }
-    }
     // One of the twelve app-wide accent choices. Appearance itself always follows macOS.
     var primaryColorID: String {
         didSet { defaults.set(primaryColorID, forKey: PrimaryColor.storageKey) }
-    }
-    /// Action pre-selected on a fresh invocation (last-used still wins after
-    /// first use).
-    var defaultActionID: String {
-        didSet { defaults.set(defaultActionID, forKey: Keys.defaultActionID) }
-    }
-    // A single "customSkillPrompt" used to live here and override the built-in
-    // Enhance prompt. It is gone: a saved prompt is now a saved action, so the
-    // chip's name describes the prompt that runs. `ActionRegistry` reads the old
-    // key once to migrate it, then clears it.
-
-    /// Records what you do to a local file so it can inform later tuning.
-    /// Nothing is ever transmitted. Defaults to off — selected text can
-    /// include secrets, so recording is an explicit choice.
-    var usageLoggingEnabled: Bool {
-        didSet { defaults.set(usageLoggingEnabled, forKey: Keys.usageLoggingEnabled) }
-    }
-    /// Asks the model to explain its most important change alongside the result.
-    /// Costs a couple of hundred tokens and no extra round trip. Defaults to on.
-    var explainChanges: Bool {
-        didSet { defaults.set(explainChanges, forKey: Keys.explainChanges) }
-    }
-    /// Lets Enhance, Describe and Search see your last few turns in the same
-    /// app, so a follow-up like "shorter" has something to refer to. Defaults to
-    /// on: only the preference is persisted, never the turns themselves, which
-    /// live in memory and die with the process.
-    var sessionContextEnabled: Bool {
-        didSet {
-            defaults.set(sessionContextEnabled, forKey: Keys.sessionContextEnabled)
-            // Turning it off should take effect now, not on the next app switch.
-            if !sessionContextEnabled { SessionThread.shared.clear() }
-        }
-    }
-    var historyRetentionDays: Int {
-        didSet { defaults.set(historyRetentionDays, forKey: Keys.historyRetentionDays) }
-    }
-    var historyMaxMegabytes: Int {
-        didSet { defaults.set(historyMaxMegabytes, forKey: Keys.historyMaxMegabytes) }
     }
     /// Most recently chosen prompt target, used when the host app has no
     /// remembered preference.
@@ -108,33 +66,6 @@ final class SettingsStore {
         didSet { defaults.set(lastRunBuild, forKey: Keys.lastRunBuild) }
     }
 
-    /// Accepted Insert / Replace / Copy choices on this Mac. Not usage history.
-    var interactionProfile: InteractionProfile {
-        didSet { persistInteractionProfile() }
-    }
-
-    func clearInteractionProfile() {
-        interactionProfile = InteractionProfile()
-    }
-
-    func recordAcceptedInteraction(
-        actionID: String,
-        replyTone: ReplyTone?,
-        grammarKind: GrammarKind?,
-        targetName: String?,
-        instruction: String?
-    ) {
-        var next = interactionProfile
-        next.recordAccepted(
-            actionID: actionID,
-            replyTone: replyTone,
-            grammarKind: grammarKind,
-            targetName: targetName,
-            instruction: instruction
-        )
-        interactionProfile = next
-    }
-
     private enum Keys {
         static let activeProvider = "activeProvider"
         static let ollamaBaseURL = "ollamaBaseURL"
@@ -144,20 +75,12 @@ final class SettingsStore {
         static let customEnhanceModel = "customEnhanceModel"
         static let customGrammarModel = "customGrammarModel"
         static let launchAtLogin = "launchAtLogin"
-        static let userName = "userName"
         static let primaryColorID = "primaryColorID"
-        static let defaultActionID = "defaultActionID"
-        static let usageLoggingEnabled = "usageLoggingEnabled"
-        static let explainChanges = "explainChanges"
-        static let sessionContextEnabled = "sessionContextEnabled"
-        static let historyRetentionDays = "historyRetentionDays"
-        static let historyMaxMegabytes = "historyMaxMegabytes"
         static let lastTargetID = "lastTargetID"
         static let lastTargetByApp = "lastTargetByApp"
         static let hasLaunchedBefore = "hasLaunchedBefore"
         static let hasCompletedGetStarted = "hasCompletedGetStarted"
         static let lastRunBuild = "lastRunBuild"
-        static let interactionProfile = "interactionProfile"
     }
 
     init(defaults: UserDefaults = .standard) {
@@ -198,40 +121,11 @@ final class SettingsStore {
         customEnhanceModel = enhanceModel
         customGrammarModel = grammarModel
         launchAtLogin = defaults.bool(forKey: Keys.launchAtLogin)
-        userName = defaults.string(forKey: Keys.userName) ?? ""
         primaryColorID = defaults.string(forKey: PrimaryColor.storageKey) ?? PrimaryColor.indigo.rawValue
-        defaultActionID = defaults.string(forKey: Keys.defaultActionID) ?? EnhancementAction.grammarID
-        // bool(forKey:) returns false for an unset key, which would silently
-        // invert the intended default; check for presence explicitly.
-        usageLoggingEnabled = defaults.object(forKey: Keys.usageLoggingEnabled) == nil
-            ? false
-            : defaults.bool(forKey: Keys.usageLoggingEnabled)
-        explainChanges = defaults.object(forKey: Keys.explainChanges) == nil
-            ? true
-            : defaults.bool(forKey: Keys.explainChanges)
-        sessionContextEnabled = defaults.object(forKey: Keys.sessionContextEnabled) == nil
-            ? true
-            : defaults.bool(forKey: Keys.sessionContextEnabled)
-        let storedRetention = defaults.integer(forKey: Keys.historyRetentionDays)
-        historyRetentionDays = storedRetention > 0 ? storedRetention : 90
-        let storedMax = defaults.integer(forKey: Keys.historyMaxMegabytes)
-        historyMaxMegabytes = storedMax > 0 ? storedMax : 200
         lastTargetID = defaults.string(forKey: Keys.lastTargetID) ?? TargetProfile.genericID
         lastTargetByApp = defaults.dictionary(forKey: Keys.lastTargetByApp) as? [String: String] ?? [:]
         hasCompletedGetStarted = defaults.bool(forKey: Keys.hasCompletedGetStarted)
         lastRunBuild = defaults.string(forKey: Keys.lastRunBuild)
-        if let data = defaults.data(forKey: Keys.interactionProfile),
-           let decoded = try? JSONDecoder().decode(InteractionProfile.self, from: data) {
-            interactionProfile = decoded
-        } else {
-            interactionProfile = InteractionProfile()
-        }
-    }
-
-    private func persistInteractionProfile() {
-        if let data = try? JSONEncoder().encode(interactionProfile) {
-            defaults.set(data, forKey: Keys.interactionProfile)
-        }
     }
 
     /// Which provider a fresh install (or an unrecognised stored value) lands
@@ -323,8 +217,7 @@ final class SettingsStore {
     /// Set by the coordinator to warm the newly selected provider's model.
     var onProviderChanged: ((ProviderKind) -> Void)?
 
-    /// The concrete model id the active provider will use for a role. Recorded
-    /// in the usage history so results can be attributed to a model later.
+    /// The concrete model id the active provider will use for a role.
     func modelID(for role: ModelRole) -> String {
         switch activeProvider {
         case .ollama:
@@ -351,7 +244,7 @@ final class SettingsStore {
         set { storeKey(newValue, cache: \.customKeyCache, account: "custom") }
     }
 
-    /// Keychain first, then `BERU_ANTHROPIC_API_KEY`. Settings fields still
+    /// Keychain first, then `ENHANCIFY_ANTHROPIC_API_KEY`. Settings fields still
     /// read `anthropicAPIKey` so an env value is not copied into Keychain.
     var resolvedAnthropicAPIKey: String? {
         ProviderAPIKey.resolved(
@@ -362,7 +255,7 @@ final class SettingsStore {
         )
     }
 
-    /// Keychain first, then `BERU_API_KEY`.
+    /// Keychain first, then `ENHANCIFY_API_KEY`.
     var resolvedCustomAPIKey: String? {
         ProviderAPIKey.resolved(
             stored: customAPIKey,

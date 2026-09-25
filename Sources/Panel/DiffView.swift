@@ -45,10 +45,10 @@ struct DiffView: View {
         Group {
             if let attributed {
                 Text(attributed)
-                    .beruPrintedText()
+                    .enhancifyPrintedText()
             } else {
                 Text(revised)
-                    .beruPrintedText()
+                    .enhancifyPrintedText()
             }
         }
         .textSelection(.enabled)
@@ -70,13 +70,13 @@ struct DiffView: View {
                 result += AttributedString(s)
             case .deletion(let s):
                 var segment = AttributedString(s)
-                segment.foregroundColor = BeruColor.destructive
-                segment.strikethroughStyle = .init(pattern: .solid, color: BeruColor.destructive)
+                segment.foregroundColor = EnhancifyColor.destructive
+                segment.strikethroughStyle = .init(pattern: .solid, color: EnhancifyColor.destructive)
                 result += segment
             case .insertion(let s):
                 var segment = AttributedString(s)
-                segment.foregroundColor = BeruColor.positive
-                segment.underlineStyle = .init(pattern: .solid, color: BeruColor.positive)
+                segment.foregroundColor = EnhancifyColor.positive
+                segment.underlineStyle = .init(pattern: .solid, color: EnhancifyColor.positive)
                 result += segment
             }
         }
@@ -100,7 +100,7 @@ struct DiffView: View {
                 }
                 result += AttributedString(String(s[..<range.lowerBound]))
                 var word = AttributedString(trimmed)
-                word.underlineStyle = .init(pattern: .dot, color: BeruColor.textTertiary)
+                word.underlineStyle = .init(pattern: .dot, color: EnhancifyColor.textTertiary)
                 result += word
                 result += AttributedString(String(s[range.upperBound...]))
             }

@@ -27,58 +27,15 @@ extension PanelView {
     var resultArea: some View {
         let state = appState.resultState(for: appState.selectedActionID)
         VStack(alignment: .trailing, spacing: 0) {
-            if appState.selectedActionID == EnhancementAction.replyID,
-               case .done = state,
-               !appState.replySuggestions.isEmpty {
-                ReplySuggestionsView(
-                    suggestions: appState.replySuggestions,
-                    selected: appState.selectedReplyTone,
-                    copied: appState.copiedFeedback,
-                    votes: appState.replyVote,
-                    pinnedRow: appState.pinnedRow,
-                    onSelect: { appState.selectedReplyTone = $0 },
-                    onCopy: { copyReplyTone($0) },
-                    onRegenerate: { engine.retry(actionID: EnhancementAction.replyID) },
-                    onVote: { setReplyVote($0, liked: $1) },
-                    onReplace: { replaceReplyTone($0) },
-                    onPin: { pinReplyTone($0) }
-                )
-            } else if appState.selectedActionID == EnhancementAction.grammarID,
-                      case .done = state,
-                      !appState.grammarSuggestions.isEmpty {
-                GrammarSuggestionsView(
-                    suggestions: appState.grammarSuggestions,
-                    selected: appState.selectedGrammarKind,
-                    copied: appState.copiedFeedback,
-                    votes: appState.grammarVote,
-                    pinnedRow: appState.pinnedRow,
-                    onSelect: { engine.applyGrammarKind($0) },
-                    onCopy: { copyGrammarKind($0) },
-                    onRegenerate: { engine.retry(actionID: EnhancementAction.grammarID) },
-                    onVote: { setGrammarVote($0, liked: $1) },
-                    onReplace: { replaceGrammarKind($0) },
-                    onPin: { pinGrammarKind($0) }
-                )
-            } else if appState.selectedActionID == EnhancementAction.searchID {
-                if hasCapturedText {
-                    SelectedSourceQuote(text: appState.capturedText)
-                }
-                if appState.searchThread.isEmpty {
-                    idlePlaceholder()
-                } else {
-                    searchThreadList
-                }
-            } else if case .done(let revised) = state,
-                      appState.diffs[appState.selectedActionID] != nil {
+            if case .done(let revised) = state,
+               appState.diffs[appState.selectedActionID] != nil {
                 diffResult(revised: revised)
             } else if case .error(let message) = state {
                 errorView(message: message)
-            } else if case .idle = state,
-                      appState.selectedActionID == EnhancementAction.describeID
-                        || appState.capturedText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            } else if case .idle = state, !hasCapturedText {
                 idlePlaceholder()
             } else {
-                ResultView(state: state, usesMarkdown: usesSearchMarkdown)
+                ResultView(state: state)
             }
         }
         // Short content hugs the top of the idle-tall band instead of
@@ -89,56 +46,18 @@ extension PanelView {
         .animation(nil, value: appState.selectedActionID)
     }
 
-    /// Stacked Search Q&As for this panel open, split by dotted rules.
-    /// Window grows to the 75% cap; then `panelResultScrollHeight` scrolls
-    /// this list — chrome stays pinned.
-    var searchThreadList: some View {
-        VStack(alignment: .leading, spacing: BeruSpace.lg) {
-            ForEach(appState.searchThread) { turn in
-                VStack(alignment: .leading, spacing: BeruSpace.xxs) {
-                    HStack(alignment: .center, spacing: BeruSpace.xs) {
-                        BeruResponseMark()
-                        Text(turn.question)
-                            .font(BeruType.footnoteMedium)
-                            .foregroundStyle(BeruColor.textSecondary)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .textSelection(.enabled)
-                    }
-                    ResultView(state: turn.answer, usesMarkdown: true)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    if case .done(let text) = turn.answer, !text.isEmpty {
-                        searchTurnActions(turn: turn, text: text)
-                    }
-                }
-                .id(turn.id)
-                if turn.id != appState.searchThread.last?.id {
-                    DottedDivider()
-                }
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    var usesSearchMarkdown: Bool {
-        appState.selectedActionID == EnhancementAction.searchID
-    }
-
+    /// Only shown when something blocks the job: Accessibility or no model.
+    /// Otherwise the composer is the empty state.
     @ViewBuilder
     func idlePlaceholder(fillsBand: Bool = true) -> some View {
         Group {
             if !a11y.isAccessibilityTrusted {
                 accessibilityPlaceholder
-            } else {
-                let needsSetup = (appState.selectedActionID == EnhancementAction.searchID || PanelMode.isFocused)
-                    && !SettingsStore.shared.isConfigured(SettingsStore.shared.activeProvider)
-                if needsSetup {
-                    providerSetupPlaceholder
-                } else {
-                    regularIdlePlaceholder
-                }
+            } else if !SettingsStore.shared.isConfigured(SettingsStore.shared.activeProvider) {
+                providerSetupPlaceholder
             }
         }
-        .padding(.horizontal, BeruSpace.lg)
+        .padding(.horizontal, EnhancifySpace.lg)
         .padding(.vertical, PanelMetrics.moduleInset)
         .frame(
             maxWidth: .infinity,
@@ -149,19 +68,19 @@ extension PanelView {
     }
 
     var accessibilityPlaceholder: some View {
-        VStack(spacing: BeruSpace.sm) {
+        VStack(spacing: EnhancifySpace.sm) {
             Text("Allow Accessibility")
-                .font(BeruType.placeholderTitle)
-                .foregroundStyle(BeruColor.textPrimary)
+                .font(EnhancifyType.placeholderTitle)
+                .foregroundStyle(EnhancifyColor.textPrimary)
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: .infinity)
             Text("Enhancify needs Accessibility to read and replace selected text in other apps.")
-                .font(BeruType.placeholderHelper)
-                .foregroundStyle(BeruColor.textSecondary)
+                .font(EnhancifyType.placeholderHelper)
+                .foregroundStyle(EnhancifyColor.textSecondary)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity)
-            BeruGlassButton(
+            EnhancifyGlassButton(
                 title: "Open System Settings",
                 prominent: true,
                 size: .compact
@@ -169,67 +88,50 @@ extension PanelView {
                 Permissions.requestAccessibilityIfNeeded()
                 Permissions.openAccessibilitySettings()
             }
-            .padding(.top, BeruSpace.xxs)
-        }
-    }
-
-    var regularIdlePlaceholder: some View {
-        let copy = EnhancementAction.emptyCaptureCopy(actionID: appState.selectedActionID)
-        return VStack(spacing: BeruSpace.xxs) {
-            Text(copy.title)
-                .font(BeruType.placeholderTitle)
-                .foregroundStyle(BeruColor.textPrimary)
-                .multilineTextAlignment(.center)
-                .frame(maxWidth: .infinity)
-            Text(copy.subtitle)
-                .font(BeruType.placeholderHelper)
-                .foregroundStyle(BeruColor.textSecondary)
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: .infinity)
+            .padding(.top, EnhancifySpace.xxs)
         }
     }
 
     var providerSetupPlaceholder: some View {
-        VStack(spacing: BeruSpace.sm) {
+        VStack(spacing: EnhancifySpace.sm) {
             Text("Choose your AI model")
-                .font(BeruType.placeholderTitle)
-                .foregroundStyle(BeruColor.textPrimary)
+                .font(EnhancifyType.placeholderTitle)
+                .foregroundStyle(EnhancifyColor.textPrimary)
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: .infinity)
             Text("Connect an AI provider or choose a local model to start using Enhancify.")
-                .font(BeruType.placeholderHelper)
-                .foregroundStyle(BeruColor.textSecondary)
+                .font(EnhancifyType.placeholderHelper)
+                .foregroundStyle(EnhancifyColor.textSecondary)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity)
-            VStack(spacing: BeruSpace.xs) {
-                BeruGlassButton(
+            VStack(spacing: EnhancifySpace.xs) {
+                EnhancifyGlassButton(
                     title: "Connect a provider",
                     prominent: true,
                     size: .compact
                 ) {
                     engine.requestProviderSetup(preferLocal: false)
                 }
-                BeruButton(title: "Use a local model", size: .compact) {
+                EnhancifyButton(title: "Use a local model", size: .compact) {
                     engine.requestProviderSetup(preferLocal: true)
                 }
             }
-            .padding(.top, BeruSpace.xxs)
+            .padding(.top, EnhancifySpace.xxs)
         }
     }
 
     var truncationBanner: some View {
         Text("Selection was truncated to \(PanelEngine.maxCapturedLength) characters")
-            .font(BeruType.caption)
-            .foregroundStyle(BeruColor.textSecondary)
-            .padding(.bottom, BeruSpace.xs)
+            .font(EnhancifyType.caption)
+            .foregroundStyle(EnhancifyColor.textSecondary)
+            .padding(.bottom, EnhancifySpace.xs)
             .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     @ViewBuilder
     func diffResult(revised: String) -> some View {
-        VStack(alignment: .leading, spacing: BeruSpace.xs) {
+        VStack(alignment: .leading, spacing: EnhancifySpace.xs) {
             DiffView(
                 ops: appState.diffs[appState.selectedActionID],
                 revised: revised,
@@ -244,8 +146,8 @@ extension PanelView {
                 showsFullDiff.toggle()
             } label: {
                 Text(showsFullDiff ? "Hide changes" : "Show changes")
-                    .font(BeruType.captionMedium)
-                    .foregroundStyle(BeruColor.textSecondary)
+                    .font(EnhancifyType.captionMedium)
+                    .foregroundStyle(EnhancifyColor.textSecondary)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -255,22 +157,22 @@ extension PanelView {
         let actionID = appState.selectedActionID
         let fallbacks = SettingsStore.shared.fallbackProviders
         let showConnectCTA = appState.errorNeedsModelSetup.contains(actionID)
-        return VStack(spacing: BeruSpace.sm) {
+        return VStack(spacing: EnhancifySpace.sm) {
             Text(message)
-                .beruPrintedText()
-                .foregroundStyle(BeruColor.textSecondary)
+                .enhancifyPrintedText()
+                .foregroundStyle(EnhancifyColor.textSecondary)
                 .multilineTextAlignment(.center)
             // Retry rows wrap: with fallbacks plus Connect to model the row
             // can outgrow the panel, and clipped actions are dead ends.
-            WrapHStack(spacing: BeruSpace.xs, lineSpacing: BeruSpace.xs) {
-                BeruButton(title: "Retry", size: .compact) {
+            WrapHStack(spacing: EnhancifySpace.xs, lineSpacing: EnhancifySpace.xs) {
+                EnhancifyButton(title: "Retry", size: .compact) {
                     engine.retry(actionID: actionID)
                 }
 
                 // Connect to model: 404 / unknown model — open Models so the
                 // user can install or pick one instead of retrying blindly.
                 if showConnectCTA {
-                    BeruGlassButton(
+                    EnhancifyGlassButton(
                         title: "Connect to model",
                         prominent: true,
                         size: .compact
@@ -282,7 +184,7 @@ extension PanelView {
                 // If another provider is configured, offer it here so a failed
                 // request doesn't dead-end the user into opening Settings.
                 ForEach(fallbacks, id: \.self) { kind in
-                    BeruButton(title: fallbackLabel(for: kind), size: .compact) {
+                    EnhancifyButton(title: fallbackLabel(for: kind), size: .compact) {
                         engine.retryWithProvider(kind, actionID: actionID)
                     }
                 }
@@ -290,35 +192,9 @@ extension PanelView {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, BeruSpace.sm)
+        .padding(.vertical, EnhancifySpace.sm)
         // The retry row can wrap onto a second line once a fallback provider
         // and Connect to model are both present, so the window has to be told.
-    }
-
-    func copyReplyTone(_ tone: ReplyTone) {
-        appState.selectedReplyTone = tone
-        guard let text = ReplySuggestions.body(in: appState.replySuggestions, matching: tone) else { return }
-        engine.copy(text: text)
-    }
-
-    func copyGrammarKind(_ kind: GrammarKind) {
-        engine.applyGrammarKind(kind)
-        guard let text = GrammarSuggestions.body(in: appState.grammarSuggestions, matching: kind) else { return }
-        engine.copy(text: text)
-    }
-
-    /// Pins without dismissing and flashes the row check for the same beat
-    /// the footer label used to show. Shared by search turns and both
-    /// suggestion rows.
-    func pinRowFlash(key: String, text: String?) {
-        guard let text else { return }
-        engine.pin(text: text)
-        appState.pinnedRow = key
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.9) {
-            if appState.pinnedRow == key {
-                appState.pinnedRow = nil
-            }
-        }
     }
 
     /// Short label for the "Try with [X]" button. Takes the first word of the

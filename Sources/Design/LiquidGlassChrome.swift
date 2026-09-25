@@ -17,7 +17,7 @@ enum LiquidGlassChrome {
     /// still swaps to the opaque plate.
     static func prepareWindowSlab(_ glass: NSGlassEffectView, interactive: Bool = false) {
         glass.style = .regular
-        glass.tintColor = BeruColor.glassTintNSColor
+        glass.tintColor = EnhancifyColor.glassTintNSColor
         let setter = NSSelectorFromString("setEffectIsInteractive:")
         guard glass.responds(to: setter) else { return }
         glass.setValue(interactive, forKey: "effectIsInteractive")

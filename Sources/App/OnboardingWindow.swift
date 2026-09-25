@@ -13,8 +13,8 @@ final class OnboardingWindowController: NSWindowController, NSWindowDelegate {
             contentRect: NSRect(
                 x: 0,
                 y: 0,
-                width: BeruMetrics.onboardingWidth,
-                height: BeruMetrics.onboardingHeight
+                width: EnhancifyMetrics.onboardingWidth,
+                height: EnhancifyMetrics.onboardingHeight
             ),
             styleMask: [.titled, .closable, .fullSizeContentView],
             backing: .buffered,
@@ -25,7 +25,7 @@ final class OnboardingWindowController: NSWindowController, NSWindowDelegate {
         window.titlebarAppearsTransparent = true
         window.isReleasedWhenClosed = false
         window.isOpaque = true
-        window.backgroundColor = BeruColor.canvasNSColor
+        window.backgroundColor = EnhancifyColor.canvasNSColor
         window.center()
         self.init(window: window)
         self.onOpenPanel = onOpenPanel
@@ -38,7 +38,7 @@ final class OnboardingWindowController: NSWindowController, NSWindowDelegate {
     func show() {
         restoredAccessory = false
         window?.contentView = NSHostingView(rootView: GetStartedView(controller: self))
-        window?.backgroundColor = BeruColor.canvasNSColor
+        window?.backgroundColor = EnhancifyColor.canvasNSColor
         NSApp.setActivationPolicy(.regular)
         window?.appearance = NSApp.effectiveAppearance
         window?.makeKeyAndOrderFront(nil)
@@ -66,7 +66,7 @@ final class OnboardingWindowController: NSWindowController, NSWindowDelegate {
     }
 
     /// Get Started is key, so the global hotkey can miss. Swallow the live
-    /// invoke shortcut here and treat it like tapping Start Beru.
+    /// invoke shortcut here and treat it like tapping Start Enhancify.
     private func installShortcutMonitor() {
         guard shortcutMonitor == nil else { return }
         shortcutMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
@@ -85,7 +85,7 @@ final class OnboardingWindowController: NSWindowController, NSWindowDelegate {
 
     private func matchesInvokeShortcut(_ event: NSEvent) -> Bool {
         guard let pressed = KeyboardShortcuts.Shortcut(event: event) else { return false }
-        let expected = KeyboardShortcuts.getShortcut(for: .invokeBeru)
+        let expected = KeyboardShortcuts.getShortcut(for: .invokeEnhancify)
             ?? KeyboardShortcuts.Shortcut(.p, modifiers: [.control, .option, .command])
         return pressed == expected
     }
@@ -105,7 +105,7 @@ final class OnboardingWindowController: NSWindowController, NSWindowDelegate {
 private enum GetStartedStep: Int, CaseIterable {
     case welcome
     case accessibility
-    case startBeru
+    case startEnhancify
 }
 
 struct GetStartedView: View {
@@ -133,19 +133,19 @@ struct GetStartedView: View {
                 switch step {
                 case .welcome: welcome
                 case .accessibility: accessibility
-                case .startBeru: startBeru
+                case .startEnhancify: startEnhancify
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .padding(.horizontal, BeruSpace.xl)
+            .padding(.horizontal, EnhancifySpace.xl)
             .id(step)
             .transition(stepTransition)
 
             stepDots
-                .padding(.bottom, BeruSpace.lg)
+                .padding(.bottom, EnhancifySpace.lg)
         }
-        .frame(width: BeruMetrics.onboardingWidth, height: BeruMetrics.onboardingHeight)
-        .background(BeruColor.canvas)
+        .frame(width: EnhancifyMetrics.onboardingWidth, height: EnhancifyMetrics.onboardingHeight)
+        .background(EnhancifyColor.canvas)
         .animation(motion, value: step)
         .animation(motion, value: isTrusted)
         .task {
@@ -157,7 +157,7 @@ struct GetStartedView: View {
     }
 
     private var motion: Animation? {
-        a11y.reduceMotion ? nil : .easeInOut(duration: BeruMotion.stepCrossfade)
+        a11y.reduceMotion ? nil : .easeInOut(duration: EnhancifyMotion.stepCrossfade)
     }
 
     private var stepTransition: AnyTransition {
@@ -165,15 +165,15 @@ struct GetStartedView: View {
     }
 
     private var stepDots: some View {
-        HStack(spacing: BeruSpace.xs) {
+        HStack(spacing: EnhancifySpace.xs) {
             ForEach(GetStartedStep.allCases, id: \.rawValue) { item in
                 Capsule()
-                    .fill(item == step ? BeruColor.accent : BeruColor.textSecondary.opacity(0.28))
+                    .fill(item == step ? EnhancifyColor.accent : EnhancifyColor.textSecondary.opacity(0.28))
                     .frame(
                         width: item == step
-                            ? BeruMetrics.onboardingDotWidth
-                            : BeruMetrics.onboardingDotHeight,
-                        height: BeruMetrics.onboardingDotHeight
+                            ? EnhancifyMetrics.onboardingDotWidth
+                            : EnhancifyMetrics.onboardingDotHeight,
+                        height: EnhancifyMetrics.onboardingDotHeight
                     )
                     .animation(motion, value: item == step)
             }
@@ -187,11 +187,11 @@ struct GetStartedView: View {
             title: "Get started with Enhancify",
             body: "Enhancify lives in your menu bar. Select text in any app, press the shortcut, and improve it instantly. Fix grammar, refine prompts, write replies, or ask questions."
         ) {
-            VStack(spacing: BeruSpace.lg) {
-                HStack(spacing: BeruSpace.xxs) {
-                    BeruChip(icon: "wand-sparkles", title: "Fix grammar")
-                    BeruChip(icon: "sparkles", title: "Refine prompts")
-                    BeruChip(icon: "messages-square", title: "Write replies")
+            VStack(spacing: EnhancifySpace.lg) {
+                HStack(spacing: EnhancifySpace.xxs) {
+                    EnhancifyChip(icon: "wand-sparkles", title: "Fix grammar")
+                    EnhancifyChip(icon: "sparkles", title: "Refine prompts")
+                    EnhancifyChip(icon: "messages-square", title: "Write replies")
                 }
                 OnboardContinueButton("Continue") { step = .accessibility }
             }
@@ -203,10 +203,10 @@ struct GetStartedView: View {
             title: "Allow Accessibility",
             body: "Enhancify needs Accessibility access to read and replace selected text in other apps. You can enable it from System Settings."
         ) {
-            VStack(spacing: BeruSpace.sm) {
+            VStack(spacing: EnhancifySpace.sm) {
                 if isTrusted {
                     SettingsStatusBadge(title: "Accessibility is on", isPositive: true)
-                    OnboardContinueButton("Continue") { step = .startBeru }
+                    OnboardContinueButton("Continue") { step = .startEnhancify }
                 } else {
                     OnboardContinueButton("Open System Settings") {
                         // Same conditional as Settings → Permissions: the system
@@ -216,24 +216,24 @@ struct GetStartedView: View {
                             Permissions.openAccessibilitySettings()
                         }
                     }
-                    BeruButton(title: "Continue", variant: .pill, size: .regular) {
-                        step = .startBeru
+                    EnhancifyButton(title: "Continue", variant: .pill, size: .regular) {
+                        step = .startEnhancify
                     }
                     Text("You can continue now and grant access later.")
-                        .font(BeruType.footnote)
-                        .foregroundStyle(BeruColor.textTertiary)
+                        .font(EnhancifyType.footnote)
+                        .foregroundStyle(EnhancifyColor.textTertiary)
                 }
             }
         }
     }
 
-    private var startBeru: some View {
+    private var startEnhancify: some View {
         stepLayout(
             title: "Start Enhancify",
             body: "Press the shortcut to open Enhancify anytime, right from the app you're working in."
         ) {
-            VStack(spacing: BeruSpace.sm) {
-                BeruKbd(text: shortcutLabel)
+            VStack(spacing: EnhancifySpace.sm) {
+                EnhancifyKbd(text: shortcutLabel)
                 OnboardContinueButton("Start Enhancify") {
                     controller?.finishAndOpenPanel()
                 }
@@ -242,7 +242,7 @@ struct GetStartedView: View {
     }
 
     private var shortcutLabel: String {
-        KeyboardShortcuts.getShortcut(for: .invokeBeru)?.description ?? "⌃⌥⌘P"
+        KeyboardShortcuts.getShortcut(for: .invokeEnhancify)?.description ?? "⌃⌥⌘P"
     }
 
     private func stepLayout<Footer: View>(
@@ -251,35 +251,35 @@ struct GetStartedView: View {
         @ViewBuilder footer: () -> Footer
     ) -> some View {
         VStack(spacing: 0) {
-            Spacer(minLength: BeruSpace.sm)
-            VStack(spacing: BeruSpace.lg) {
+            Spacer(minLength: EnhancifySpace.sm)
+            VStack(spacing: EnhancifySpace.lg) {
                 Image("BrandMark")
                     .resizable()
                     .scaledToFit()
-                    .frame(width: BeruMetrics.brandOnboarding, height: BeruMetrics.brandOnboarding)
-                    .clipShape(BeruRadius.shape(BeruRadius.lg))
+                    .frame(width: EnhancifyMetrics.brandOnboarding, height: EnhancifyMetrics.brandOnboarding)
+                    .clipShape(EnhancifyRadius.shape(EnhancifyRadius.lg))
                     .accessibilityHidden(true)
                 Text(title)
-                    .font(BeruType.heroTitle)
-                    .foregroundStyle(BeruColor.textPrimary)
+                    .font(EnhancifyType.heroTitle)
+                    .foregroundStyle(EnhancifyColor.textPrimary)
                     .multilineTextAlignment(.center)
                 Text(body)
-                    .beruPrintedText()
-                    .foregroundStyle(BeruColor.textSecondary)
+                    .enhancifyPrintedText()
+                    .foregroundStyle(EnhancifyColor.textSecondary)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
-                    .frame(maxWidth: BeruMetrics.onboardingBodyWidth)
+                    .frame(maxWidth: EnhancifyMetrics.onboardingBodyWidth)
                 footer()
-                    .padding(.top, BeruSpace.xxs)
+                    .padding(.top, EnhancifySpace.xxs)
             }
-            Spacer(minLength: BeruSpace.sm)
+            Spacer(minLength: EnhancifySpace.sm)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 
 /// The onboarding CTA. Used to be a system `.borderedProminent` in system blue,
-/// which made this the only surface in Beru not painted in the brand accent.
+/// which made this the only surface in Enhancify not painted in the brand accent.
 private struct OnboardContinueButton: View {
     let title: String
     var prominent: Bool = true
@@ -299,7 +299,7 @@ private struct OnboardContinueButton: View {
     }
 
     var body: some View {
-        BeruButton(
+        EnhancifyButton(
             title: title,
             variant: prominent ? .primary : .pill,
             size: .large,

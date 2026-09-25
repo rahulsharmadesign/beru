@@ -69,7 +69,7 @@ final class DropdownPopup: NSPanel {
         // The opaque `panelSolid` card it used to draw read as a grey plate
         // against the newly translucent panel.
         let glass = NSGlassEffectView(frame: NSRect(origin: .zero, size: size))
-        glass.cornerRadius = BeruRadius.sm2
+        glass.cornerRadius = EnhancifyRadius.sm2
         glass.clipsToBounds = true
         LiquidGlassChrome.prepareWindowSlab(glass)
         contentView = glass
@@ -81,16 +81,16 @@ final class DropdownPopup: NSPanel {
             let anchorScreen = window.convertToScreen(anchor.convert(anchor.bounds, to: nil))
             var origin = NSPoint(
                 x: anchorScreen.minX,
-                y: anchorScreen.minY - size.height - BeruSpace.xxs
+                y: anchorScreen.minY - size.height - EnhancifySpace.xxs
             )
             if let screen = window.screen ?? NSScreen.main {
                 let visible = screen.visibleFrame
                 origin.x = min(
-                    max(origin.x, visible.minX + BeruSpace.sm),
-                    visible.maxX - size.width - BeruSpace.sm
+                    max(origin.x, visible.minX + EnhancifySpace.sm),
+                    visible.maxX - size.width - EnhancifySpace.sm
                 )
                 if origin.y < visible.minY {
-                    origin.y = anchorScreen.maxY + BeruSpace.xxs
+                    origin.y = anchorScreen.maxY + EnhancifySpace.xxs
                 }
             }
             setFrame(NSRect(origin: origin, size: size), display: true)
@@ -129,32 +129,32 @@ private struct DropdownPopupContent: View {
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
     var body: some View {
-        VStack(alignment: .leading, spacing: BeruSpace.hair) {
+        VStack(alignment: .leading, spacing: EnhancifySpace.hair) {
             ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
                 if item.isSeparator {
                     Rectangle()
-                        .fill(BeruColor.border)
-                        .frame(height: BeruMetrics.hairline)
-                        .padding(.vertical, BeruSpace.xxs)
+                        .fill(EnhancifyColor.border)
+                        .frame(height: EnhancifyMetrics.hairline)
+                        .padding(.vertical, EnhancifySpace.xxs)
                 } else {
                     Button {
                         pick(index)
                     } label: {
-                        HStack(spacing: BeruSpace.sm) {
-                            BeruIcon(name: "check", size: BeruMetrics.iconSizeDense)
-                                .foregroundStyle(BeruColor.accent)
+                        HStack(spacing: EnhancifySpace.sm) {
+                            EnhancifyIcon(name: "check", size: EnhancifyMetrics.iconSizeDense)
+                                .foregroundStyle(EnhancifyColor.accent)
                                 .opacity(item.isOn ? 1 : 0)
                             Text(item.title)
-                                .font(BeruType.control)
-                                .foregroundStyle(item.isEnabled ? BeruColor.textPrimary : BeruColor.textTertiary)
+                                .font(EnhancifyType.control)
+                                .foregroundStyle(item.isEnabled ? EnhancifyColor.textPrimary : EnhancifyColor.textTertiary)
                                 .lineLimit(1)
                             Spacer(minLength: 0)
                         }
-                        .padding(.horizontal, BeruSpace.sm)
-                        .frame(minHeight: BeruMetrics.pillHeightSm, alignment: .leading)
+                        .padding(.horizontal, EnhancifySpace.sm)
+                        .frame(minHeight: EnhancifyMetrics.pillHeightSm, alignment: .leading)
                         .background {
-                            BeruRadius.shape(BeruRadius.sm)
-                                .fill(hovered == index ? AnyShapeStyle(BeruColor.hoverFill) : AnyShapeStyle(Color.clear))
+                            EnhancifyRadius.shape(EnhancifyRadius.sm)
+                                .fill(hovered == index ? AnyShapeStyle(EnhancifyColor.hoverFill) : AnyShapeStyle(Color.clear))
                         }
                         .contentShape(Rectangle())
                     }
@@ -164,19 +164,19 @@ private struct DropdownPopupContent: View {
                 }
             }
         }
-        .padding(BeruSpace.xs)
-        .frame(maxWidth: BeruMetrics.menuDropdownWidth, alignment: .leading)
+        .padding(EnhancifySpace.xs)
+        .frame(maxWidth: EnhancifyMetrics.menuDropdownWidth, alignment: .leading)
         .fixedSize(horizontal: true, vertical: false)
         .background {
             // On the glass slab the row list paints nothing — the refraction
             // is the surface. Reduce Transparency has no glass to sit on, so
             // it keeps the opaque plate and the hairline that defines it.
             if reduceTransparency {
-                BeruRadius.shape(BeruRadius.sm2)
-                    .fill(BeruColor.panelSolid)
+                EnhancifyRadius.shape(EnhancifyRadius.sm2)
+                    .fill(EnhancifyColor.panelSolid)
                     .overlay {
-                        BeruRadius.shape(BeruRadius.sm2)
-                            .strokeBorder(BeruColor.border, lineWidth: BeruMetrics.hairline)
+                        EnhancifyRadius.shape(EnhancifyRadius.sm2)
+                            .strokeBorder(EnhancifyColor.border, lineWidth: EnhancifyMetrics.hairline)
                     }
             }
         }

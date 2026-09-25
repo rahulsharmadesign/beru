@@ -7,37 +7,37 @@ import SwiftUI
 struct SettingsField: View {
     let placeholder: String
     @Binding var text: String
-    var width: CGFloat = BeruMetrics.fieldWidth
+    var width: CGFloat = EnhancifyMetrics.fieldWidth
     var alignment: TextAlignment = .leading
     var leadingIcon: String? = nil
     @FocusState private var focused: Bool
 
     var body: some View {
-        HStack(spacing: BeruSpace.xs) {
+        HStack(spacing: EnhancifySpace.xs) {
             if let leadingIcon {
-                BeruIcon(name: leadingIcon, size: BeruMetrics.iconSize)
-                    .foregroundStyle(BeruColor.textSecondary)
+                EnhancifyIcon(name: leadingIcon, size: EnhancifyMetrics.iconSize)
+                    .foregroundStyle(EnhancifyColor.textSecondary)
             }
             TextField(placeholder, text: $text)
                 .textFieldStyle(.plain)
-                .font(BeruType.control)
+                .font(EnhancifyType.control)
                 .multilineTextAlignment(alignment)
                 .focused($focused)
         }
-        .padding(.horizontal, BeruSpace.sm)
-        .frame(width: width, height: BeruMetrics.fieldHeight, alignment: .leading)
+        .padding(.horizontal, EnhancifySpace.sm)
+        .frame(width: width, height: EnhancifyMetrics.fieldHeight, alignment: .leading)
         .background {
             Capsule()
-                .fill(BeruColor.subtleFill)
+                .fill(EnhancifyColor.subtleFill)
                 .overlay {
                     Capsule().strokeBorder(
-                        focused ? BeruColor.accent : BeruColor.border,
-                        lineWidth: BeruMetrics.hairline
+                        focused ? EnhancifyColor.accent : EnhancifyColor.border,
+                        lineWidth: EnhancifyMetrics.hairline
                     )
                 }
-                .shadow(color: focused ? BeruColor.focusGlow : .clear, radius: BeruMetrics.focusHalo)
+                .shadow(color: focused ? EnhancifyColor.focusGlow : .clear, radius: EnhancifyMetrics.focusHalo)
         }
-        .beruFocusEase(focused)
+        .enhancifyFocusEase(focused)
         .onTapGesture { focused = true }
     }
 }
@@ -46,12 +46,12 @@ struct SettingsField: View {
 struct SettingsSecretField: View {
     let placeholder: String
     @Binding var text: String
-    var width: CGFloat = BeruMetrics.fieldWidth
+    var width: CGFloat = EnhancifyMetrics.fieldWidth
     @State private var visible = false
     @FocusState private var focused: Bool
 
     var body: some View {
-        HStack(spacing: BeruSpace.xs) {
+        HStack(spacing: EnhancifySpace.xs) {
             Group {
                 if visible {
                     TextField(placeholder, text: $text)
@@ -60,67 +60,31 @@ struct SettingsSecretField: View {
                 }
             }
             .textFieldStyle(.plain)
-            .font(BeruType.mono)
+            .font(EnhancifyType.mono)
             .focused($focused)
             Button {
                 visible.toggle()
             } label: {
-                BeruIcon(name: visible ? "visibility_off" : "visibility", size: BeruMetrics.iconSize)
-                    .foregroundStyle(BeruColor.textSecondary)
+                EnhancifyIcon(name: visible ? "visibility_off" : "visibility", size: EnhancifyMetrics.iconSize)
+                    .foregroundStyle(EnhancifyColor.textSecondary)
             }
             .buttonStyle(.plain)
             .help(visible ? "Hide secret" : "Show secret")
             .accessibilityLabel(visible ? "Hide secret" : "Show secret")
         }
-        .padding(.horizontal, BeruSpace.sm)
-        .frame(width: width, height: BeruMetrics.fieldHeight)
+        .padding(.horizontal, EnhancifySpace.sm)
+        .frame(width: width, height: EnhancifyMetrics.fieldHeight)
         .background {
             Capsule()
-                .fill(BeruColor.subtleFill)
+                .fill(EnhancifyColor.subtleFill)
                 .overlay {
                     Capsule().strokeBorder(
-                        focused ? BeruColor.accent : BeruColor.border,
-                        lineWidth: BeruMetrics.hairline
+                        focused ? EnhancifyColor.accent : EnhancifyColor.border,
+                        lineWidth: EnhancifyMetrics.hairline
                     )
                 }
-                .shadow(color: focused ? BeruColor.focusGlow : .clear, radius: BeruMetrics.focusHalo)
+                .shadow(color: focused ? EnhancifyColor.focusGlow : .clear, radius: EnhancifyMetrics.focusHalo)
         }
-        .beruFocusEase(focused)
-    }
-}
-
-/// Haze search: Lucide glyph, plain field, clear round. Replaces
-/// `NSSearchField` so settings search paints like every other well.
-struct SettingsSearchField: View {
-    @Binding var text: String
-    var placeholder: String = "Search settings..."
-
-    var body: some View {
-        HStack(spacing: BeruSpace.xs) {
-            BeruIcon(name: "search", size: BeruMetrics.iconSize)
-                .foregroundStyle(BeruColor.textSecondary)
-            TextField(placeholder, text: $text)
-                .textFieldStyle(.plain)
-                .font(BeruType.search)
-            if !text.isEmpty {
-                Button { text = "" } label: {
-                    BeruIcon(name: "x", size: BeruMetrics.iconSizeDense)
-                        .foregroundStyle(BeruColor.textSecondary)
-                }
-                .buttonStyle(.plain)
-                .help("Clear search")
-                .accessibilityLabel("Clear search")
-            }
-        }
-        .padding(.horizontal, BeruSpace.sm)
-        .frame(height: BeruMetrics.fieldHeight)
-        .background {
-            Capsule()
-                .fill(BeruColor.subtleFill)
-                .overlay {
-                    Capsule().strokeBorder(BeruColor.border, lineWidth: BeruMetrics.hairline)
-                }
-        }
-        .accessibilityLabel(placeholder)
+        .enhancifyFocusEase(focused)
     }
 }

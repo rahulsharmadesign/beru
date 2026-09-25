@@ -9,7 +9,7 @@ import SwiftUI
 struct ComposerTextField: NSViewRepresentable {
     @Binding var text: String
     var isFocused: Bool
-    var font: NSFont = BeruType.bodyNSFont
+    var font: NSFont = EnhancifyType.bodyNSFont
     var maxLines: Int = 3
     var onSubmit: () -> Void
     /// Tab / Shift-Tab. Return true when the panel used it (Enhance ⇄
@@ -141,7 +141,7 @@ final class GrowingComposerTextView: NSTextView {
         drawsBackground = false
         backgroundColor = .clear
         textColor = .labelColor
-        insertionPointColor = BeruColor.accentNSColor
+        insertionPointColor = EnhancifyColor.accentNSColor
         isVerticallyResizable = true
         isHorizontallyResizable = false
         autoresizingMask = [.width]
@@ -158,7 +158,7 @@ final class GrowingComposerTextView: NSTextView {
         isAutomaticLinkDetectionEnabled = false
         isAutomaticDataDetectionEnabled = false
         isAutomaticTextCompletionEnabled = false
-        // Beru IS the writing tool here: a "Write with Siri" pill over this
+        // Enhancify IS the writing tool here: a "Write with Siri" pill over this
         // field is pure noise on top of the panel that already answers it.
         writingToolsBehavior = .none
     }

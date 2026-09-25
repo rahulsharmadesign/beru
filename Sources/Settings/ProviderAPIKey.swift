@@ -8,9 +8,9 @@ import Foundation
 /// Keychain only when the user edits the field.
 enum ProviderAPIKey {
     /// OpenAI-compatible hosts (Groq, OpenAI, OpenRouter, custom `/v1`).
-    static let environmentVariable = "BERU_API_KEY"
+    static let environmentVariable = "ENHANCIFY_API_KEY"
     /// Anthropic Messages API.
-    static let anthropicEnvironmentVariable = "BERU_ANTHROPIC_API_KEY"
+    static let anthropicEnvironmentVariable = "ENHANCIFY_ANTHROPIC_API_KEY"
 
     /// Trimmed non-empty value from `environment`, or nil.
     nonisolated static func fromEnvironment(

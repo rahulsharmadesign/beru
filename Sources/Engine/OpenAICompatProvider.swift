@@ -51,8 +51,15 @@ struct OpenAICompatProvider: LLMProvider {
 
     /// Remote OpenAI-compatible hosts must send a Bearer token. Loopback
     /// servers (Ollama, LM Studio) usually do not.
+    /// A key never travels over plain HTTP to a remote host: anyone on the
+    /// network path could read it.
     func applyAuthentication(to request: inout URLRequest) throws {
         if let key = resolvedAPIKey {
+            if request.url?.scheme?.lowercased() != "https", !isLoopback {
+                throw ProviderError.connectionFailed(
+                    "Use an https:// base URL for a remote server so your API key isn't sent unencrypted."
+                )
+            }
             request.setValue("Bearer \(key)", forHTTPHeaderField: "Authorization")
             return
         }
@@ -124,7 +131,6 @@ struct OpenAICompatProvider: LLMProvider {
         user: String,
         role: ModelRole,
         suppressThinking: Bool,
-        expectsRationale: Bool,
         actionID: String = ""
     ) -> [String: Any] {
         var body: [String: Any] = [
@@ -135,11 +141,7 @@ struct OpenAICompatProvider: LLMProvider {
             // seed, which makes even nonzero temperatures produce identical
             // output for identical input.
             "seed": Int.random(in: 0..<Int(Int32.max)),
-            "max_tokens": ProviderTuning.maxTokens(
-                for: role,
-                input: user,
-                expectsRationale: expectsRationale
-            ),
+            "max_tokens": ProviderTuning.maxTokens(for: role, input: user),
             "messages": [
                 ["role": "system", "content": system],
                 ["role": "user", "content": user]
@@ -164,7 +166,6 @@ struct OpenAICompatProvider: LLMProvider {
         system: String,
         user: String,
         role: ModelRole,
-        expectsRationale: Bool,
         actionID: String
     ) -> AsyncThrowingStream<StreamChunk, Error> {
         AsyncThrowingStream { continuation in
@@ -188,7 +189,6 @@ struct OpenAICompatProvider: LLMProvider {
                                 user: user,
                                 role: role,
                                 suppressThinking: suppressThinking,
-                                expectsRationale: expectsRationale,
                                 actionID: actionID
                             )
                         )

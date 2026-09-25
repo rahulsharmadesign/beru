@@ -11,10 +11,10 @@ enum SelectionLocator {
     /// position.
     ///
     /// Prefer passing the pre-capture `element` — once the panel is key, the
-    /// focused AX element is Beru itself and selection bounds disappear, which
+    /// focused AX element is Enhancify itself and selection bounds disappear, which
     /// used to fall back to the mouse and drift the panel downward each run.
     ///
-    /// When there is no selection and no element (clipboard, vault, dictation),
+    /// When there is no selection and no element (clipboard, dictation),
     /// we use a stable screen-center position instead of mouse location. Mouse
     /// location varies between invocations and causes the panel to "wander"
     /// across the screen — confusing when the user invokes from the menu bar
@@ -29,7 +29,7 @@ enum SelectionLocator {
         }
         // No selection anywhere — use a stable position in the upper-center of
         // the main screen. This keeps the panel in a predictable spot when
-        // invoked from the menu bar (Enhance Clipboard, Dictate, Vault) where
+        // invoked from the menu bar (Enhance Clipboard, Dictate) where
         // there is no text selection to anchor to.
         return stableMenuBarAnchor()
     }

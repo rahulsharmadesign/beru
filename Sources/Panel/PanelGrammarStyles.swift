@@ -7,7 +7,7 @@ import SwiftUI
 extension PanelView {
     var grammarStyleRow: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: BeruSpace.xs) {
+            HStack(spacing: EnhancifySpace.xs) {
                 ForEach(GrammarStyle.quick) { style in
                     PanelHitCapsule(
                         help: style == .english
@@ -40,7 +40,7 @@ extension PanelView {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .frame(height: BeruMetrics.pillHeightSm)
+        .frame(height: EnhancifyMetrics.pillHeightSm)
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
@@ -76,22 +76,22 @@ private struct GrammarStyleChip: View {
     let showsChevron: Bool
 
     var body: some View {
-        HStack(spacing: BeruSpace.xxs) {
+        HStack(spacing: EnhancifySpace.xxs) {
             Text(title)
-                .font(BeruType.captionMedium)
+                .font(EnhancifyType.captionMedium)
                 .lineLimit(1)
             if showsChevron {
-                BeruIcon(name: "chevron-down", size: BeruMetrics.iconSizeDense, strokeWidth: 2)
+                EnhancifyIcon(name: "chevron-down", size: EnhancifyMetrics.iconSizeDense, strokeWidth: 2)
             }
         }
-        .foregroundStyle(isSelected ? BeruColor.textPrimary : BeruColor.textSecondary)
-        .padding(.horizontal, BeruSpace.xs)
-        .frame(height: BeruMetrics.pillHeightSm)
+        .foregroundStyle(isSelected ? EnhancifyColor.textPrimary : EnhancifyColor.textSecondary)
+        .padding(.horizontal, EnhancifySpace.xs)
+        .frame(height: EnhancifyMetrics.pillHeightSm)
         // Outline, not fill: the tab row above uses a filled pill, so the two
         // levels read as different controls at a glance.
         .overlay {
             if isSelected {
-                Capsule().strokeBorder(BeruColor.strongBorder, lineWidth: BeruMetrics.hairline)
+                Capsule().strokeBorder(EnhancifyColor.strongBorder, lineWidth: EnhancifyMetrics.hairline)
             }
         }
         .contentShape(Capsule())

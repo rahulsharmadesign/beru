@@ -25,7 +25,7 @@ enum ProviderKind: String, CaseIterable, Codable {
     /// One-line quality caveat for the Settings row, or nil when the provider
     /// carries the full prompts. Apple on-device is the general-purpose ~3B
     /// base model — not the task-adapted models behind Apple's own Writing
-    /// Tools — so Beru serves it the simplified prompts and says so here, the
+    /// Tools — so Enhancify serves it the simplified prompts and says so here, the
     /// same honesty `ModelFit` gives a small Ollama model at pick time.
     var qualityCaption: String? {
         switch self {
@@ -47,7 +47,7 @@ enum ProviderKind: String, CaseIterable, Codable {
 /// - 14,400 requests/day
 /// - 6,000 tokens/minute
 ///
-/// For Beru's text enhancement use case, this is more than sufficient. Groq
+/// For Enhancify's text enhancement use case, this is more than sufficient. Groq
 /// retired `llama-3.3-70b-versatile` on 16 Aug 2026; `openai/gpt-oss-120b`
 /// is the production replacement.
 enum CompatibleAPIPreset: String, CaseIterable, Identifiable {

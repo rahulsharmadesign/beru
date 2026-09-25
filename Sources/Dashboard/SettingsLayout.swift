@@ -7,38 +7,9 @@ import SwiftUI
 struct SettingsHeaderRule: View {
     var body: some View {
         Rectangle()
-            .fill(BeruColor.border)
-            .frame(height: BeruMetrics.hairline)
+            .fill(EnhancifyColor.border)
+            .frame(height: EnhancifyMetrics.hairline)
             .frame(maxWidth: .infinity)
-    }
-}
-
-struct SettingsVRule: View {
-    var body: some View {
-        Rectangle()
-            .fill(BeruColor.border)
-            .frame(width: BeruMetrics.hairline)
-            .frame(maxHeight: .infinity)
-    }
-}
-
-/// Fixed sidebar + flexible detail. `HSplitView` collapses the detail pane on
-/// macOS when a child also asks for `maxWidth`.
-struct SettingsSplitView<Sidebar: View, Detail: View>: View {
-    var sidebarWidth: CGFloat = BeruMetrics.workspaceListWidth
-    @ViewBuilder var sidebar: Sidebar
-    @ViewBuilder var detail: Detail
-
-    var body: some View {
-        HStack(spacing: 0) {
-            sidebar
-                .frame(width: sidebarWidth)
-                .frame(maxHeight: .infinity)
-            SettingsVRule()
-            detail
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 
@@ -57,20 +28,20 @@ struct SettingsPage<Content: View>: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            VStack(alignment: .leading, spacing: BeruMetrics.headerContentSpacing) {
+            VStack(alignment: .leading, spacing: EnhancifyMetrics.headerContentSpacing) {
                 SettingsPageHeader(title: title, subtitle: subtitle, icon: icon)
                 SettingsHeaderRule()
             }
-            .padding(.bottom, BeruMetrics.headerContentSpacing)
+            .padding(.bottom, EnhancifyMetrics.headerContentSpacing)
             .fixedSize(horizontal: false, vertical: true)
             ScrollView {
                 // Explicit stack: a bare ViewBuilder lays sections out with
                 // zero gap, so wells would touch edge to edge.
-                VStack(alignment: .leading, spacing: BeruSpace.xl) {
+                VStack(alignment: .leading, spacing: EnhancifySpace.xl) {
                     content
                 }
-                .padding(.top, BeruMetrics.headerContentSpacing)
-                .padding(.bottom, BeruSpace.xxl)
+                .padding(.top, EnhancifyMetrics.headerContentSpacing)
+                .padding(.bottom, EnhancifySpace.xxl)
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
             .scrollBounceBehavior(.basedOnSize)
@@ -79,44 +50,11 @@ struct SettingsPage<Content: View>: View {
         }
         // One readable column, centered in the detail pane. Without the cap a
         // 1180pt window stretches every row to full bleed.
-        .frame(maxWidth: BeruMetrics.formMaxWidth, alignment: .leading)
+        .frame(maxWidth: EnhancifyMetrics.formMaxWidth, alignment: .leading)
         .frame(maxWidth: .infinity, alignment: .center)
-        .padding(.horizontal, BeruMetrics.contentPadding)
-        .padding(.top, BeruSpace.xl)
+        .padding(.horizontal, EnhancifyMetrics.contentPadding)
+        .padding(.top, EnhancifySpace.xl)
         .frame(maxHeight: .infinity, alignment: .top)
-    }
-}
-
-struct SettingsWorkspace<Content: View>: View {
-    let title: String
-    let subtitle: String
-    var icon: String?
-    var content: Content
-
-    init(
-        title: String,
-        subtitle: String = "",
-        icon: String? = nil,
-        @ViewBuilder content: () -> Content
-    ) {
-        self.title = title
-        self.subtitle = subtitle
-        self.icon = icon
-        self.content = content()
-    }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            SettingsPageHeader(title: title, subtitle: subtitle, icon: icon)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, BeruMetrics.workspaceChromeInset)
-                .padding(.top, BeruSpace.xl)
-                .padding(.bottom, BeruMetrics.headerContentSpacing)
-            SettingsHeaderRule()
-            content
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 }
 
@@ -126,30 +64,30 @@ struct SettingsPageHeader: View {
     var icon: String? = nil
 
     var body: some View {
-        HStack(alignment: .center, spacing: BeruSpace.md) {
+        HStack(alignment: .center, spacing: EnhancifySpace.md) {
             if let icon {
                 // Outlined 28pt tile, accent glyph — same size as the sidebar
                 // squircle, so the page announces its route before its title.
                 ZStack {
-                    BeruRadius.shape(BeruRadius.sm)
+                    EnhancifyRadius.shape(EnhancifyRadius.sm)
                         .fill(Color.clear)
                         .overlay {
-                            BeruRadius.shape(BeruRadius.sm)
-                                .strokeBorder(BeruColor.strongBorder, lineWidth: BeruMetrics.hairline)
+                            EnhancifyRadius.shape(EnhancifyRadius.sm)
+                                .strokeBorder(EnhancifyColor.strongBorder, lineWidth: EnhancifyMetrics.hairline)
                         }
-                    BeruIcon(name: icon, size: BeruMetrics.iconSize)
-                        .foregroundStyle(BeruColor.accent)
+                    EnhancifyIcon(name: icon, size: EnhancifyMetrics.iconSize)
+                        .foregroundStyle(EnhancifyColor.accent)
                 }
-                .frame(width: BeruMetrics.hitTarget, height: BeruMetrics.hitTarget)
+                .frame(width: EnhancifyMetrics.hitTarget, height: EnhancifyMetrics.hitTarget)
             }
-            VStack(alignment: .leading, spacing: BeruSpace.xxs) {
+            VStack(alignment: .leading, spacing: EnhancifySpace.xxs) {
                 Text(title)
-                    .font(BeruType.pageTitle)
-                    .foregroundStyle(BeruColor.textPrimary)
+                    .font(EnhancifyType.pageTitle)
+                    .foregroundStyle(EnhancifyColor.textPrimary)
                 if !subtitle.isEmpty {
                     Text(subtitle)
-                        .font(BeruType.pageSubtitle)
-                        .foregroundStyle(BeruColor.textSecondary)
+                        .font(EnhancifyType.pageSubtitle)
+                        .foregroundStyle(EnhancifyColor.textSecondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
@@ -184,25 +122,25 @@ struct SettingsSection<Content: View>: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: BeruSpace.sm) {
-            VStack(alignment: .leading, spacing: BeruSpace.xxs) {
+        VStack(alignment: .leading, spacing: EnhancifySpace.sm) {
+            VStack(alignment: .leading, spacing: EnhancifySpace.xxs) {
                 Text(title)
-                    .font(BeruType.section)
-                    .foregroundStyle(BeruColor.textPrimary)
+                    .font(EnhancifyType.section)
+                    .foregroundStyle(EnhancifyColor.textPrimary)
                 if let subtitle, !subtitle.isEmpty {
                     Text(subtitle)
-                        .font(BeruType.footnote)
-                        .foregroundStyle(BeruColor.textSecondary)
+                        .font(EnhancifyType.footnote)
+                        .foregroundStyle(EnhancifyColor.textSecondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
             // Grouped rows sit in a Haze well so every page — form pages and
             // workspace inspectors alike — reads as one card language.
-            VStack(alignment: .leading, spacing: BeruSpace.md) {
+            VStack(alignment: .leading, spacing: EnhancifySpace.md) {
                 content
             }
-            .padding(.horizontal, BeruSpace.md)
-            .padding(.vertical, BeruSpace.sm)
+            .padding(.horizontal, EnhancifySpace.md)
+            .padding(.vertical, EnhancifySpace.sm)
             .frame(maxWidth: .infinity, alignment: .leading)
             .modifier(SectionWell(tone: tone))
         }
@@ -219,11 +157,11 @@ private struct SectionWell: ViewModifier {
             content.settingsModule()
         case .danger:
             content.background {
-                BeruRadius.shape(BeruRadius.md)
-                    .fill(BeruColor.dangerFill)
+                EnhancifyRadius.shape(EnhancifyRadius.md)
+                    .fill(EnhancifyColor.dangerFill)
                     .overlay {
-                        BeruRadius.shape(BeruRadius.md)
-                            .strokeBorder(BeruColor.dangerBorder, lineWidth: BeruMetrics.hairline)
+                        EnhancifyRadius.shape(EnhancifyRadius.md)
+                            .strokeBorder(EnhancifyColor.dangerBorder, lineWidth: EnhancifyMetrics.hairline)
                     }
             }
         }
@@ -235,8 +173,8 @@ struct SettingsFootnote: View {
 
     var body: some View {
         Text(text)
-            .font(BeruType.footnote)
-            .foregroundStyle(BeruColor.textSecondary)
+            .font(EnhancifyType.footnote)
+            .foregroundStyle(EnhancifyColor.textSecondary)
             .fixedSize(horizontal: false, vertical: true)
     }
 }
@@ -255,14 +193,14 @@ struct SettingsRow<Control: View>: View {
     }
 
     private var labels: some View {
-        VStack(alignment: .leading, spacing: BeruSpace.hair) {
+        VStack(alignment: .leading, spacing: EnhancifySpace.hair) {
             Text(title)
-                .font(BeruType.rowTitle)
-                .foregroundStyle(BeruColor.textPrimary)
+                .font(EnhancifyType.rowTitle)
+                .foregroundStyle(EnhancifyColor.textPrimary)
             if let caption, !caption.isEmpty {
                 Text(caption)
-                    .font(BeruType.footnote)
-                    .foregroundStyle(BeruColor.textSecondary)
+                    .font(EnhancifyType.footnote)
+                    .foregroundStyle(EnhancifyColor.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
@@ -271,10 +209,10 @@ struct SettingsRow<Control: View>: View {
     private var horizontalLayout: some View {
         // Centered: the label block rides the control's vertical center, so a
         // title-only row reads as one line and captioned rows stay balanced.
-        HStack(alignment: .center, spacing: BeruSpace.lg) {
+        HStack(alignment: .center, spacing: EnhancifySpace.lg) {
             labels
-                .frame(minWidth: 0, maxWidth: BeruMetrics.labelMaxWidth, alignment: .leading)
-            Spacer(minLength: BeruSpace.sm)
+                .frame(minWidth: 0, maxWidth: EnhancifyMetrics.labelMaxWidth, alignment: .leading)
+            Spacer(minLength: EnhancifySpace.sm)
             control
                 .layoutPriority(1)
                 .fixedSize(horizontal: true, vertical: false)
@@ -282,7 +220,7 @@ struct SettingsRow<Control: View>: View {
     }
 
     private var verticalLayout: some View {
-        VStack(alignment: .leading, spacing: BeruSpace.xs) {
+        VStack(alignment: .leading, spacing: EnhancifySpace.xs) {
             labels
             // Leading, like System Settings' stacked rows: a trailing-aligned
             // control under a left label reads detached.
@@ -292,86 +230,6 @@ struct SettingsRow<Control: View>: View {
     }
 }
 
-struct SettingsWorkspaceToolbar<Content: View>: View {
-    @ViewBuilder var content: Content
-
-    var body: some View {
-        VStack(spacing: 0) {
-            ViewThatFits(in: .horizontal) {
-                toolbarContent
-                ScrollView(.horizontal, showsIndicators: false) {
-                    toolbarContent
-                }
-            }
-            .padding(.horizontal, BeruMetrics.workspaceChromeInset)
-            .padding(.vertical, BeruMetrics.workspaceChromePadding)
-            .frame(maxWidth: .infinity, minHeight: BeruMetrics.workspaceChromeMinHeight, alignment: .leading)
-            .fixedSize(horizontal: false, vertical: true)
-            SettingsHeaderRule()
-        }
-    }
-
-    private var toolbarContent: some View {
-        HStack(alignment: .center, spacing: BeruSpace.sm) {
-            content
-        }
-    }
-}
-
-struct SettingsListFooter<Content: View>: View {
-    @ViewBuilder var content: Content
-
-    var body: some View {
-        VStack(spacing: 0) {
-            SettingsHeaderRule()
-            HStack(spacing: BeruSpace.xs) {
-                content
-                Spacer(minLength: 0)
-            }
-            .buttonStyle(.plain)
-            .foregroundStyle(BeruColor.textPrimary)
-            .padding(.horizontal, BeruMetrics.workspaceChromeInset)
-            .padding(.vertical, BeruMetrics.workspaceChromePadding)
-            .frame(maxWidth: .infinity, minHeight: BeruMetrics.workspaceChromeMinHeight, alignment: .leading)
-            .fixedSize(horizontal: false, vertical: true)
-            .background(DashboardChrome.sidebarSurface)
-        }
-        .fixedSize(horizontal: false, vertical: true)
-    }
-}
-
 extension View {
-    func settingsWorkspacePane() -> some View {
-        frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-    }
 
-    func settingsSidebarList() -> some View {
-        listStyle(.sidebar)
-            .scrollContentBackground(.hidden)
-            .contentMargins(.horizontal, BeruMetrics.workspaceListInset, for: .scrollContent)
-    }
-
-    /// Inset list-row highlight so selection pills do not touch column edges.
-    func settingsListRowBackground(
-        isHighlighted: Bool,
-        fill: some ShapeStyle = BeruColor.accent
-    ) -> some View {
-        listRowBackground(
-            BeruRadius.shape(BeruRadius.md)
-                .fill(isHighlighted ? AnyShapeStyle(fill) : AnyShapeStyle(Color.clear))
-                .padding(.horizontal, BeruMetrics.workspaceListInset)
-        )
-    }
-
-    func settingsEditorSurface() -> some View {
-        padding(BeruSpace.sm)
-            .background {
-                BeruRadius.shape(BeruRadius.md)
-                    .fill(BeruColor.input)
-                    .overlay {
-                        BeruRadius.shape(BeruRadius.md)
-                            .strokeBorder(BeruColor.border, lineWidth: BeruMetrics.hairline)
-                    }
-            }
-    }
 }

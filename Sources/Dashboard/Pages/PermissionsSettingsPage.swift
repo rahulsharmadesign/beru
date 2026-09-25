@@ -27,7 +27,7 @@ struct PermissionsSettingsTab: View {
                 isPositive: a11y.isAccessibilityTrusted,
                 message: a11y.isAccessibilityTrusted
                     ? "Required to read and replace text in other apps."
-                    : "Required to read and replace text in other apps. If the toggle won't stick: quit Enhancify, keep only one copy of the app in /Applications, then remove (–) and re-add (+) that copy. Still stuck: run `tccutil reset Accessibility com.rahul.beru` in Terminal and grant again."
+                    : "Required to read and replace text in other apps. If the toggle won't stick: quit Enhancify, keep only one copy of the app in /Applications, then remove (–) and re-add (+) that copy. Still stuck: run `tccutil reset Accessibility com.rahul.enhancify` in Terminal and grant again."
             ) {
                 if a11y.isAccessibilityTrusted {
                     SettingsPillButton(title: "Open") {

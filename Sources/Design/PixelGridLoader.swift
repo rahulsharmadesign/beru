@@ -3,7 +3,7 @@ import SwiftUI
 // Pixel-grid loading furniture for long-running work: a 3×3 field of tiny
 // cells whose staggered delays draw a wavefront (chevron sweep, or a comet
 // lapping the perimeter), a shimmering label, and a live elapsed timer.
-// Same contract as BeruLoader: computed per frame from wall-clock time,
+// Same contract as EnhancifyLoader: computed per frame from wall-clock time,
 // frame-rate independent, Reduce Motion freezes to the dim state.
 
 /// Which cells lead the wave.
@@ -26,13 +26,13 @@ enum PixelGridVariant {
             return (0..<9).map { index in
                 let row = index / 3
                 let column = index % 3
-                return Double(column + abs(row - 1)) * BeruMetrics.pixelStep
+                return Double(column + abs(row - 1)) * EnhancifyMetrics.pixelStep
             }
         case .orbit:
             let ring: [Int] = [0, 1, 2, 5, 8, 7, 6, 3]
             return (0..<9).map { index in
                 guard let lap = ring.firstIndex(of: index) else { return nil }
-                return Double(lap) * BeruMetrics.pixelOrbitStep
+                return Double(lap) * EnhancifyMetrics.pixelOrbitStep
             }
         }
     }
@@ -41,16 +41,16 @@ enum PixelGridVariant {
 /// The 3×3 cell field. Roughly glyph-sized: 14pt across.
 struct PixelGridLoader: View {
     var variant: PixelGridVariant = .drive
-    var tint: Color = BeruColor.textSecondary
+    var tint: Color = EnhancifyColor.textSecondary
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         let delays = variant.delays()
         TimelineView(.animation(minimumInterval: 1 / 60, paused: reduceMotion)) { context in
-            VStack(spacing: BeruMetrics.pixelGap) {
+            VStack(spacing: EnhancifyMetrics.pixelGap) {
                 ForEach(0..<3, id: \.self) { row in
-                    HStack(spacing: BeruMetrics.pixelGap) {
+                    HStack(spacing: EnhancifyMetrics.pixelGap) {
                         ForEach(0..<3, id: \.self) { column in
                             let index = row * 3 + column
                             CircleCapCell(round: variant.round, tint: tint)
@@ -64,14 +64,14 @@ struct PixelGridLoader: View {
     }
 
     private func cellOpacity(_ delay: Double?, at date: Date) -> Double {
-        guard let delay else { return BeruMetrics.pixelDimIdle }
-        if reduceMotion { return BeruMetrics.pixelDimRest }
-        let cycle = BeruMetrics.pixelCycle
+        guard let delay else { return EnhancifyMetrics.pixelDimIdle }
+        if reduceMotion { return EnhancifyMetrics.pixelDimRest }
+        let cycle = EnhancifyMetrics.pixelCycle
         let phase = (date.timeIntervalSinceReferenceDate - delay)
             .truncatingRemainder(dividingBy: cycle) / cycle
         // Half-cosine pulse: dim at the seam, full brightness mid-cycle.
         let pulse = 0.5 - 0.5 * cos(phase * 2 * .pi)
-        return BeruMetrics.pixelDimRest + (1 - BeruMetrics.pixelDimRest) * pulse
+        return EnhancifyMetrics.pixelDimRest + (1 - EnhancifyMetrics.pixelDimRest) * pulse
     }
 }
 
@@ -80,9 +80,9 @@ private struct CircleCapCell: View {
     let tint: Color
 
     var body: some View {
-        RoundedRectangle(cornerRadius: round ? BeruMetrics.pixelCell / 2 : 1, style: .continuous)
+        RoundedRectangle(cornerRadius: round ? EnhancifyMetrics.pixelCell / 2 : 1, style: .continuous)
             .fill(tint)
-            .frame(width: BeruMetrics.pixelCell, height: BeruMetrics.pixelCell)
+            .frame(width: EnhancifyMetrics.pixelCell, height: EnhancifyMetrics.pixelCell)
     }
 }
 
@@ -94,25 +94,25 @@ struct ShimmerLabel: View {
 
     var body: some View {
         Text(text)
-            .font(BeruType.footnoteMedium)
-            .foregroundStyle(BeruColor.textSecondary)
+            .font(EnhancifyType.footnoteMedium)
+            .foregroundStyle(EnhancifyColor.textSecondary)
             .overlay {
                 if !reduceMotion {
                     TimelineView(.animation(minimumInterval: 1 / 30)) { context in
                         GeometryReader { geo in
-                            let sweep = geo.size.width + BeruSpace.xl
+                            let sweep = geo.size.width + EnhancifySpace.xl
                             LinearGradient(
-                                colors: [.clear, BeruColor.textPrimary, .clear],
+                                colors: [.clear, EnhancifyColor.textPrimary, .clear],
                                 startPoint: .leading,
                                 endPoint: .trailing
                             )
-                            .frame(width: BeruSpace.xl)
-                            .offset(x: offset(at: context.date, sweep: sweep) - BeruSpace.xl)
+                            .frame(width: EnhancifySpace.xl)
+                            .offset(x: offset(at: context.date, sweep: sweep) - EnhancifySpace.xl)
                         }
                     }
                     .mask {
                         Text(text)
-                            .font(BeruType.footnoteMedium)
+                            .font(EnhancifyType.footnoteMedium)
                     }
                 }
             }
@@ -120,7 +120,7 @@ struct ShimmerLabel: View {
 
     private func offset(at date: Date, sweep: Double) -> Double {
         let t = date.timeIntervalSinceReferenceDate
-            .truncatingRemainder(dividingBy: BeruMetrics.shimmerPeriod) / BeruMetrics.shimmerPeriod
+            .truncatingRemainder(dividingBy: EnhancifyMetrics.shimmerPeriod) / EnhancifyMetrics.shimmerPeriod
         return t * sweep
     }
 }
@@ -133,8 +133,8 @@ struct ElapsedTimer: View {
     var body: some View {
         TimelineView(.periodic(from: .now, by: 0.1)) { context in
             Text(Self.format(context.date.timeIntervalSince(startedAt)))
-                .font(BeruType.footnote.monospacedDigit())
-                .foregroundStyle(BeruColor.textTertiary)
+                .font(EnhancifyType.footnote.monospacedDigit())
+                .foregroundStyle(EnhancifyColor.textTertiary)
         }
     }
 
@@ -153,7 +153,7 @@ struct PixelLoadingState: View {
     var variant: PixelGridVariant = .drive
 
     var body: some View {
-        HStack(spacing: BeruSpace.sm) {
+        HStack(spacing: EnhancifySpace.sm) {
             PixelGridLoader(variant: variant)
             ShimmerLabel(text: label)
             ElapsedTimer()

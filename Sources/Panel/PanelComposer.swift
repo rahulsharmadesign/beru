@@ -15,14 +15,8 @@ extension PanelView {
     /// Outcome strip sits behind the composer and only appears once a result
     /// is in — and stays, dimmed, while that result reloads, so Regenerate
     /// does not collapse the chrome and bounce the composer mid-refresh.
-    ///
-    /// Search, Grammar, and Reply have no strip: turns and rows own every
-    /// outcome. Their shell mounts only for result-level info with no row
-    /// home (write-back toast, applied context). Enhance and the verb tabs
-    /// keep a plain leading icon row — no glass, no overlap.
-    ///
-    /// The slot is always `footerMinHeight` so Search → Enhance cannot grow
-    /// the window when the icons appear (the reverse shrink is already frozen).
+    /// The slot is always `footerMinHeight`, so the strip appearing never
+    /// resizes the window.
     var composerColumn: some View {
         VStack(spacing: 0) {
             footerSlot
@@ -33,7 +27,6 @@ extension PanelView {
                     focusRing: describeFieldFocused,
                     scrim: .well
                 )
-                .overlay { firstRunBeamOverlay }
                 .frame(maxWidth: .infinity)
                 .clipped()
                 .fixedSize(horizontal: false, vertical: true)
@@ -53,8 +46,8 @@ extension PanelView {
         .animation(nil, value: appState.selectedActionID)
     }
 
-    /// Keeps chrome height stable across tabs. Empty on Search / Grammar /
-    /// Reply; filled on Enhance once a result is in.
+    /// Keeps chrome height stable: the outcome strip once a result is in,
+    /// otherwise a one-line keyboard hint.
     var footerSlot: some View {
         ZStack {
             if showsFooter {
@@ -68,21 +61,19 @@ extension PanelView {
         .frame(maxWidth: .infinity)
     }
 
-    /// Transient confirmations ("Replaced in …", "Pinned") never resize the
-    /// chrome. Tabs with a footer show the text inline while the icon row
-    /// and savings hide for the 0.8s confirmation (that chrome is dead — the
-    /// panel dismisses when the toast clears). Grammar/Reply have no
-    /// footer, so the toast floats over the composer spacer zone instead,
-    /// ignoring clicks so the pill and mic stay usable beneath it.
+    /// "Replaced in …" never resizes the chrome. With the strip showing, the
+    /// text sits inline while the icon row hides for the 0.8s confirmation
+    /// (the panel dismisses when the toast clears); otherwise it floats over
+    /// the composer, ignoring clicks.
     @ViewBuilder
     var toastFallbackOverlay: some View {
         Group {
             if toastVisible && !showsFooter {
                     toastText
-                    .padding(.horizontal, BeruSpace.sm)
-                    .padding(.vertical, BeruSpace.xxs)
-                    .beruOverlayCapsule()
-                    .padding(.bottom, BeruSpace.xl)
+                    .padding(.horizontal, EnhancifySpace.sm)
+                    .padding(.vertical, EnhancifySpace.xxs)
+                    .enhancifyOverlayCapsule()
+                    .padding(.bottom, EnhancifySpace.xl)
                     .transition(.opacity)
             }
         }
@@ -94,20 +85,15 @@ extension PanelView {
     var toastText: some View {
         if let replaced = appState.replacedFeedback {
             Text(replaced)
-                .font(BeruType.footnote)
-                .foregroundStyle(BeruColor.textSecondary)
+                .font(EnhancifyType.footnote)
+                .foregroundStyle(EnhancifyColor.textSecondary)
                 .lineLimit(1)
                 .accessibilityAddTraits(.updatesFrequently)
-        } else if appState.pinnedFeedback {
-            Text("Pinned")
-                .font(BeruType.footnote)
-                .foregroundStyle(BeruColor.textSecondary)
-                .lineLimit(1)
         }
     }
 
     var toastVisible: Bool {
-        appState.replacedFeedback != nil || appState.pinnedFeedback
+        appState.replacedFeedback != nil
     }
 
     var showsFooter: Bool {
@@ -115,14 +101,14 @@ extension PanelView {
     }
 
     /// A finished result currently reloading. Footer actions self-guard
-    /// (copy/pin/replace/vote need `.done` text; `retry` refuses a live
-    /// run), so dimming is the only treatment the strip needs.
+    /// (copy/replace need `.done` text; `retry` refuses a live run), so
+    /// dimming is the only treatment the strip needs.
     var footerReloading: Bool {
         showsFooter && !hasFinishedResult
     }
 
     var footer: some View {
-        HStack(spacing: BeruSpace.xs) {
+        HStack(spacing: EnhancifySpace.xs) {
             footerPrimaryAction
 
             if !toastVisible {
@@ -134,19 +120,6 @@ extension PanelView {
             if toastVisible {
                 toastText
                     .transition(.opacity)
-            } else {
-                if showsTokenSavings, let savings = appState.savings[appState.selectedActionID] {
-                    SavingsPill(savings: savings)
-                        .transition(.opacity)
-                }
-
-                if let provenance = contextProvenance {
-                    Text(provenance)
-                        .font(BeruType.captionMedium)
-                        .foregroundStyle(BeruColor.textSecondary)
-                        .lineLimit(1)
-                        .help("Local context applied to this result")
-                }
             }
         }
         .padding(.horizontal, PanelMetrics.moduleInset)
@@ -155,14 +128,9 @@ extension PanelView {
         .animation(.easeOut(duration: 0.15), value: toastVisible)
     }
 
-    /// Write-back first and left-aligned: Replace (Insert on Reply, Apply
-    /// on a vault note) matches the copy-row type color. The token pill
-    /// sits far right as a side note.
-    /// Clicks travel through `PanelHitCapsule`: window-drag swallows plain
-    /// buttons here.
-    @ViewBuilder
+    /// Write-back first and left-aligned. Clicks travel through
+    /// `PanelHitCapsule`: window-drag swallows plain buttons here.
     var footerPrimaryAction: some View {
-        if !isSearchTab && !isGrammarCards && !isSmartReply && showsHostWriteAction {
             PanelHitCapsule(
                 help: primaryFooterHoverHelp,
                 accessibilityLabel: primaryFooterTitle,
@@ -174,123 +142,73 @@ extension PanelView {
                 performReplace()
             } label: {
                 ZStack {
-                    BeruGlassButton(
+                    EnhancifyGlassButton(
                         title: primaryFooterTitle,
                         secondary: true,
                         size: .compact,
                         leadingIcon: "replace"
                     ) {}
                     .opacity(appState.replacedFeedback != nil ? 0 : 1)
-                    BeruLoader.compact()
-                        .frame(width: BeruMetrics.roundButtonSm, height: BeruMetrics.roundButtonSm)
+                    EnhancifyLoader.compact()
+                        .frame(width: EnhancifyMetrics.roundButtonSm, height: EnhancifyMetrics.roundButtonSm)
                         .opacity(appState.replacedFeedback != nil ? 1 : 0)
                 }
                 .animation(.easeOut(duration: 0.15), value: appState.replacedFeedback != nil)
             }
-        }
     }
 
-    /// Icon-only outcome row. Only Enhance and the verb tabs have one:
-    /// Search turns, Grammar rows, and Reply rows own every outcome, so
-    /// those tabs render nothing here. Clicks still travel through
-    /// `PanelHitCapsule`: window-drag swallows plain buttons here.
+    /// Icon-only outcome row: Copy, Regenerate, and Refine while the
+    /// composer is hidden. Clicks travel through `PanelHitCapsule`:
+    /// window-drag swallows plain buttons here.
     @ViewBuilder
     var footerActions: some View {
-        if isSearchTab {
-            // Turns own copy, regenerate, votes, and pin.
-            EmptyView()
-        } else if isGrammarCards || isSmartReply {
-            // Rows own copy, regenerate, votes, write-back, and pin.
-            EmptyView()
-        } else {
-            let actionID = appState.selectedActionID
-            let vote = appState.resultFeedback[actionID]
-            PanelHitCapsule(
+        let actionID = appState.selectedActionID
+        PanelHitCapsule(
+            help: appState.copiedFeedback ? "Copied" : "Copy response",
+            accessibilityLabel: appState.copiedFeedback ? "Copied" : "Copy",
+            showsHelpPill: true
+        ) {
+            performCopy()
+        } label: {
+            OutcomeIconButton(
+                icon: appState.copiedFeedback ? "check" : "copy",
                 help: appState.copiedFeedback ? "Copied" : "Copy response",
-                accessibilityLabel: appState.copiedFeedback ? "Copied" : "Copy",
-                showsHelpPill: true
-            ) {
-                performCopy()
-            } label: {
-                SearchActionButton(
-                    icon: appState.copiedFeedback ? "check" : "copy",
-                    help: appState.copiedFeedback ? "Copied" : "Copy response",
-                    tint: appState.copiedFeedback ? BeruColor.positive : nil
-                ) {}
-                .animation(.easeOut(duration: 0.15), value: appState.copiedFeedback)
-            }
+                tint: appState.copiedFeedback ? EnhancifyColor.positive : nil
+            ) {}
+            .animation(.easeOut(duration: 0.15), value: appState.copiedFeedback)
+        }
+        PanelHitCapsule(
+            help: "Regenerate",
+            accessibilityLabel: "Regenerate",
+            showsHelpPill: true
+        ) {
+            engine.retry(actionID: actionID)
+        } label: {
+            OutcomeIconButton(icon: "rotate-cw", help: "Regenerate") {}
+        }
+        if composerCollapsed {
             PanelHitCapsule(
-                help: "Regenerate",
-                accessibilityLabel: "Regenerate",
+                help: "Refine (⌘L, or just type)",
+                accessibilityLabel: "Refine",
                 showsHelpPill: true
             ) {
-                engine.retry(actionID: actionID)
+                composerExpanded = true
             } label: {
-                SearchActionButton(icon: "rotate-cw", help: "Regenerate") {}
-            }
-            if composerCollapsed {
-                PanelHitCapsule(
-                    help: "Refine (⌘L, or just type)",
-                    accessibilityLabel: "Refine",
-                    showsHelpPill: true
-                ) {
-                    composerExpanded = true
-                } label: {
-                    SearchActionButton(icon: "message-square", help: "Refine (⌘L, or just type)") {}
-                }
-            }
-            PanelHitCapsule(
-                help: "Good result",
-                accessibilityLabel: "Like",
-                showsHelpPill: true
-            ) {
-                setResultVoteFooter(liked: true)
-            } label: {
-                SearchActionButton(icon: "thumbs-up", help: "Good result", active: vote == true) {}
-            }
-            PanelHitCapsule(
-                help: "Bad result",
-                accessibilityLabel: "Dislike",
-                showsHelpPill: true
-            ) {
-                setResultVoteFooter(liked: false)
-            } label: {
-                SearchActionButton(icon: "thumbs-down", help: "Bad result", active: vote == false) {}
-            }
-            PanelHitCapsule(
-                help: appState.pinnedFeedback ? "Pinned" : "Pin",
-                accessibilityLabel: appState.pinnedFeedback ? "Pinned" : "Pin",
-                showsHelpPill: true
-            ) {
-                performPin()
-            } label: {
-                SearchActionButton(
-                    icon: appState.pinnedFeedback ? "check" : "pin",
-                    help: "Pin",
-                    tint: appState.pinnedFeedback ? BeruColor.positive : nil
-                ) {}
+                OutcomeIconButton(icon: "message-square", help: "Refine (⌘L, or just type)") {}
             }
         }
-    }
-
-    var isErrorState: Bool {
-        if case .error = appState.resultState(for: appState.selectedActionID) { return true }
-        return false
     }
 
     var intentField: some View {
-        VStack(alignment: .leading, spacing: BeruSpace.sm) {
-            HStack(alignment: .top, spacing: BeruSpace.xs) {
-                BeruIcon(
-                    name: appState.isQuickSearch ? "search" : "sparkles",
-                    size: 16
-                )
-                .foregroundStyle(BeruColor.textSecondary)
+        VStack(alignment: .leading, spacing: EnhancifySpace.sm) {
+            HStack(alignment: .top, spacing: EnhancifySpace.xs) {
+                EnhancifyIcon(name: "sparkles", size: 16)
+                .foregroundStyle(EnhancifyColor.textSecondary)
                 ZStack(alignment: .topLeading) {
                     if appState.describeInstruction.isEmpty {
                         Text(composerPlaceholder)
-                            .font(BeruType.body)
-                            .foregroundStyle(BeruColor.textSecondary)
+                            .font(EnhancifyType.body)
+                            .foregroundStyle(EnhancifyColor.textSecondary)
                             .lineLimit(1)
                     }
                     ComposerTextField(
@@ -314,21 +232,17 @@ extension PanelView {
                 } else {
                     providerMenu
                 }
-                // Mic and send ride the trailing edge; the provider/target
-                // pill owns the leading edge. Regenerate lives on the
-                // outcome row (Enhance) or on Search / Grammar / Reply rows.
+                // Mic and send ride the trailing edge; the target (Enhance)
+                // or provider (Grammar) pill owns the leading edge.
                 Spacer(minLength: 0)
                 DictationButton(onNeedsPermission: { engine.requestDictationPermission() })
                 sendButton
             }
             .frame(maxWidth: .infinity)
         }
-        // Search mode swaps the icon, placeholder and the target/provider menu.
-        // Scoped here so the composer card's own frame is not part of it.
-        .animation(nil, value: appState.isQuickSearch)
         .padding(.horizontal, PanelMetrics.moduleInset)
         .padding(.top, PanelMetrics.moduleInset)
-        .padding(.bottom, BeruSpace.xs)
+        .padding(.bottom, EnhancifySpace.xs)
         .frame(minHeight: PanelMetrics.composerMinHeight, alignment: .center)
         .frame(maxWidth: .infinity)
     }
@@ -338,7 +252,6 @@ extension PanelView {
         return EnhancementAction.composerPlaceholder(
             actionID: appState.selectedActionID,
             hasCapture: hasCapture,
-            isQuickSearch: appState.isQuickSearch,
             targetName: targetRegistry.profile(withID: appState.selectedTargetID)?.name
         )
     }
@@ -348,19 +261,11 @@ extension PanelView {
     }
 
     func submitDescribe() {
-        if appState.selectedActionID == EnhancementAction.searchID || appState.isQuickSearch {
-            engine.runQuickSearch(query: appState.describeInstruction)
-        } else {
-            engine.runDescribe(instruction: appState.describeInstruction)
-        }
+        engine.runDescribe(instruction: appState.describeInstruction)
     }
 
     var targetPickerVisible: Bool {
-        guard !appState.isQuickSearch,
-              let action = registry.action(withID: appState.selectedActionID) else { return false }
-        return Prompts.targetApplies(
-            actionID: action.id, role: action.role, usesBuiltInPrompt: action.isBuiltIn
-        )
+        Prompts.targetApplies(actionID: appState.selectedActionID)
     }
 
     func selectTarget(_ targetID: String) {
@@ -379,10 +284,5 @@ extension PanelView {
     func performCopy() {
         guard let text = appState.acceptedText() else { return }
         engine.copy(text: text)
-    }
-
-    func performPin() {
-        guard let text = appState.acceptedText() else { return }
-        engine.pin(text: text)
     }
 }

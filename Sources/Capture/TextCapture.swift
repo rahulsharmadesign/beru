@@ -2,7 +2,7 @@ import AppKit
 import ApplicationServices
 import os.log
 
-private let logger = Logger(subsystem: "com.rahul.beru", category: "capture")
+private let logger = Logger(subsystem: "com.rahul.enhancify", category: "capture")
 
 enum CaptureResult {
     case text(String)
@@ -62,10 +62,8 @@ enum TextCapture {
 
     /// Whether the focused element is a field the user composes in (editor,
     /// chat box, comment box) as opposed to static content they are reading.
-    /// Decides between the writing skills (Grammar) and the reading skills
-    /// (Summarize) when the invoke lands. Unknown roles read as static —
-    /// misrouting a message to Smart Reply is one chip away; misrouting the
-    /// user's own draft there is a wrong model call.
+    /// Decides between Grammar (your own writing) and Enhance when the invoke
+    /// lands. Unknown roles read as static; Tab switches tabs either way.
     static func isEditableElement(_ element: AXUIElement?) -> Bool {
         guard let element else { return false }
         var value: AnyObject?

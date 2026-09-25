@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Single QA gate for Beru. Run this before claiming any change is done.
+# Single QA gate for Enhancify. Run this before claiming any change is done.
 #
 #   ./scripts/qa.sh                  static guards + generate + build + test
 #   ./scripts/qa.sh --static         guards only (fast, no Xcode)
@@ -18,7 +18,7 @@ cd "$(dirname "$0")/.." || exit 1
 REPO_ROOT="$(pwd)"
 
 BASELINE_FILE="scripts/qa-baseline.txt"
-SCHEME="Beru"
+SCHEME="Enhancify"
 DESTINATION="platform=macOS"
 
 RUN_STATIC=1
@@ -181,7 +181,7 @@ run_static_guards() {
         "Swift files over 400 lines"
 
     # Panel height contract (frozen). The rules in
-    # .cursor/rules/beru-design-tokens.mdc were prose-only, so nothing stopped
+    # .cursor/rules/enhancify-design-tokens.mdc were prose-only, so nothing stopped
     # a regression. Each guard below is one line of that "Do not" list.
 
     # Height comes from child preferences, never from the hosting view. Only a
@@ -210,8 +210,8 @@ run_static_guards() {
 
     # Status banners must expire. Direct assignment leaves them on screen.
     guard unmanaged_status_writes \
-        "$(count_matches 'statusMessage = ' Sources --exclude=VaultStore.swift)" \
-        "direct statusMessage writes outside VaultStore"
+        "$(count_matches 'statusMessage = ' Sources)" \
+        "direct statusMessage writes"
 
     if [ -n "$LOOSENED" ]; then
         warn "baseline is now loose for:${LOOSENED}"
@@ -262,11 +262,11 @@ run_generate() {
         fail "xcodegen not found (brew install xcodegen, or vendor it at .tools/xcodegen/bin/xcodegen)"
         return 1
     fi
-    if "$xcodegen" generate >/tmp/beru-qa-xcodegen.log 2>&1; then
+    if "$xcodegen" generate >/tmp/enhancify-qa-xcodegen.log 2>&1; then
         pass "project generated"
     else
-        fail "xcodegen failed, see /tmp/beru-qa-xcodegen.log"
-        tail -20 /tmp/beru-qa-xcodegen.log
+        fail "xcodegen failed, see /tmp/enhancify-qa-xcodegen.log"
+        tail -20 /tmp/enhancify-qa-xcodegen.log
         return 1
     fi
 }
@@ -274,12 +274,12 @@ run_generate() {
 run_build() {
     stage "Stage 3/4  build"
     if xcodebuild -scheme "$SCHEME" -destination "$DESTINATION" build \
-        >/tmp/beru-qa-build.log 2>&1; then
+        >/tmp/enhancify-qa-build.log 2>&1; then
         pass "build succeeded"
     else
         fail "build failed"
-        grep -E 'error:|warning: .*never used' /tmp/beru-qa-build.log | head -30
-        say "${DIM}full log: /tmp/beru-qa-build.log${RESET}"
+        grep -E 'error:|warning: .*never used' /tmp/enhancify-qa-build.log | head -30
+        say "${DIM}full log: /tmp/enhancify-qa-build.log${RESET}"
         return 1
     fi
 }
@@ -287,25 +287,25 @@ run_build() {
 run_tests() {
     stage "Stage 4/4  tests"
     if xcodebuild -scheme "$SCHEME" -destination "$DESTINATION" test \
-        >/tmp/beru-qa-test.log 2>&1; then
+        >/tmp/enhancify-qa-test.log 2>&1; then
         pass "$(grep -oE 'Executed [0-9]+ tests, with [0-9]+ tests? skipped and [0-9]+ failures' \
-            /tmp/beru-qa-test.log | tail -1)"
+            /tmp/enhancify-qa-test.log | tail -1)"
     else
         fail "tests failed"
         # macOS logs a flood of harmless "Unable to get synchronousRemoteObjectProxy,
         # error: Error Domain=…" lines during tests; they used to fill all 30
         # lines and hide the actual failing assertion.
-        grep -E 'error:|failed|XCTAssert' /tmp/beru-qa-test.log \
+        grep -E 'error:|failed|XCTAssert' /tmp/enhancify-qa-test.log \
             | grep -vE 'Error Domain=|synchronousRemoteObjectProxy|Process Instance Registry' \
             | head -30
-        say "${DIM}full log: /tmp/beru-qa-test.log${RESET}"
+        say "${DIM}full log: /tmp/enhancify-qa-test.log${RESET}"
         return 1
     fi
 }
 
 # ------------------------------------------------------------------- main
 
-say "${BOLD}Beru QA gate${RESET}"
+say "${BOLD}Enhancify QA gate${RESET}"
 
 if [ "$RUN_STATIC" -eq 1 ]; then
     run_static_guards

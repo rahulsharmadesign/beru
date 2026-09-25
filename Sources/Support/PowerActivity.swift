@@ -17,14 +17,6 @@ final class PowerActivity {
         release()
     }
 
-    func pullBegan() {
-        retain(reason: "Downloading local model")
-    }
-
-    func pullEnded() {
-        release()
-    }
-
     private func retain(reason: String) {
         activeCount += 1
         guard token == nil else { return }

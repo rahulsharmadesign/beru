@@ -9,7 +9,7 @@ import Security
 final class KeychainStore: Sendable {
     static let shared = KeychainStore()
 
-    private let service = "com.beru.api"
+    private let service = "com.rahul.enhancify.api"
 
     private init() {}
 
