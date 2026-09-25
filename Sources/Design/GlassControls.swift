@@ -152,19 +152,18 @@ struct BeruGlassChip: View {
 
     var body: some View {
         ZStack {
+            // Neutral, like a macOS segmented control: the accent is kept for
+            // the one thing that should pop (send), not for which tab is on.
             if isSelected {
-                chipShape.fill(BeruColor.accent)
+                chipShape.fill(BeruColor.hoverFill)
                     .matchedGeometryEffect(id: "tabHighlight", in: highlightNamespace)
             }
 
-            chipLabel(BeruColor.textPrimary)
-                .overlay {
-                    chipShape.strokeBorder(BeruColor.strongBorder, lineWidth: BeruMetrics.hairline)
-                }
+            chipLabel(BeruColor.textSecondary)
                 .compositingGroup()
                 .opacity(isSelected ? 0 : 1)
 
-            chipLabel(BeruColor.onAccent)
+            chipLabel(BeruColor.textPrimary)
                 .compositingGroup()
                 .opacity(isSelected ? 1 : 0)
         }

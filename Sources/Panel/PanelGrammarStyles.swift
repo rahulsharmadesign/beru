@@ -19,7 +19,6 @@ extension PanelView {
                     } label: {
                         GrammarStyleChip(
                             title: style.title,
-                            icon: style.icon,
                             isSelected: appState.grammarStyle == style,
                             showsChevron: false
                         )
@@ -33,7 +32,6 @@ extension PanelView {
                 } label: {
                     GrammarStyleChip(
                         title: menuStyleSelected ? appState.grammarStyle.title : "More",
-                        icon: "smile",
                         isSelected: menuStyleSelected,
                         showsChevron: true
                     )
@@ -67,35 +65,30 @@ extension PanelView {
     }
 }
 
-/// Small capsule for the Grammar style row. Its own view rather than the
+/// Text-only pill for the Grammar style row. A step quieter than the tabs
+/// above it — it is an option of Grammar, not a peer — and neutral when
+/// selected so the panel keeps one accent. Its own view rather than the
 /// verb chip: that one shares the tab row's matched-geometry highlight.
 private struct GrammarStyleChip: View {
     let title: String
-    let icon: String
     let isSelected: Bool
     let showsChevron: Bool
 
     var body: some View {
         HStack(spacing: BeruSpace.xxs) {
-            BeruIcon(name: icon, size: BeruMetrics.iconSizeCompact, strokeWidth: 2)
             Text(title)
-                .font(BeruType.footnoteMedium)
+                .font(BeruType.captionMedium)
                 .lineLimit(1)
             if showsChevron {
                 BeruIcon(name: "chevron-down", size: BeruMetrics.iconSizeDense, strokeWidth: 2)
             }
         }
-        .foregroundStyle(isSelected ? BeruColor.onAccent : BeruColor.textPrimary)
-        .padding(.horizontal, BeruSpace.sm)
+        .foregroundStyle(isSelected ? BeruColor.textPrimary : BeruColor.textSecondary)
+        .padding(.horizontal, BeruSpace.xs)
         .frame(height: BeruMetrics.pillHeightSm)
         .background {
             if isSelected {
-                Capsule().fill(BeruColor.accent)
-            }
-        }
-        .overlay {
-            if !isSelected {
-                Capsule().strokeBorder(BeruColor.strongBorder, lineWidth: BeruMetrics.hairline)
+                Capsule().fill(BeruColor.hoverFill)
             }
         }
         .contentShape(Capsule())
