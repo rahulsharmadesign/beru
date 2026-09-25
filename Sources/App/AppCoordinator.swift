@@ -273,13 +273,17 @@ final class AppCoordinator {
                 isEditableField: isEditableField,
                 capturedText: text,
                 source: routingSource,
-                windowTitle: windowTitle
+                windowTitle: windowTitle,
+                focused: PanelMode.isFocused
             )
         )
         panelController.show(at: anchor, appState: appState, engine: engine)
         pushToTalk.arm()
         let landing = appState.selectedActionID
-        if hasCapture && landing != EnhancementAction.searchID {
+        // Dictation opens to hear an instruction first, and an unconfigured
+        // install would only fail — in both cases nothing runs until asked.
+        // (Outside focused mode both already land on AI Search.)
+        if hasCapture, landing != EnhancementAction.searchID, !openOnSearch, !needsSetup {
             engine.startIfNeeded(actionID: landing)
         }
     }

@@ -29,8 +29,17 @@ extension AppCoordinator {
         isEditableField: Bool = false,
         capturedText: String = "",
         source: String? = nil,
-        windowTitle: String? = nil
+        windowTitle: String? = nil,
+        focused: Bool = false
     ) -> String {
+        if focused {
+            return focusedActionID(
+                host: host,
+                hasCapture: hasCapture,
+                isEditableField: isEditableField,
+                source: source
+            )
+        }
         if openOnSearch || needsSetup || !hasCapture {
             return EnhancementAction.searchID
         }
@@ -63,6 +72,35 @@ extension AppCoordinator {
         return Self.isSocialFeedSelection(bundleID: host?.bundleID, windowTitle: windowTitle)
             ? EnhancementAction.replyID
             : EnhancementAction.enhanceID
+    }
+
+    /// Focused mode (`PanelMode`): only Enhance and Grammar exist. First match
+    /// wins.
+    ///
+    /// - No selection, clipboard, vault, or dictation → Enhance: whatever is
+    ///   typed or spoken becomes the rough idea to turn into a prompt.
+    /// - Selection inside Cursor / Claude / ChatGPT / Kimi → Enhance.
+    /// - Selection in an editable field, or anywhere in a chat/mail app →
+    ///   Grammar: that is your own writing. Chat apps are matched by bundle
+    ///   because Electron clients (Slack, Discord) expose a thin AX tree.
+    /// - Anything else (a webpage, notes, a PDF) → Enhance.
+    static func focusedActionID(
+        host: HostApp.Info?,
+        hasCapture: Bool,
+        isEditableField: Bool,
+        source: String?
+    ) -> String {
+        guard hasCapture, source == nil || source == "hotkey",
+              let bundleID = host?.bundleID.lowercased() else {
+            return EnhancementAction.enhanceID
+        }
+        if TargetProfile.seededID(forBundleID: bundleID, name: host?.name) != nil {
+            return EnhancementAction.enhanceID
+        }
+        if isEditableField || isCommunicationApp(bundleID) {
+            return EnhancementAction.grammarID
+        }
+        return EnhancementAction.enhanceID
     }
 
     private static let communicationBundlePrefixes: [String] = [

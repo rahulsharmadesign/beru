@@ -129,7 +129,7 @@ extension PanelView {
             if !a11y.isAccessibilityTrusted {
                 accessibilityPlaceholder
             } else {
-                let needsSetup = appState.selectedActionID == EnhancementAction.searchID
+                let needsSetup = (appState.selectedActionID == EnhancementAction.searchID || PanelMode.isFocused)
                     && !SettingsStore.shared.isConfigured(SettingsStore.shared.activeProvider)
                 if needsSetup {
                     providerSetupPlaceholder
