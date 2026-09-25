@@ -31,6 +31,9 @@ struct PanelView: View {
     /// Set by ⌘L or the Refine button to show the collapsed composer. Reset
     /// on every open because the view is re-identified per panel session.
     @State var composerExpanded = false
+    /// Result shows clean text with changed words lightly marked; this flips
+    /// it to the full red/green diff. Per panel open.
+    @State var showsFullDiff = false
     @State var chromeTopHeight: CGFloat = 0
     @State var chromeBottomHeight: CGFloat = 0
 

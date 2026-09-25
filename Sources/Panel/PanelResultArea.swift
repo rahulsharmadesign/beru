@@ -229,12 +229,26 @@ extension PanelView {
 
     @ViewBuilder
     func diffResult(revised: String) -> some View {
-        DiffView(
-            ops: appState.diffs[appState.selectedActionID],
-            revised: revised,
-            showDiff: true,
-            scrolls: false
-        )
+        VStack(alignment: .leading, spacing: BeruSpace.xs) {
+            DiffView(
+                ops: appState.diffs[appState.selectedActionID],
+                revised: revised,
+                showDiff: true,
+                scrolls: false,
+                style: showsFullDiff ? .full : .clean
+            )
+            PanelHitCapsule(
+                help: showsFullDiff ? "Show the finished text" : "Show what was removed and added",
+                accessibilityLabel: showsFullDiff ? "Hide changes" : "Show changes"
+            ) {
+                showsFullDiff.toggle()
+            } label: {
+                Text(showsFullDiff ? "Hide changes" : "Show changes")
+                    .font(BeruType.captionMedium)
+                    .foregroundStyle(BeruColor.textSecondary)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     func errorView(message: String) -> some View {
