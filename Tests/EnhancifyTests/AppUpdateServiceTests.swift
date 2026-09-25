@@ -27,11 +27,6 @@ final class AppUpdateServiceTests: XCTestCase {
     }
 
     func testPrefersMatchingEnhancifyDMG() {
-        let assets = ["notes.txt", "Enhancify-1.1.2.dmg", "Enhancify-1.1.2.zip"]
-        XCTAssertEqual(AppUpdateFeed.dmgAsset(named: assets, preferring: "1.1.2"), "Enhancify-1.1.2.dmg")
-    }
-
-    func testPrefersMatchingEnhancifyDMG() {
         let assets = ["notes.txt", "Enhancify-1.2.0.dmg", "Enhancify-1.2.0.zip"]
         XCTAssertEqual(AppUpdateFeed.dmgAsset(named: assets, preferring: "1.2.0"), "Enhancify-1.2.0.dmg")
     }
