@@ -212,4 +212,12 @@ final class PanelKeyBindingTests: XCTestCase {
             "Tab must fall through to focus movement when Grammar is not a tab."
         )
     }
+
+    func testCommandLShowsTheComposer() {
+        XCTAssertEqual(
+            PanelKeyBinding.resolveCharacter("l", modifiers: .command, tabCount: 2),
+            .showComposer
+        )
+        XCTAssertEqual(PanelKeyBinding.resolveCharacter("l", modifiers: .none, tabCount: 2), .pass)
+    }
 }
