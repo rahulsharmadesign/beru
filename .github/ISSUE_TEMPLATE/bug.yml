@@ -22,4 +22,4 @@ body:
       required: true
   - type: markdown
     attributes:
-      value: Do not report security vulnerabilities here. Use GitHub Security Advisories — see SECURITY.md.
+      value: "Do not report security vulnerabilities here. Report them privately: https://github.com/rahulsharmadesign/beru/security/advisories/new"

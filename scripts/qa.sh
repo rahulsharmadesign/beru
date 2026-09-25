@@ -18,7 +18,6 @@ cd "$(dirname "$0")/.." || exit 1
 REPO_ROOT="$(pwd)"
 
 BASELINE_FILE="scripts/qa-baseline.txt"
-CHECKLIST_FILE="docs/QA-CHECKLIST.md"
 SCHEME="Beru"
 DESTINATION="platform=macOS"
 
@@ -334,7 +333,3 @@ fi
 
 say "${GREEN}${BOLD}QA gate passed.${RESET}"
 
-if [ "$RUN_TEST" -eq 1 ] && [ -f "$CHECKLIST_FILE" ]; then
-    printf '\n%sAutomated checks cannot see the screen. Now do the manual pass:%s\n\n' "$BOLD" "$RESET"
-    cat "$CHECKLIST_FILE"
-fi
