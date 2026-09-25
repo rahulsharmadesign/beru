@@ -374,9 +374,14 @@ final class ReloadFooterTests: XCTestCase {
         state.setResult(.done("old"), for: EnhancementAction.searchID)
         XCTAssertFalse(state.showsFooter(for: EnhancementAction.searchID))
         state.setResult(.done("old"), for: EnhancementAction.grammarID)
+        XCTAssertTrue(
+            state.showsFooter(for: EnhancementAction.grammarID),
+            "Grammar publishes one result like every tab; Replace lives in the footer"
+        )
+        state.grammarSuggestions = [GrammarSuggestion(kind: .corrected, body: "old")]
         XCTAssertFalse(
             state.showsFooter(for: EnhancementAction.grammarID),
-            "rows own every outcome; the strip is gone"
+            "when cards are shown, they own every outcome"
         )
         state.setResult(.done("old"), for: EnhancementAction.replyID)
         XCTAssertFalse(state.showsFooter(for: EnhancementAction.replyID))
@@ -384,6 +389,8 @@ final class ReloadFooterTests: XCTestCase {
 
     func testGrammarReplyShellMountsOnlyForAppliedContext() {
         let state = AppState()
+        // The card layout; without cards Grammar always has its footer.
+        state.grammarSuggestions = [GrammarSuggestion(kind: .corrected, body: "old")]
         state.setResult(.done("old"), for: EnhancementAction.grammarID)
         state.replacedFeedback = "Replaced in Notes"
         XCTAssertFalse(

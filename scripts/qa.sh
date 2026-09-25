@@ -293,7 +293,12 @@ run_tests() {
             /tmp/beru-qa-test.log | tail -1)"
     else
         fail "tests failed"
-        grep -E 'error:|failed|XCTAssert' /tmp/beru-qa-test.log | head -30
+        # macOS logs a flood of harmless "Unable to get synchronousRemoteObjectProxy,
+        # error: Error Domain=…" lines during tests; they used to fill all 30
+        # lines and hide the actual failing assertion.
+        grep -E 'error:|failed|XCTAssert' /tmp/beru-qa-test.log \
+            | grep -vE 'Error Domain=|synchronousRemoteObjectProxy|Process Instance Registry' \
+            | head -30
         say "${DIM}full log: /tmp/beru-qa-test.log${RESET}"
         return 1
     fi
