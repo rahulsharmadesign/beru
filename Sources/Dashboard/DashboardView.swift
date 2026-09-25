@@ -1,10 +1,11 @@
 import SwiftUI
 
 /// Settings shell: grouped sidebar + detail. Same nine routes and behavior,
-/// rebuilt around Haze rows — icon tiles, group headers, solid accent selection.
+/// rebuilt around Haze rows — plain glyphs, group headers, neutral selection.
 struct DashboardView: View {
     @Bindable var model: DashboardModel
     @State private var query = ""
+    @AppStorage(PanelMode.showAllActionsKey) private var showAllActions = false
     @Bindable private var updates = AppUpdateService.shared
     @Bindable private var appearance = AppearanceObserver.shared
 
@@ -46,7 +47,7 @@ struct DashboardView: View {
     }
 
     private var filteredMenu: [DashboardRoute] {
-        DashboardRoute.menu.filter { $0.matches(query) }
+        DashboardRoute.visibleMenu(showAll: showAllActions).filter { $0.matches(query) }
     }
 
     private var filteredFooter: [DashboardRoute] {
@@ -68,10 +69,15 @@ struct DashboardView: View {
 
     private var sidebar: some View {
         VStack(alignment: .leading, spacing: 0) {
-            SettingsSearchField(text: $query)
-                .padding(.horizontal, BeruMetrics.workspaceListInset)
-                .padding(.top, BeruSpace.md)
-                .padding(.bottom, BeruSpace.sm)
+            // Four pages need no search box.
+            if showAllActions {
+                SettingsSearchField(text: $query)
+                    .padding(.horizontal, BeruMetrics.workspaceListInset)
+                    .padding(.top, BeruSpace.md)
+                    .padding(.bottom, BeruSpace.sm)
+            } else {
+                Color.clear.frame(height: BeruSpace.md)
+            }
             if filteredMenu.isEmpty && filteredFooter.isEmpty {
                 sidebarNoMatches
                 Spacer(minLength: 0)
@@ -137,10 +143,11 @@ struct DashboardView: View {
     private func sidebarRow(_ route: DashboardRoute) -> some View {
         let selected = model.route == route
         return HStack(spacing: BeruSpace.sm) {
+            // Plain glyph, no colored tile: with four pages the icons are
+            // wayfinding, not decoration.
             BeruIcon(name: route.lucideIcon, size: BeruMetrics.sidebarTileGlyph)
-                .foregroundStyle(BeruColor.onTile)
+                .foregroundStyle(BeruColor.textSecondary)
                 .frame(width: BeruMetrics.sidebarTileBox, height: BeruMetrics.sidebarTileBox)
-                .background(BeruRadius.shape(BeruMetrics.sidebarTileRadius).fill(route.sidebarTileColor))
             Text(route.title)
                 .font(selected ? BeruType.sidebarSelected : BeruType.sidebar)
             Spacer(minLength: 0)
@@ -148,13 +155,13 @@ struct DashboardView: View {
                 SidebarUpdateChip()
             }
         }
-        .foregroundStyle(selected ? BeruColor.onAccent : BeruColor.textPrimary)
+        .foregroundStyle(BeruColor.textPrimary)
         .padding(.horizontal, BeruSpace.sm)
         .frame(maxWidth: .infinity, minHeight: BeruMetrics.sidebarRowHeight, alignment: .leading)
         .frame(height: BeruMetrics.sidebarRowHeight)
         .background {
             BeruRadius.shape(BeruRadius.md)
-                .fill(selected ? BeruColor.accent : Color.clear)
+                .fill(selected ? BeruColor.hoverFill : Color.clear)
         }
         .contentShape(RoundedRectangle(cornerRadius: BeruRadius.md, style: .continuous))
     }

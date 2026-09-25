@@ -37,7 +37,7 @@ struct MenuBarContent: View {
     @Bindable private var appearance = AppearanceObserver.shared
     @Environment(\.dismiss) private var dismiss
 
-    /// Hero CTA height. Rows sit at the 32pt Haze pill height.
+    /// Menu rows sit at the 32pt pill height.
     private let rowHeight: CGFloat = BeruMetrics.pillHeight
 
     var body: some View {
@@ -46,65 +46,57 @@ struct MenuBarContent: View {
         // subscription that repaints AppKit-backed surfaces on a light/dark switch.
         let _ = appearance.signature
         let _ = settings.primaryColorID
-        VStack(spacing: BeruSpace.xs) {
+        VStack(alignment: .leading, spacing: BeruSpace.hair) {
             header
-            primaryAction
-            HStack(spacing: BeruSpace.xs) {
-                BeruButton(
-                    title: "Dictate",
-                    size: .regular,
-                    leadingIcon: "mic",
-                    expands: true
-                ) {
-                    coordinator.dictateNewText()
-                }
-                BeruButton(
-                    title: "Vault",
-                    size: .regular,
-                    leadingIcon: "library",
-                    expands: true
-                ) {
-                    openDashboard(.vault)
-                }
+            Divider().padding(.vertical, BeruSpace.xxs)
+            menuRow("Enhance Clipboard", icon: "sparkles") {
+                coordinator.enhanceClipboard()
             }
-            MenuProviderPicker()
-            Divider()
-            footer
+            menuRow(
+                "Dictate",
+                icon: "mic",
+                shortcut: KeyboardShortcuts.getShortcut(for: .dictateToBeru)?.description
+            ) {
+                coordinator.dictateNewText()
+            }
+            Divider().padding(.vertical, BeruSpace.xxs)
+            menuRow("Settings…", icon: "settings") {
+                openDashboard(.general)
+            }
+            menuRow("Quit Enhancify", icon: "x") {
+                NSApp.terminate(nil)
+            }
         }
-        .padding(BeruSpace.sm)
+        .padding(BeruSpace.xs)
         .frame(width: BeruMetrics.menuDropdownWidth)
         // No opaque card, stroke, or shadow: the MenuBarExtra window is
-        // already system glass, and painting a plate over it is what made
-        // the dropdown read as a grey card. This translucent scrim is the
-        // same recipe as the panel slab's tint, so the menu bar dropdown and
-        // the floating panel read as one material.
+        // already system glass. This translucent scrim is the same recipe as
+        // the panel slab's tint, so the dropdown and the panel read as one
+        // material.
         .background(BeruColor.glassScrim)
-        .tint(BeruColor.accent)
     }
 
+    /// Name, the open shortcut, and a status line only when something is
+    /// blocked. No colored dot: an accent that means "fine" is noise.
     private var header: some View {
-        HStack(spacing: BeruSpace.sm) {
-            Image("BrandMark")
-                .resizable()
-                .scaledToFit()
-                .frame(width: BeruMetrics.brandMark, height: BeruMetrics.brandMark)
-                .clipShape(BeruRadius.shape(BeruRadius.sm))
-            VStack(alignment: .leading, spacing: 0) {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack {
                 Text("Enhancify").font(BeruType.controlSemibold)
-                if let status = headerStatus.text {
-                    Text(status)
-                        .font(BeruType.footnote)
-                        .foregroundStyle(BeruColor.textSecondary)
-                        .lineLimit(1)
+                Spacer(minLength: BeruSpace.xs)
+                if let shortcut = KeyboardShortcuts.getShortcut(for: .invokeBeru) {
+                    BeruKbd(text: shortcut.description)
                 }
             }
-            Spacer(minLength: BeruSpace.xs)
-            Circle()
-                .fill(headerStatus.ready ? BeruColor.accent : BeruColor.textSecondary.opacity(0.45))
-                .frame(width: BeruSpace.xs, height: BeruSpace.xs)
-                .accessibilityLabel(headerStatus.ready ? "Enhancify is ready" : (headerStatus.text ?? "Enhancify"))
+            if let status = headerStatus.text {
+                Text(status)
+                    .font(BeruType.footnote)
+                    .foregroundStyle(BeruColor.textSecondary)
+                    .lineLimit(1)
+            }
         }
-        .padding(.bottom, BeruSpace.xxs)
+        .padding(.horizontal, BeruSpace.xs)
+        .padding(.top, BeruSpace.xxs)
+        .accessibilityElement(children: .combine)
     }
 
     /// Status copy only when something is blocked. Ready is the green dot.
@@ -118,48 +110,15 @@ struct MenuBarContent: View {
         return (nil, true)
     }
 
-    private var primaryAction: some View {
-        Button { coordinator.enhanceClipboard() } label: {
-            HStack(spacing: BeruSpace.xs) {
-                BeruIcon(name: "sparkles", size: BeruMetrics.iconSize, strokeWidth: 2)
-                Text("Enhance Clipboard")
-                    .font(BeruType.controlSemibold)
-                    .lineLimit(1)
-                Spacer(minLength: BeruSpace.xs)
-                if let shortcut = KeyboardShortcuts.getShortcut(for: .invokeBeru) {
-                    BeruKbd(text: shortcut.description, tone: .onAccent)
-                        .opacity(0.85)
-                }
-            }
-            .foregroundStyle(BeruColor.onAccent)
-            .padding(.horizontal, BeruSpace.md)
-            .frame(maxWidth: .infinity, minHeight: rowHeight)
-            .background(BeruColor.accent, in: Capsule())
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("Enhance Clipboard")
-        .accessibilityHint("Run Enhancify on the current clipboard")
-    }
-
-    /// `NSMenu.popUp` works in a MenuBarExtra window. SwiftUI `Menu` as an
-    /// overlay on a custom row does not receive clicks.
-    private var footer: some View {
-        HStack(spacing: BeruSpace.xxs) {
-            BeruButton(
-                title: "Settings",
-                size: .regular,
-                leadingIcon: "settings"
-            ) {
-                openDashboard(.general)
-            }
-            Spacer(minLength: 0)
-            BeruButton(
-                title: "Quit",
-                role: .destructive
-            ) {
-                NSApp.terminate(nil)
-            }
-        }
+    /// One plain row, like a native menu item: icon, title, optional
+    /// shortcut, a soft fill on hover.
+    private func menuRow(
+        _ title: String,
+        icon: String,
+        shortcut: String? = nil,
+        action: @escaping () -> Void
+    ) -> some View {
+        MenuBarRow(title: title, icon: icon, shortcut: shortcut, height: rowHeight, action: action)
     }
 
     private func openDashboard(_ route: DashboardRoute) {

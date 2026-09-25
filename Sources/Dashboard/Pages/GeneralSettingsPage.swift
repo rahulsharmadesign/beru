@@ -18,9 +18,14 @@ struct GeneralSettingsTab: View {
             subtitle: DashboardRoute.general.pageSubtitle,
             icon: DashboardRoute.general.lucideIcon
         ) {
-            SettingsSection(title: "Account") {
-                SettingsRow(title: "Name") {
-                    SettingsField(placeholder: "Your name", text: $settings.userName, alignment: .center)
+            // Focused mode keeps General to what the two jobs use. The rest
+            // (name for Search greetings, default action, rationale, history,
+            // learned preferences) returns with Show all actions.
+            if showAllActions {
+                SettingsSection(title: "Account") {
+                    SettingsRow(title: "Name") {
+                        SettingsField(placeholder: "Your name", text: $settings.userName, alignment: .center)
+                    }
                 }
             }
 
@@ -58,14 +63,16 @@ struct GeneralSettingsTab: View {
             }
 
             SettingsSection(title: "Panel") {
-                SettingsRow(title: "Default action", caption: "Used when enhancing the clipboard or a vault note.") {
-                    SettingsMenuPicker(
-                        selection: $settings.defaultActionID,
-                        options: ActionRegistry.shared.allActions.map {
-                            SettingsPickerOption(value: $0.id, title: $0.name)
-                        },
-                        accessibilityLabel: "Default action"
-                    )
+                if showAllActions {
+                    SettingsRow(title: "Default action", caption: "Used when enhancing the clipboard or a vault note.") {
+                        SettingsMenuPicker(
+                            selection: $settings.defaultActionID,
+                            options: ActionRegistry.shared.allActions.map {
+                                SettingsPickerOption(value: $0.id, title: $0.name)
+                            },
+                            accessibilityLabel: "Default action"
+                        )
+                    }
                 }
                 SettingsRow(
                     title: "Show all actions",
@@ -76,26 +83,29 @@ struct GeneralSettingsTab: View {
                         accessibilityLabel: "Show all actions"
                     )
                 }
-                SettingsRow(
-                    title: "Explain what changed",
-                    caption: "A short rationale with the result. No extra round trip."
-                ) {
-                    SettingsSwitch(
-                        isOn: $settings.explainChanges,
-                        accessibilityLabel: "Explain what changed"
-                    )
-                }
-                SettingsRow(
-                    title: "Remember recent turns",
-                    caption: "Follow-ups can build on earlier requests in the same app. Memory only, never written to disk."
-                ) {
-                    SettingsSwitch(
-                        isOn: $settings.sessionContextEnabled,
-                        accessibilityLabel: "Remember recent turns"
-                    )
+                if showAllActions {
+                    SettingsRow(
+                        title: "Explain what changed",
+                        caption: "A short rationale with the result. No extra round trip."
+                    ) {
+                        SettingsSwitch(
+                            isOn: $settings.explainChanges,
+                            accessibilityLabel: "Explain what changed"
+                        )
+                    }
+                    SettingsRow(
+                        title: "Remember recent turns",
+                        caption: "Follow-ups can build on earlier requests in the same app. Memory only, never written to disk."
+                    ) {
+                        SettingsSwitch(
+                            isOn: $settings.sessionContextEnabled,
+                            accessibilityLabel: "Remember recent turns"
+                        )
+                    }
                 }
             }
 
+            if showAllActions {
             SettingsSection(
                 title: "Reset",
                 subtitle: "Clear what Enhancify has learned from how you use it.",
@@ -111,6 +121,7 @@ struct GeneralSettingsTab: View {
                     .disabled(settings.interactionProfile.isEmpty)
                     .accessibilityLabel("Clear learned preferences")
                 }
+            }
             }
         }
     }
