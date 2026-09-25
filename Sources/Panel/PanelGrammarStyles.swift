@@ -67,7 +67,8 @@ extension PanelView {
 
 /// Text-only pill for the Grammar style row. A step quieter than the tabs
 /// above it — it is an option of Grammar, not a peer — and neutral when
-/// selected so the panel keeps one accent. Its own view rather than the
+/// selected (an outline, where the tabs use a fill) so the panel keeps one
+/// accent. Its own view rather than the
 /// verb chip: that one shares the tab row's matched-geometry highlight.
 private struct GrammarStyleChip: View {
     let title: String
@@ -86,9 +87,11 @@ private struct GrammarStyleChip: View {
         .foregroundStyle(isSelected ? BeruColor.textPrimary : BeruColor.textSecondary)
         .padding(.horizontal, BeruSpace.xs)
         .frame(height: BeruMetrics.pillHeightSm)
-        .background {
+        // Outline, not fill: the tab row above uses a filled pill, so the two
+        // levels read as different controls at a glance.
+        .overlay {
             if isSelected {
-                Capsule().fill(BeruColor.hoverFill)
+                Capsule().strokeBorder(BeruColor.strongBorder, lineWidth: BeruMetrics.hairline)
             }
         }
         .contentShape(Capsule())
