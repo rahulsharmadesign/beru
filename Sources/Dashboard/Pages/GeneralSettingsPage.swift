@@ -10,6 +10,7 @@ import SwiftUI
 
 struct GeneralSettingsTab: View {
     @Bindable private var settings = SettingsStore.shared
+    @AppStorage(PanelMode.showAllActionsKey) private var showAllActions = false
 
     var body: some View {
         SettingsPage(
@@ -64,6 +65,15 @@ struct GeneralSettingsTab: View {
                             SettingsPickerOption(value: $0.id, title: $0.name)
                         },
                         accessibilityLabel: "Default action"
+                    )
+                }
+                SettingsRow(
+                    title: "Show all actions",
+                    caption: "Adds AI Search, Smart Reply, Summarize, Explain, and your custom actions to the panel. Off keeps it to Enhance Prompt and Grammar; Tab switches between them."
+                ) {
+                    SettingsSwitch(
+                        isOn: $showAllActions,
+                        accessibilityLabel: "Show all actions"
                     )
                 }
                 SettingsRow(

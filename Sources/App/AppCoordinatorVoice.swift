@@ -54,7 +54,11 @@ extension AppCoordinator {
         }
 
         if appState.isPanelVisible {
-            appState.selectAction(EnhancementAction.searchID)
+            if !PanelMode.isFocused {
+                appState.selectAction(EnhancementAction.searchID)
+            } else if !PanelMode.focusedActionIDs.contains(appState.selectedActionID) {
+                appState.selectAction(EnhancementAction.enhanceID)
+            }
             beginVoiceAsk()
             return
         }

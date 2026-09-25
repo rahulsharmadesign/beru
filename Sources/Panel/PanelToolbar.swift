@@ -29,6 +29,22 @@ extension PanelView {
     /// AI Search is pinned first. Registry skills follow. Instruction only
     /// appears while a one-off describe is active.
     var panelTabs: [EnhancementAction] {
+        if PanelMode.isFocused {
+            var tabs = PanelMode.focusedActionIDs.compactMap { registry.action(withID: $0) }
+            // Never strand a selected tab the row does not show (a vault or
+            // design-snapshot entry can still land on another action).
+            let current = appState.selectedActionID
+            if !tabs.contains(where: { $0.id == current }) {
+                if current == EnhancementAction.searchID {
+                    tabs.append(EnhancementAction.search)
+                } else if current == EnhancementAction.describeID {
+                    tabs.append(EnhancementAction.describe)
+                } else if let action = registry.action(withID: current) {
+                    tabs.append(action)
+                }
+            }
+            return tabs
+        }
         var tabs = [EnhancementAction.search]
         if appState.selectedActionID == EnhancementAction.describeID {
             tabs.append(EnhancementAction.describe)
