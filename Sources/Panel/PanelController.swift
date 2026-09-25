@@ -18,7 +18,7 @@ private let layoutLog = Logger(subsystem: "com.rahul.enhancify", category: "pane
 /// - Below the cap: result is intrinsic. At the cap: result scrolls inside
 ///   `appState.panelResultScrollHeight`; close / chips / composer stay pinned.
 /// - Grow immediately and unanimated. Tab-change shrinks are skipped so
-///   Search ↔ Enhance cannot jump the window; leftover height sits between
+///   Enhance ↔ Grammar cannot jump the window; leftover height sits between
 ///   the result and the composer. Other shrinks debounce. Never drive height
 ///   from `NSHostingView.intrinsicContentSize` (`sizingOptions` stays empty).
 @MainActor
@@ -47,8 +47,8 @@ final class PanelController {
     private var lastActionID: String?
     private var lastResolvedLayout: PanelLayoutHeights?
     /// Once the user switches tabs this session, never shrink below the
-    /// height already on screen. Search (no footer, thread) and Enhance
-    /// (footer, diff) disagree enough to jump the window otherwise.
+    /// height already on screen. Enhance (plain text) and Grammar (diff,
+    /// style row) disagree enough to jump the window otherwise.
     private var heightFrozen = false
 
     /// Internal for PanelEntrance.swift, which shares the reduce-motion check.

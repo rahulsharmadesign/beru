@@ -23,8 +23,8 @@ enum StreamingPrint {
 }
 
 /// Live result print: words appear one by one with a caret — a plain
-/// typewriter, no blur. Finished answers pass `isLive: false` so Search
-/// history does not replay. Reduce Motion shows the full string.
+/// typewriter, no blur. Finished results pass `isLive: false` so they do not
+/// replay. Reduce Motion shows the full string.
 struct StreamingPrintedText: View {
     let text: String
     var isLive: Bool = false

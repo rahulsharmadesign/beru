@@ -68,7 +68,7 @@ enum PanelMetrics {
     /// Height reserved by the result area while a request is in flight.
     static let resultPlaceholderHeight: CGFloat = 120
     /// Idle result band floor. Tall enough that the opening widget breathes;
-    /// placeholder copy stays vertically centered in it. Search ↔ Enhance
+    /// placeholder copy stays vertically centered in it. Enhance ↔ Grammar
     /// placeholder swaps never change this height, so tab switches cannot
     /// crop the composer.
     static let resultIdleMinHeight: CGFloat = 172

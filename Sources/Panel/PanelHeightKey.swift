@@ -34,8 +34,8 @@ struct PanelLayoutHeights: Equatable {
     }
 
     /// How a shrink should land. Grow is always immediate and unanimated.
-    /// Tab changes never shrink: Search has no footer and a different result
-    /// stack than Enhance, so applying the new ideal would jump the window.
+    /// Tab changes never shrink: Enhance and Grammar have different result
+    /// stacks, so applying the new ideal would jump the window.
     /// Leftover height stays; the composer pins to the bottom. Streaming
     /// layout jitter still skips; a shrink during a stream is dropped until
     /// `streamingDidEnd` flushes. Other shrinks debounce.
@@ -51,9 +51,9 @@ struct PanelLayoutHeights: Equatable {
         return .debounceAnimated
     }
 
-    /// After a tab switch, keep the taller window so Search ↔ Enhance cannot
-    /// jump. Result growth (a new Search answer) still wins; chrome-only
-    /// growth (the Enhance footer appearing) does not.
+    /// After a tab switch, keep the taller window so Enhance ↔ Grammar cannot
+    /// jump. Result growth (a new answer) still wins; chrome-only growth (the
+    /// footer appearing) does not.
     static func frozenTarget(
         computed: CGFloat,
         lastApplied: CGFloat,

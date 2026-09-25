@@ -37,7 +37,7 @@ extension AppCoordinator {
         return last != current
     }
 
-    func invokeVoiceAsk() {
+    func invokeDictation() {
         if DictationService.shared.isRecording {
             DictationService.shared.stop()
             return
@@ -54,7 +54,7 @@ extension AppCoordinator {
         }
 
         if appState.isPanelVisible {
-            beginVoiceAsk()
+            beginDictation()
             return
         }
 
@@ -73,13 +73,13 @@ extension AppCoordinator {
                 host: host,
                 waitsForInput: true
             )
-            beginVoiceAsk()
+            beginDictation()
         }
     }
 
     /// Opens the panel and starts dictating.
     func dictateNewText() {
-        invokeVoiceAsk()
+        invokeDictation()
     }
 
     /// No selection: open an intent-ready panel so the user can type or dictate
@@ -112,7 +112,7 @@ extension AppCoordinator {
     }
 
     /// Start listening into the composer.
-    func beginVoiceAsk() {
+    func beginDictation() {
         dictationDestination = .instruction
         let service = DictationService.shared
         switch DictationService.intentForMicPress(
@@ -152,7 +152,7 @@ extension AppCoordinator {
 
     /// Toggle listening from the panel mic.
     func beginPushToTalk() {
-        beginVoiceAsk()
+        beginDictation()
     }
 
     func dismiss() {

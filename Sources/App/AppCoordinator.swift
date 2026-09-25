@@ -47,7 +47,7 @@ final class AppCoordinator {
         }
         KeyboardShortcuts.onKeyDown(for: .dictateToEnhancify) { [weak self] in
             logger.notice("dictate hotkey fired")
-            self?.invokeVoiceAsk()
+            self?.invokeDictation()
         }
         let invoke = KeyboardShortcuts.getShortcut(for: .invokeEnhancify)?.description ?? "nil"
         logger.notice("invoke shortcut bound = \(invoke, privacy: .public)")
