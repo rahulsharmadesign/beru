@@ -1,7 +1,7 @@
 import SwiftUI
 import os.log
 
-private let bandLog = Logger(subsystem: "com.rahul.beru", category: "panel-layout")
+private let bandLog = Logger(subsystem: "com.rahul.enhancify", category: "panel-layout")
 
 /// Trace hook for band preference delivery, callable from PanelView.
 enum PanelControllerTrace {

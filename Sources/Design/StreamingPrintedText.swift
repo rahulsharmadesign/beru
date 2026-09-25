@@ -49,8 +49,8 @@ struct StreamingPrintedText: View {
 
     var body: some View {
         (Text(revealed) + caret)
-            .beruPrintedText()
-            .foregroundStyle(BeruColor.textPrimary)
+            .enhancifyPrintedText()
+            .foregroundStyle(EnhancifyColor.textPrimary)
             .textSelection(.enabled)
             .frame(maxWidth: .infinity, alignment: .leading)
             .onChange(of: text, initial: true) { _, new in
@@ -66,7 +66,7 @@ struct StreamingPrintedText: View {
     private var caret: Text {
         guard shouldType else { return Text("") }
         return Text("▌")
-            .foregroundStyle(BeruColor.textPrimary.opacity(caretOn ? 1 : 0))
+            .foregroundStyle(EnhancifyColor.textPrimary.opacity(caretOn ? 1 : 0))
     }
 
     private func syncReveal(for new: String) {
@@ -82,7 +82,7 @@ struct StreamingPrintedText: View {
 
     private func tick() async {
         guard tickID >= 0 else { return }
-        try? await Task.sleep(for: .seconds(BeruMotion.typewriterWord))
+        try? await Task.sleep(for: .seconds(EnhancifyMotion.typewriterWord))
         guard !Task.isCancelled else { return }
         revealedCount = min(revealedCount + 1, tokens.count)
     }
@@ -91,7 +91,7 @@ struct StreamingPrintedText: View {
         guard shouldType else { return }
         caretOn = true
         while !Task.isCancelled {
-            try? await Task.sleep(for: .seconds(BeruMotion.typewriterCaret))
+            try? await Task.sleep(for: .seconds(EnhancifyMotion.typewriterCaret))
             guard !Task.isCancelled else { return }
             caretOn.toggle()
         }

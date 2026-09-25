@@ -138,7 +138,7 @@ enum Prompts {
     // forty lines of rules plus the composed target / framing layers. Apple's on-device model
     // is the general-purpose ~3B base — it does not get the task adapters Apple
     // trains for Writing Tools — and it cannot carry that load. Measured on
-    // Beru's real prompts: Grammar echoes the selection or answers it instead of
+    // Enhancify's real prompts: Grammar echoes the selection or answers it instead of
     // tagging it, and Enhance invents deliverables the author never asked for.
     //
     // These variants take Apple's own approach: one narrow job per call, a short

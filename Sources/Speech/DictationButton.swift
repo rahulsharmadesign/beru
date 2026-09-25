@@ -18,17 +18,17 @@ struct DictationButton: View {
     var body: some View {
         ZStack {
             DictationPressView(onToggle: toggle)
-            BeruIcon(name: symbol, size: BeruMetrics.iconSize, strokeWidth: 2)
+            EnhancifyIcon(name: symbol, size: EnhancifyMetrics.iconSize, strokeWidth: 2)
                 .foregroundStyle(iconTint)
                 .allowsHitTesting(false)
         }
-        .frame(width: BeruMetrics.roundButton, height: BeruMetrics.roundButton)
+        .frame(width: EnhancifyMetrics.roundButton, height: EnhancifyMetrics.roundButton)
         .background {
-            Circle().fill(isHovered ? BeruColor.hoverFill : Color.clear)
+            Circle().fill(isHovered ? EnhancifyColor.hoverFill : Color.clear)
         }
         .contentShape(Circle())
         .onHover { isHovered = $0 }
-        .beruHoverEase(isHovered)
+        .enhancifyHoverEase(isHovered)
         .help(helpText)
         .accessibilityLabel(dictation.isRecording ? "Stop dictation" : "Dictate an instruction")
         .accessibilityHint(helpText)
@@ -77,14 +77,14 @@ struct DictationButton: View {
     }
 
     private var iconTint: Color {
-        if dictation.isRecording { return BeruColor.destructive }
-        return BeruColor.textSecondary
+        if dictation.isRecording { return EnhancifyColor.destructive }
+        return EnhancifyColor.textSecondary
     }
 
     private var helpText: String {
         if dictation.isRecording { return "Listening — click, press the shortcut, or Escape to stop" }
         if let reason = dictation.availability.message { return reason }
-        guard let shortcut = KeyboardShortcuts.getShortcut(for: .dictateToBeru) else {
+        guard let shortcut = KeyboardShortcuts.getShortcut(for: .dictateToEnhancify) else {
             return "Click the mic, or set a dictate shortcut in Settings › General"
         }
         let key = "\(shortcut)"

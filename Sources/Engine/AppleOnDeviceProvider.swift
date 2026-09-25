@@ -1,14 +1,14 @@
 import Foundation
 import FoundationModels
 
-/// Beru's provider over Apple's on-device model (Foundation Models framework).
+/// Enhancify's provider over Apple's on-device model (Foundation Models framework).
 ///
 /// Nothing leaves the Mac, there is no key, no base URL, no model id, and no
-/// download — which is what makes it a candidate for Beru's *default* provider.
+/// download — which is what makes it a candidate for Enhancify's *default* provider.
 /// Everything provider-specific is confined to this file; the caller sees the
 /// same `LLMProvider` it already has.
 ///
-/// Concurrency notes (Beru builds with `SWIFT_STRICT_CONCURRENCY: complete`):
+/// Concurrency notes (Enhancify builds with `SWIFT_STRICT_CONCURRENCY: complete`):
 /// - `LanguageModelSession` is a non-Sendable class, so it is created *inside*
 ///   the streaming task and never stored. That is why this type is a stateless
 ///   struct and safe to hand across actors.
@@ -47,7 +47,7 @@ struct AppleOnDeviceProvider: LLMProvider {
                     var accumulator = DeltaAccumulator()
                     for try await snapshot in stream {
                         if Task.isCancelled { break }
-                        // Snapshots are cumulative; Beru appends deltas.
+                        // Snapshots are cumulative; Enhancify appends deltas.
                         if let delta = accumulator.delta(forCumulative: snapshot.content) {
                             continuation.yield(.content(delta))
                         }
@@ -91,7 +91,7 @@ struct AppleOnDeviceProvider: LLMProvider {
 /// Sampling and output caps for the on-device model, kept separate from the
 /// streaming code so the mapping is unit-testable without a model.
 enum AppleGeneration {
-    /// Deterministic or lightly varied. Beru's own tuning decides which.
+    /// Deterministic or lightly varied. Enhancify's own tuning decides which.
     enum Sampling: Equatable, Sendable {
         case deterministic
         case temperature(Double)
@@ -99,11 +99,11 @@ enum AppleGeneration {
 
     /// Grammar's three-in-one call needs variation *between* its rows, and
     /// Apple's 3B-class model collapses clearer/tighter into near-verbatim
-    /// echoes under greedy decoding (measured with Beru's exact prompt:
+    /// echoes under greedy decoding (measured with Enhancify's exact prompt:
     /// identical triple on clean input). At temperature 0.7 the same prompt
     /// yields genuinely different rows with corrections intact — also
     /// measured, on error-filled input — so Grammar alone opts out of greedy
-    /// on this provider. Every other role keeps Beru's shared tuning.
+    /// on this provider. Every other role keeps Enhancify's shared tuning.
     static let grammarTemperature = 0.7
 
     static func sampling(for role: ModelRole, actionID: String) -> Sampling {

@@ -1,4 +1,4 @@
-name: Beru
+name: Enhancify
 options:
   bundleIdPrefix: com.rahul
   deploymentTarget:
@@ -11,7 +11,7 @@ packages:
     from: 2.2.1
 
 targets:
-  Beru:
+  Enhancify:
     type: application
     platform: macOS
     deploymentTarget: "26.0"
@@ -21,12 +21,12 @@ targets:
         buildPhase: resources
         excludes:
           - Info.plist
-          - Beru.entitlements
+          - Enhancify.entitlements
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.rahul.beru
-        MARKETING_VERSION: "1.1.27"
-        CURRENT_PROJECT_VERSION: "35"
+        PRODUCT_BUNDLE_IDENTIFIER: com.rahul.enhancify
+        MARKETING_VERSION: "2.0.0"
+        CURRENT_PROJECT_VERSION: "36"
         SWIFT_VERSION: "6.0"
         # Signed with the machine's Apple Development certificate, MANUALLY and
         # with no provisioning profile.
@@ -45,11 +45,11 @@ targets:
         CODE_SIGN_STYLE: Automatic
         CODE_SIGN_IDENTITY: "-"
         # Hardened Runtime enables runtime security checks that protect against
-        # code injection and exploitation. Required for notarization. Beru does
+        # code injection and exploitation. Required for notarization. Enhancify does
         # not use JIT, unsigned libraries, or other features that require
         # exceptions, so the default hardened runtime is sufficient.
         ENABLE_HARDENED_RUNTIME: YES
-        # Xcode 16+ Debug builds emit Beru.debug.dylib. Hardened Runtime then
+        # Xcode 16+ Debug builds emit Enhancify.debug.dylib. Hardened Runtime then
         # refuses to load it when signed with a local cert that has no Team ID
         # ("different Team IDs"). A single binary avoids that without weakening
         # library validation.
@@ -64,10 +64,6 @@ targets:
         CFBundleShortVersionString: "$(MARKETING_VERSION)"
         CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         CFBundleIconName: AppIcon
-        # The product is Enhancify; the target, module, bundle id, Keychain
-        # service and Application Support folder keep the original "Beru" name
-        # so existing installs keep their Accessibility grant, settings, keys,
-        # vault, and in-app updates.
         CFBundleName: Enhancify
         CFBundleDisplayName: Enhancify
         LSUIElement: true
@@ -84,18 +80,18 @@ targets:
         NSMicrophoneUsageDescription: "Enhancify listens only while you hold the dictation key, so you can speak an instruction instead of typing it. Audio is transcribed on this Mac and never leaves it."
         NSSpeechRecognitionUsageDescription: "Enhancify transcribes what you say on this Mac so you can speak an instruction instead of typing it. Speech is recognized on-device and is not sent to Apple’s servers."
     entitlements:
-      path: Resources/Beru.entitlements
+      path: Resources/Enhancify.entitlements
       properties:
         com.apple.security.app-sandbox: false
         com.apple.security.device.audio-input: true
         com.apple.security.network.client: true
 
-  BeruTests:
+  EnhancifyTests:
     type: bundle.unit-test
     platform: macOS
     deploymentTarget: "26.0"
     sources:
-      - path: Tests/BeruTests
+      - path: Tests/EnhancifyTests
     settings:
       base:
         SWIFT_VERSION: "6.0"
@@ -103,21 +99,21 @@ targets:
         CODE_SIGN_STYLE: Automatic
         CODE_SIGN_IDENTITY: "-"
     dependencies:
-      - target: Beru
+      - target: Enhancify
     testTargets:
-      - Beru
+      - Enhancify
 
 # Explicit scheme so the test bundle is built only for the test action.
 #
 # XcodeGen's default scheme builds every target for every action, including
 # archive. Release turns testability off, so archiving then fails on each
-# `@testable import Beru` — which is what blocked building a distributable
+# `@testable import Enhancify` — which is what blocked building a distributable
 # DMG. Tests still run normally; they just no longer gate a release build.
 schemes:
-  Beru:
+  Enhancify:
     build:
       targets:
-        Beru: [run, test, profile, analyze, archive]
-        BeruTests: [test]
+        Enhancify: [run, test, profile, analyze, archive]
+        EnhancifyTests: [test]
     test:
-      targets: [BeruTests]
+      targets: [EnhancifyTests]

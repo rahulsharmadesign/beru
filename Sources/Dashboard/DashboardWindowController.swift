@@ -42,8 +42,8 @@ final class DashboardWindowController: NSWindowController, NSWindowDelegate {
             contentRect: NSRect(
                 x: 0,
                 y: 0,
-                width: BeruMetrics.windowWidth,
-                height: BeruMetrics.windowHeight
+                width: EnhancifyMetrics.windowWidth,
+                height: EnhancifyMetrics.windowHeight
             ),
             styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
             backing: .buffered,
@@ -62,7 +62,7 @@ final class DashboardWindowController: NSWindowController, NSWindowDelegate {
         window.backgroundColor = .clear
         window.isReleasedWhenClosed = false
         window.minSize = NSSize(width: 880, height: 560)
-        window.setFrameAutosaveName("BeruDashboardFixed")
+        window.setFrameAutosaveName("EnhancifyDashboardFixed")
         window.center()
         super.init(window: window)
         window.delegate = self
@@ -128,7 +128,7 @@ final class DashboardWindowController: NSWindowController, NSWindowDelegate {
             window.contentView = canvas
             window.isOpaque = true
             usingOpaqueMaterial = true
-            window.backgroundColor = BeruColor.canvasNSColor
+            window.backgroundColor = EnhancifyColor.canvasNSColor
             host.frame = canvas.bounds
             canvas.addSubview(host)
             canvas.refreshColors()
@@ -243,7 +243,7 @@ private final class DashboardCanvasView: NSView {
     func refreshColors() {
         wantsLayer = true
         effectiveAppearance.performAsCurrentDrawingAppearance { [self] in
-            layer?.backgroundColor = BeruColor.canvasNSColor.cgColor
+            layer?.backgroundColor = EnhancifyColor.canvasNSColor.cgColor
         }
     }
 }

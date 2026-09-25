@@ -4,8 +4,8 @@ import SwiftUI
 /// the trailing edge. For button rows that grow with state (error fallbacks,
 /// pin actions) on fixed-width surfaces like the panel and inspectors.
 struct WrapHStack: Layout {
-    var spacing: CGFloat = BeruSpace.xs
-    var lineSpacing: CGFloat = BeruSpace.xs
+    var spacing: CGFloat = EnhancifySpace.xs
+    var lineSpacing: CGFloat = EnhancifySpace.xs
 
     func sizeThatFits(
         proposal: ProposedViewSize,

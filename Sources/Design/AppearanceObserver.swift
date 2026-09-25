@@ -38,7 +38,7 @@ final class AppearanceObserver {
             // (wallpaper tint can disagree with the app), and stamping it here
             // froze the status-item label on the app's scheme — the "wrong
             // variant" the menu-bar icon used to show. Same class-name match
-            // BeruApp uses to dismiss the extra.
+            // EnhancifyApp uses to dismiss the extra.
             guard !window.className.contains("NSStatusBar") else { continue }
             window.appearance = appearance
             (window as? FloatingPanel)?.syncAppearance(with: appearance)
@@ -46,7 +46,7 @@ final class AppearanceObserver {
     }
 
     /// Light/dark plus Increase Contrast / Reduce Transparency / Reduce Motion,
-    /// so named `BeruColor` tokens re-resolve when Liquid Glass accessibility
+    /// so named `EnhancifyColor` tokens re-resolve when Liquid Glass accessibility
     /// settings change without a relaunch.
     private static func makeSignature() -> String {
         let workspace = NSWorkspace.shared

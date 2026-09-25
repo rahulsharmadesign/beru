@@ -3,7 +3,7 @@ import FoundationModels
 
 /// What the on-device Apple model can actually do on *this* Mac.
 ///
-/// The three failure modes are not interchangeable, and Beru's UI has to say
+/// The three failure modes are not interchangeable, and Enhancify's UI has to say
 /// which one it is: an Intel Mac will never be eligible, an eligible Mac may
 /// only have Apple Intelligence switched off, and a fresh enable is
 /// `modelNotReady` until Apple's assets finish downloading.
@@ -62,16 +62,16 @@ enum AppleModelState: Equatable, Sendable {
         state(from: SystemLanguageModel.default.availability)
     }
 
-    /// Only `.ready` counts as configured. Beru's `isConfigured(.apple)` must
+    /// Only `.ready` counts as configured. Enhancify's `isConfigured(.apple)` must
     /// use this so the panel can never open on a provider that will fail.
     static var isConfigured: Bool { current().isReady }
 }
 
 extension AppleModelState {
-    /// How a non-ready state surfaces in Beru's error path.
+    /// How a non-ready state surfaces in Enhancify's error path.
     ///
     /// Nothing here returns `.modelUnavailable`: that case sets
-    /// `needsModelSetup`, which makes Beru offer "Connect to model" — wrong for
+    /// `needsModelSetup`, which makes Enhancify offer "Connect to model" — wrong for
     /// a provider the user cannot configure by typing a URL or a key.
     var providerError: ProviderError {
         switch self {
@@ -84,7 +84,7 @@ extension AppleModelState {
         }
     }
 
-    /// Maps a framework generation failure to Beru's error vocabulary.
+    /// Maps a framework generation failure to Enhancify's error vocabulary.
     static func providerError(for error: Error) -> ProviderError {
         guard let generation = error as? LanguageModelSession.GenerationError else {
             if error is CancellationError { return .cancelled }

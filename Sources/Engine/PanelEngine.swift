@@ -2,7 +2,7 @@ import AppKit
 import Foundation
 import os.log
 
-let engineLogger = Logger(subsystem: "com.rahul.beru", category: "engine")
+let engineLogger = Logger(subsystem: "com.rahul.enhancify", category: "engine")
 
 /// Orchestrates capture -> LLM streaming -> replace/copy for the floating panel.
 /// UI-agnostic: PanelView drives it, AppState holds the state it produces.

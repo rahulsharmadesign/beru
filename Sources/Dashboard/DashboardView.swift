@@ -19,19 +19,19 @@ struct DashboardView: View {
         // under the traffic lights and meets the vertical rule at a T-junction.
         VStack(spacing: 0) {
             Color.clear
-                .frame(height: BeruMetrics.titlebarHeight)
+                .frame(height: EnhancifyMetrics.titlebarHeight)
                 .frame(maxWidth: .infinity)
             Rectangle()
-                .fill(BeruColor.border)
-                .frame(height: BeruMetrics.hairline)
+                .fill(EnhancifyColor.border)
+                .frame(height: EnhancifyMetrics.hairline)
                 .frame(maxWidth: .infinity)
             HStack(spacing: 0) {
                 sidebar
-                    .frame(width: BeruMetrics.sidebarWidth)
+                    .frame(width: EnhancifyMetrics.sidebarWidth)
                     .frame(maxHeight: .infinity)
                 Rectangle()
-                    .fill(BeruColor.border)
-                    .frame(width: BeruMetrics.hairline)
+                    .fill(EnhancifyColor.border)
+                    .frame(width: EnhancifyMetrics.hairline)
                     .frame(maxHeight: .infinity)
                 detail
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -39,45 +39,45 @@ struct DashboardView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .clipped()
-        .tint(BeruColor.accent)
-        .font(BeruType.control)
+        .tint(EnhancifyColor.accent)
+        .font(EnhancifyType.control)
     }
 
     private var sidebar: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Color.clear.frame(height: BeruSpace.md)
+            Color.clear.frame(height: EnhancifySpace.md)
             // Custom rows, not a List: AppKit draws List selection with the
             // system accent and ignores SwiftUI tint.
-            VStack(alignment: .leading, spacing: BeruSpace.xs) {
+            VStack(alignment: .leading, spacing: EnhancifySpace.xs) {
                 sidebarGroup(title: "Settings", routes: DashboardRoute.menu)
             }
-            .padding(.horizontal, BeruSpace.xs)
+            .padding(.horizontal, EnhancifySpace.xs)
             Spacer(minLength: 0)
             VStack(spacing: 0) {
                 SettingsHeaderRule()
                 ForEach(DashboardRoute.footer) { route in
                     sidebarButton(route)
                 }
-                .padding(.horizontal, BeruSpace.xs)
-                .padding(.vertical, BeruSpace.xxs)
-                .frame(maxWidth: .infinity, minHeight: BeruMetrics.workspaceChromeMinHeight)
+                .padding(.horizontal, EnhancifySpace.xs)
+                .padding(.vertical, EnhancifySpace.xxs)
+                .frame(maxWidth: .infinity, minHeight: EnhancifyMetrics.workspaceChromeMinHeight)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         // Inset panel: 4pt of glass around the sidebar, clipped to the same
         // rounded enclosure as the window.
-        .padding(BeruSpace.xxs)
-        .clipShape(BeruRadius.shape(BeruRadius.sm))
+        .padding(EnhancifySpace.xxs)
+        .clipShape(EnhancifyRadius.shape(EnhancifyRadius.sm))
     }
 
     @ViewBuilder
     private func sidebarGroup(title: String, routes: [DashboardRoute]) -> some View {
         if !routes.isEmpty {
             Text(title)
-                .font(BeruType.footnoteSemibold)
-                .foregroundStyle(BeruColor.textTertiary)
-                .padding(.horizontal, BeruSpace.sm)
-                .padding(.top, BeruSpace.xs)
+                .font(EnhancifyType.footnoteSemibold)
+                .foregroundStyle(EnhancifyColor.textTertiary)
+                .padding(.horizontal, EnhancifySpace.sm)
+                .padding(.top, EnhancifySpace.xs)
                 .accessibilityAddTraits(.isHeader)
             ForEach(routes) { route in
                 sidebarButton(route)
@@ -96,28 +96,28 @@ struct DashboardView: View {
 
     private func sidebarRow(_ route: DashboardRoute) -> some View {
         let selected = model.route == route
-        return HStack(spacing: BeruSpace.sm) {
+        return HStack(spacing: EnhancifySpace.sm) {
             // Plain glyph, no colored tile: with four pages the icons are
             // wayfinding, not decoration.
-            BeruIcon(name: route.lucideIcon, size: BeruMetrics.sidebarTileGlyph)
-                .foregroundStyle(BeruColor.textSecondary)
-                .frame(width: BeruMetrics.sidebarTileBox, height: BeruMetrics.sidebarTileBox)
+            EnhancifyIcon(name: route.lucideIcon, size: EnhancifyMetrics.sidebarTileGlyph)
+                .foregroundStyle(EnhancifyColor.textSecondary)
+                .frame(width: EnhancifyMetrics.sidebarTileBox, height: EnhancifyMetrics.sidebarTileBox)
             Text(route.title)
-                .font(selected ? BeruType.sidebarSelected : BeruType.sidebar)
+                .font(selected ? EnhancifyType.sidebarSelected : EnhancifyType.sidebar)
             Spacer(minLength: 0)
             if route == .about, updates.showsUpdateButton {
                 SidebarUpdateChip()
             }
         }
-        .foregroundStyle(BeruColor.textPrimary)
-        .padding(.horizontal, BeruSpace.sm)
-        .frame(maxWidth: .infinity, minHeight: BeruMetrics.sidebarRowHeight, alignment: .leading)
-        .frame(height: BeruMetrics.sidebarRowHeight)
+        .foregroundStyle(EnhancifyColor.textPrimary)
+        .padding(.horizontal, EnhancifySpace.sm)
+        .frame(maxWidth: .infinity, minHeight: EnhancifyMetrics.sidebarRowHeight, alignment: .leading)
+        .frame(height: EnhancifyMetrics.sidebarRowHeight)
         .background {
-            BeruRadius.shape(BeruRadius.md)
-                .fill(selected ? BeruColor.hoverFill : Color.clear)
+            EnhancifyRadius.shape(EnhancifyRadius.md)
+                .fill(selected ? EnhancifyColor.hoverFill : Color.clear)
         }
-        .contentShape(RoundedRectangle(cornerRadius: BeruRadius.md, style: .continuous))
+        .contentShape(RoundedRectangle(cornerRadius: EnhancifyRadius.md, style: .continuous))
     }
 
     private var detail: some View {
@@ -139,8 +139,8 @@ private struct SidebarUpdateChip: View {
     var body: some View {
         SettingsIconButton(
             icon: "square.and.arrow.down",
-            size: BeruMetrics.iconSizeCompact,
-            frameSize: BeruMetrics.hitTargetCompact,
+            size: EnhancifyMetrics.iconSizeCompact,
+            frameSize: EnhancifyMetrics.hitTargetCompact,
             enabled: !updates.isBusy,
             help: updates.availableVersion.map { "Install Enhancify \($0)" } ?? "Install the latest Enhancify"
         ) {

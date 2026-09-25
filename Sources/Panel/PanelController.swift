@@ -6,7 +6,7 @@ import SwiftUI
 
 import os.log
 
-private let layoutLog = Logger(subsystem: "com.rahul.beru", category: "panel-layout")
+private let layoutLog = Logger(subsystem: "com.rahul.enhancify", category: "panel-layout")
 
 /// Owns the lifecycle of the floating panel and hosts the SwiftUI content.
 ///

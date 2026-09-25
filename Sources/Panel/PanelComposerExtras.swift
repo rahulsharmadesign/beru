@@ -29,8 +29,8 @@ extension PanelView {
 
     func hintLine(_ text: String) -> some View {
         Text(text)
-            .font(BeruType.captionMedium)
-            .foregroundStyle(BeruColor.textSecondary)
+            .font(EnhancifyType.captionMedium)
+            .foregroundStyle(EnhancifyColor.textSecondary)
             .lineLimit(1)
             .padding(.horizontal, PanelMetrics.moduleInset)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -47,11 +47,11 @@ struct OutcomeIconButton: View {
     let action: () -> Void
 
     var body: some View {
-        BeruIconButton(
+        EnhancifyIconButton(
             icon: icon,
-            size: BeruMetrics.iconSize,
-            frameSize: BeruMetrics.roundButtonSm,
-            tint: tint ?? BeruColor.textSecondary,
+            size: EnhancifyMetrics.iconSize,
+            frameSize: EnhancifyMetrics.roundButtonSm,
+            tint: tint ?? EnhancifyColor.textSecondary,
             help: help,
             action: action
         )

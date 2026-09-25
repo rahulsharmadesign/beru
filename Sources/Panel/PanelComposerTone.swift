@@ -24,7 +24,7 @@ extension PanelView {
         ) {
             submitIfReady()
         } label: {
-            BeruFilledCircleButton(
+            EnhancifyFilledCircleButton(
                 icon: "arrow-up",
                 enabled: canSubmitDescribe && !isPromptBusy,
                 help: isPromptBusy ? "Working…" : "Run this intent"

@@ -70,10 +70,10 @@ extension PanelView {
         Group {
             if toastVisible && !showsFooter {
                     toastText
-                    .padding(.horizontal, BeruSpace.sm)
-                    .padding(.vertical, BeruSpace.xxs)
-                    .beruOverlayCapsule()
-                    .padding(.bottom, BeruSpace.xl)
+                    .padding(.horizontal, EnhancifySpace.sm)
+                    .padding(.vertical, EnhancifySpace.xxs)
+                    .enhancifyOverlayCapsule()
+                    .padding(.bottom, EnhancifySpace.xl)
                     .transition(.opacity)
             }
         }
@@ -85,8 +85,8 @@ extension PanelView {
     var toastText: some View {
         if let replaced = appState.replacedFeedback {
             Text(replaced)
-                .font(BeruType.footnote)
-                .foregroundStyle(BeruColor.textSecondary)
+                .font(EnhancifyType.footnote)
+                .foregroundStyle(EnhancifyColor.textSecondary)
                 .lineLimit(1)
                 .accessibilityAddTraits(.updatesFrequently)
         }
@@ -108,7 +108,7 @@ extension PanelView {
     }
 
     var footer: some View {
-        HStack(spacing: BeruSpace.xs) {
+        HStack(spacing: EnhancifySpace.xs) {
             footerPrimaryAction
 
             if !toastVisible {
@@ -142,15 +142,15 @@ extension PanelView {
                 performReplace()
             } label: {
                 ZStack {
-                    BeruGlassButton(
+                    EnhancifyGlassButton(
                         title: primaryFooterTitle,
                         secondary: true,
                         size: .compact,
                         leadingIcon: "replace"
                     ) {}
                     .opacity(appState.replacedFeedback != nil ? 0 : 1)
-                    BeruLoader.compact()
-                        .frame(width: BeruMetrics.roundButtonSm, height: BeruMetrics.roundButtonSm)
+                    EnhancifyLoader.compact()
+                        .frame(width: EnhancifyMetrics.roundButtonSm, height: EnhancifyMetrics.roundButtonSm)
                         .opacity(appState.replacedFeedback != nil ? 1 : 0)
                 }
                 .animation(.easeOut(duration: 0.15), value: appState.replacedFeedback != nil)
@@ -173,7 +173,7 @@ extension PanelView {
             OutcomeIconButton(
                 icon: appState.copiedFeedback ? "check" : "copy",
                 help: appState.copiedFeedback ? "Copied" : "Copy response",
-                tint: appState.copiedFeedback ? BeruColor.positive : nil
+                tint: appState.copiedFeedback ? EnhancifyColor.positive : nil
             ) {}
             .animation(.easeOut(duration: 0.15), value: appState.copiedFeedback)
         }
@@ -200,15 +200,15 @@ extension PanelView {
     }
 
     var intentField: some View {
-        VStack(alignment: .leading, spacing: BeruSpace.sm) {
-            HStack(alignment: .top, spacing: BeruSpace.xs) {
-                BeruIcon(name: "sparkles", size: 16)
-                .foregroundStyle(BeruColor.textSecondary)
+        VStack(alignment: .leading, spacing: EnhancifySpace.sm) {
+            HStack(alignment: .top, spacing: EnhancifySpace.xs) {
+                EnhancifyIcon(name: "sparkles", size: 16)
+                .foregroundStyle(EnhancifyColor.textSecondary)
                 ZStack(alignment: .topLeading) {
                     if appState.describeInstruction.isEmpty {
                         Text(composerPlaceholder)
-                            .font(BeruType.body)
-                            .foregroundStyle(BeruColor.textSecondary)
+                            .font(EnhancifyType.body)
+                            .foregroundStyle(EnhancifyColor.textSecondary)
                             .lineLimit(1)
                     }
                     ComposerTextField(
@@ -242,7 +242,7 @@ extension PanelView {
         }
         .padding(.horizontal, PanelMetrics.moduleInset)
         .padding(.top, PanelMetrics.moduleInset)
-        .padding(.bottom, BeruSpace.xs)
+        .padding(.bottom, EnhancifySpace.xs)
         .frame(minHeight: PanelMetrics.composerMinHeight, alignment: .center)
         .frame(maxWidth: .infinity)
     }

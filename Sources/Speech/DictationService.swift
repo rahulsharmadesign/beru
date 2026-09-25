@@ -5,12 +5,12 @@ import Observation
 import Speech
 import os.log
 
-private let logger = Logger(subsystem: "com.rahul.beru", category: "dictation")
+private let logger = Logger(subsystem: "com.rahul.enhancify", category: "dictation")
 
 /// Microphone capture and speech-to-text, on this Mac only.
 ///
 /// **`SFSpeechRecognizer` sends audio to Apple's servers by default.** That is
-/// the single most important thing about this file. Beru promises that
+/// the single most important thing about this file. Enhancify promises that
 /// nothing about the user's activity leaves the device, and a recogniser left on
 /// its defaults would break that promise invisibly — the transcription comes
 /// back correct either way, so nothing in the UI would ever look wrong.
@@ -180,7 +180,7 @@ final class DictationService {
 
     /// Asks for both permissions, microphone first.
     ///
-    /// Activates the app first: Beru is an accessory process, and TCC dialogs
+    /// Activates the app first: Enhancify is an accessory process, and TCC dialogs
     /// do not appear in front of a non-activating panel.
     func requestPermissions() async {
         // Accessory processes often never surface TCC dialogs. Become a regular

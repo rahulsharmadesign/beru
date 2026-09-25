@@ -51,8 +51,15 @@ struct OpenAICompatProvider: LLMProvider {
 
     /// Remote OpenAI-compatible hosts must send a Bearer token. Loopback
     /// servers (Ollama, LM Studio) usually do not.
+    /// A key never travels over plain HTTP to a remote host: anyone on the
+    /// network path could read it.
     func applyAuthentication(to request: inout URLRequest) throws {
         if let key = resolvedAPIKey {
+            if request.url?.scheme?.lowercased() != "https", !isLoopback {
+                throw ProviderError.connectionFailed(
+                    "Use an https:// base URL for a remote server so your API key isn't sent unencrypted."
+                )
+            }
             request.setValue("Bearer \(key)", forHTTPHeaderField: "Authorization")
             return
         }

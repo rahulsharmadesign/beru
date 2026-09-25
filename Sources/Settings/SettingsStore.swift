@@ -244,7 +244,7 @@ final class SettingsStore {
         set { storeKey(newValue, cache: \.customKeyCache, account: "custom") }
     }
 
-    /// Keychain first, then `BERU_ANTHROPIC_API_KEY`. Settings fields still
+    /// Keychain first, then `ENHANCIFY_ANTHROPIC_API_KEY`. Settings fields still
     /// read `anthropicAPIKey` so an env value is not copied into Keychain.
     var resolvedAnthropicAPIKey: String? {
         ProviderAPIKey.resolved(
@@ -255,7 +255,7 @@ final class SettingsStore {
         )
     }
 
-    /// Keychain first, then `BERU_API_KEY`.
+    /// Keychain first, then `ENHANCIFY_API_KEY`.
     var resolvedCustomAPIKey: String? {
         ProviderAPIKey.resolved(
             stored: customAPIKey,

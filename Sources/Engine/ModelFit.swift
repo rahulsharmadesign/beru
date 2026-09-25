@@ -1,11 +1,11 @@
 import Foundation
 
-// Whether a model id is a good fit for Beru's text roles (Enhance, Grammar).
+// Whether a model id is a good fit for Enhancify's text roles (Enhance, Grammar).
 // Pure name matching, so it is unit-testable and runs without touching the
 // server.
 //
 // Vision, embedding, speech, and guard models all pull cleanly from Ollama
-// and then fail Beru's jobs in confusing ways: a vision model ignores the bans the
+// and then fail Enhancify's jobs in confusing ways: a vision model ignores the bans the
 // tagged formats rely on. Flagging the mismatch where the model is picked
 // beats debugging the output later.
 
@@ -103,7 +103,7 @@ enum OllamaModelFit {
         "guard", "rerank", "shieldgemma", "shield-gemma",
     ]
 
-    /// Parameter-count tags too small for Beru's instruction-heavy prompts:
+    /// Parameter-count tags too small for Enhancify's instruction-heavy prompts:
     /// Enhance stacks target + context + thread + framing rules, and Grammar
     /// needs exact three-tag XML. A 1–3B model drops tags, paraphrases instead
     /// of correcting, or echoes the input — the "local models give poor

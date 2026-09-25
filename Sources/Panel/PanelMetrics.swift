@@ -55,9 +55,9 @@ enum PanelMetrics {
         moduleInset * 2 + closeStripHeight + footerMinHeight + moduleSpacing * 2
     }
     /// All four inner cards share this outer radius. Haze card radius.
-    static var moduleRadius: CGFloat { BeruRadius.md }
+    static var moduleRadius: CGFloat { EnhancifyRadius.md }
     /// Horizontal chip row. Haze pill height.
-    static var chipRowHeight: CGFloat { BeruMetrics.pillHeight }
+    static var chipRowHeight: CGFloat { EnhancifyMetrics.pillHeight }
     /// Outcome-row slot above the composer. Always reserved so a tab switch
     /// cannot grow the window when the icons appear. Haze pill height.
     static let footerMinHeight: CGFloat = 32

@@ -26,10 +26,10 @@ struct GeneralSettingsTab: View {
 
             SettingsSection(title: "Keyboard") {
                 SettingsRow(title: "Open Enhancify", caption: "Select text in another app, then press this shortcut.") {
-                    SettingsShortcutRecorder(name: .invokeBeru)
+                    SettingsShortcutRecorder(name: .invokeEnhancify)
                 }
                 SettingsRow(title: "Dictate", caption: "Opens Enhancify and starts listening.") {
-                    SettingsShortcutRecorder(name: .dictateToBeru)
+                    SettingsShortcutRecorder(name: .dictateToEnhancify)
                 }
             }
 

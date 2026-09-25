@@ -84,7 +84,7 @@ struct PanelView: View {
                 }
             }
             .ignoresSafeArea()
-            .tint(BeruColor.accent)
+            .tint(EnhancifyColor.accent)
             .id(appState.panelSessionID)
             .onPreferenceChange(PanelBandHeightKey.self, perform: publishLayoutHeights)
             .onChange(of: appState.selectedActionID) { _, actionID in
@@ -199,7 +199,7 @@ struct PanelView: View {
     }
 
     var closeStrip: some View {
-        HStack(spacing: BeruSpace.xxs) {
+        HStack(spacing: EnhancifySpace.xxs) {
             PanelCloseDot { engine.cancel() }
             Spacer(minLength: 0)
             PanelUpdateButton()

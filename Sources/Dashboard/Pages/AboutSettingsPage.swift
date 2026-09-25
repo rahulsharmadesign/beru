@@ -9,9 +9,9 @@ import SwiftUI
 // MARK: - About
 
 /// Public identity for this build. Swap these URLs if the handles change.
-enum BeruAbout {
-    static let source = URL(string: "https://github.com/rahulsharmadesign/beru")!
-    static let issues = URL(string: "https://github.com/rahulsharmadesign/beru/issues")!
+enum EnhancifyAbout {
+    static let source = URL(string: "https://github.com/rahulsharmadesign/enhancify")!
+    static let issues = URL(string: "https://github.com/rahulsharmadesign/enhancify/issues")!
     static let tip = URL(string: "https://razorpay.me/@rahulsharmadesign")!
 }
 
@@ -61,7 +61,7 @@ struct AboutSettingsTab: View {
                     SettingsFootnote(text: message)
                 }
                 SettingsRow(title: "GitHub Releases") {
-                    HStack(spacing: BeruSpace.xs) {
+                    HStack(spacing: EnhancifySpace.xs) {
                         SettingsPrimaryButton(
                             title: updates.checkButtonTitle,
                             enabled: !updates.isBusy
@@ -92,21 +92,21 @@ struct AboutSettingsTab: View {
                     title: "Send a tip"
                 ) {
                     SettingsPillButton(title: "Razorpay") {
-                        NSWorkspace.shared.open(BeruAbout.tip)
+                        NSWorkspace.shared.open(EnhancifyAbout.tip)
                     }
                 }
                 SettingsRow(
                     title: "Source"
                 ) {
                     SettingsPillButton(title: "GitHub") {
-                        NSWorkspace.shared.open(BeruAbout.source)
+                        NSWorkspace.shared.open(EnhancifyAbout.source)
                     }
                 }
                 SettingsRow(
                     title: "Contact"
                 ) {
                     SettingsPillButton(title: "Open") {
-                        NSWorkspace.shared.open(BeruAbout.issues)
+                        NSWorkspace.shared.open(EnhancifyAbout.issues)
                     }
                 }
             }

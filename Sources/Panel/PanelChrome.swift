@@ -15,7 +15,7 @@ struct PanelUpdateButton: View {
                     guard !updates.isBusy else { return }
                     updates.install()
                 }
-                BeruGlassButton(
+                EnhancifyGlassButton(
                     title: updates.buttonTitle,
                     prominent: true,
                     size: .compact
@@ -39,19 +39,19 @@ struct PanelSettingsLink: View {
     var body: some View {
         ZStack {
             DictationPressView(onToggle: action)
-            BeruIcon(name: "settings", size: BeruMetrics.iconSize)
-                .foregroundStyle(BeruColor.textPrimary)
-                .frame(width: BeruMetrics.hitTarget, height: BeruMetrics.hitTarget)
+            EnhancifyIcon(name: "settings", size: EnhancifyMetrics.iconSize)
+                .foregroundStyle(EnhancifyColor.textPrimary)
+                .frame(width: EnhancifyMetrics.hitTarget, height: EnhancifyMetrics.hitTarget)
                 .background {
-                    BeruRadius.shape(BeruRadius.sm)
-                        .fill(isHovered ? BeruColor.hoverFill : Color.clear)
+                    EnhancifyRadius.shape(EnhancifyRadius.sm)
+                        .fill(isHovered ? EnhancifyColor.hoverFill : Color.clear)
                 }
                 .allowsHitTesting(false)
         }
-        .frame(width: BeruMetrics.hitTarget, height: BeruMetrics.hitTarget)
+        .frame(width: EnhancifyMetrics.hitTarget, height: EnhancifyMetrics.hitTarget)
         .contentShape(Rectangle())
         .onHover { isHovered = $0 }
-        .beruHoverEase(isHovered)
+        .enhancifyHoverEase(isHovered)
         .help("Settings")
         .accessibilityLabel("Settings")
         .accessibilityAddTraits(.isButton)
@@ -67,7 +67,7 @@ struct PanelHitCapsule<Label: View>: View {
     var showsHelpPill: Bool = false
     /// Which way that pill grows. Controls on the panel's leading edge pass
     /// `.leading`; a centered pill hangs past the window and gets sheared.
-    var helpAnchor: BeruHelpAnchor = .center
+    var helpAnchor: EnhancifyHelpAnchor = .center
     var action: () -> Void
     @ViewBuilder var label: () -> Label
 
@@ -82,10 +82,10 @@ struct PanelHitCapsule<Label: View>: View {
         }
         .fixedSize()
         .onHover { isHovered = $0 }
-        .beruHoverEase(isHovered)
-        .environment(\.beruParentHovered, isHovered)
-        .beruHoverHelp(help, isVisible: showsHelpPill && isHovered, anchor: helpAnchor)
-        .beruNativeHelp(help, enabled: !showsHelpPill)
+        .enhancifyHoverEase(isHovered)
+        .environment(\.enhancifyParentHovered, isHovered)
+        .enhancifyHoverHelp(help, isVisible: showsHelpPill && isHovered, anchor: helpAnchor)
+        .enhancifyNativeHelp(help, enabled: !showsHelpPill)
         .accessibilityLabel(accessibilityLabel ?? help)
         .accessibilityAddTraits(.isButton)
     }
@@ -118,6 +118,6 @@ final class WindowMoveView: NSView {
     required init?(coder: NSCoder) { nil }
 
     override func mouseDown(with event: NSEvent) {
-        beruBeginWindowDrag(with: event)
+        enhancifyBeginWindowDrag(with: event)
     }
 }

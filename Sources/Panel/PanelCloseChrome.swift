@@ -105,7 +105,7 @@ final class PanelStripCloseButton: NSControl {
             width: size - 1,
             height: size - 1
         )
-        let fill = pressing ? BeruColor.CloseDisc.pressedFill : BeruColor.CloseDisc.fill
+        let fill = pressing ? EnhancifyColor.CloseDisc.pressedFill : EnhancifyColor.CloseDisc.fill
         fill.setFill()
         NSBezierPath(ovalIn: oval).fill()
 
@@ -118,7 +118,7 @@ final class PanelStripCloseButton: NSControl {
         glyph.line(to: NSPoint(x: oval.maxX - pad, y: oval.maxY - pad))
         glyph.move(to: NSPoint(x: oval.maxX - pad, y: oval.minY + pad))
         glyph.line(to: NSPoint(x: oval.minX + pad, y: oval.maxY - pad))
-        BeruColor.CloseDisc.glyph.setStroke()
+        EnhancifyColor.CloseDisc.glyph.setStroke()
         glyph.stroke()
     }
 }

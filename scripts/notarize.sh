@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Notarize and staple a Beru.app bundle or .dmg with Apple's notary service.
+# Notarize and staple a Enhancify.app bundle or .dmg with Apple's notary service.
 #
 # Required environment variables:
 #   APPLE_ID                  Apple ID email
@@ -12,7 +12,7 @@
 #
 set -euo pipefail
 
-TARGET="${1:?usage: notarize.sh <Beru.app|Beru.dmg>}"
+TARGET="${1:?usage: notarize.sh <Enhancify.app|Enhancify.dmg>}"
 cd "$(dirname "$0")/.."
 
 if [[ ! -e "$TARGET" ]]; then

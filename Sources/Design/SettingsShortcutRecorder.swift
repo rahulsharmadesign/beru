@@ -21,12 +21,12 @@ public struct SettingsShortcutRecorder: View {
 
     public var body: some View {
         RecorderField(name: name)
-            .frame(width: BeruMetrics.fieldWidth, height: BeruMetrics.fieldHeight)
+            .frame(width: EnhancifyMetrics.fieldWidth, height: EnhancifyMetrics.fieldHeight)
             .background {
                 Capsule()
-                    .fill(BeruColor.subtleFill)
+                    .fill(EnhancifyColor.subtleFill)
                     .overlay {
-                        Capsule().strokeBorder(BeruColor.border, lineWidth: BeruMetrics.hairline)
+                        Capsule().strokeBorder(EnhancifyColor.border, lineWidth: EnhancifyMetrics.hairline)
                     }
             }
     }
@@ -62,10 +62,10 @@ private final class RecorderHost: NSView {
         recorder.translatesAutoresizingMaskIntoConstraints = false
         addSubview(recorder)
         NSLayoutConstraint.activate([
-            recorder.leadingAnchor.constraint(equalTo: leadingAnchor, constant: BeruSpace.sm),
-            recorder.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -BeruSpace.sm),
+            recorder.leadingAnchor.constraint(equalTo: leadingAnchor, constant: EnhancifySpace.sm),
+            recorder.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -EnhancifySpace.sm),
             recorder.centerYAnchor.constraint(equalTo: centerYAnchor),
-            recorder.heightAnchor.constraint(equalToConstant: BeruMetrics.recorderTextHeight)
+            recorder.heightAnchor.constraint(equalToConstant: EnhancifyMetrics.recorderTextHeight)
         ])
     }
 
@@ -73,6 +73,6 @@ private final class RecorderHost: NSView {
     required init?(coder: NSCoder) { nil }
 
     override var intrinsicContentSize: NSSize {
-        NSSize(width: BeruMetrics.fieldWidth, height: BeruMetrics.fieldHeight)
+        NSSize(width: EnhancifyMetrics.fieldWidth, height: EnhancifyMetrics.fieldHeight)
     }
 }

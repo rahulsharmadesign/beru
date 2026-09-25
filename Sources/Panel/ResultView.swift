@@ -29,8 +29,8 @@ struct ResultView: View {
                 StreamingPrintedText(text: text, isLive: false)
             } else if case .error(let message) = state {
                 Text(message)
-                    .beruPrintedText()
-                    .foregroundStyle(BeruColor.textSecondary)
+                    .enhancifyPrintedText()
+                    .foregroundStyle(EnhancifyColor.textSecondary)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)

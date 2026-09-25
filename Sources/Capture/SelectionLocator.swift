@@ -11,7 +11,7 @@ enum SelectionLocator {
     /// position.
     ///
     /// Prefer passing the pre-capture `element` — once the panel is key, the
-    /// focused AX element is Beru itself and selection bounds disappear, which
+    /// focused AX element is Enhancify itself and selection bounds disappear, which
     /// used to fall back to the mouse and drift the panel downward each run.
     ///
     /// When there is no selection and no element (clipboard, dictation),

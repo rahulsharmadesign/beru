@@ -2,7 +2,7 @@ import SwiftUI
 
 /// How a panel control sits on the window slab. `.glass` is a second
 /// refractive lens and muddies NSGlassEffectView — do not use it there.
-enum BeruGlassKind {
+enum EnhancifyGlassKind {
     /// Filled accent control. Selected tab, Send when ready.
     case prominent
     /// No extra material. Idle tabs, menus, and icon actions on the slab.
@@ -10,14 +10,14 @@ enum BeruGlassKind {
 }
 
 /// Native glass-prominent or plain button for the floating panel.
-/// Settings keeps `BeruButton` (outlined / accent pills, no refraction).
-struct BeruGlassButton: View {
+/// Settings keeps `EnhancifyButton` (outlined / accent pills, no refraction).
+struct EnhancifyGlassButton: View {
     let title: String
     var prominent: Bool = false
     /// Outlined hairline pill in the same muted type as copy. Replace /
     /// Insert / Apply keep this look — never an accent fill.
     var secondary: Bool = false
-    var size: BeruButton.Size = .compact
+    var size: EnhancifyButton.Size = .compact
     var leadingIcon: String?
     var trailingIcon: String?
     var enabled: Bool = true
@@ -26,7 +26,7 @@ struct BeruGlassButton: View {
     let action: () -> Void
 
     @State private var isHovered = false
-    @Environment(\.beruParentHovered) private var parentHovered
+    @Environment(\.enhancifyParentHovered) private var parentHovered
 
     private var hovered: Bool { enabled && (isHovered || parentHovered) }
 
@@ -34,16 +34,16 @@ struct BeruGlassButton: View {
         if secondary {
             Button(action: action) {
                 labelStack
-                    .foregroundStyle(BeruColor.textSecondary)
-                    .padding(.horizontal, BeruSpace.sm)
+                    .foregroundStyle(EnhancifyColor.textSecondary)
+                    .padding(.horizontal, EnhancifySpace.sm)
                     .frame(height: height)
                     .background {
                         Capsule()
-                            .fill(hovered ? BeruColor.hoverFill : Color.clear)
+                            .fill(hovered ? EnhancifyColor.hoverFill : Color.clear)
                             .overlay {
                                 Capsule().strokeBorder(
-                                    BeruColor.strongBorder,
-                                    lineWidth: BeruMetrics.hairline
+                                    EnhancifyColor.strongBorder,
+                                    lineWidth: EnhancifyMetrics.hairline
                                 )
                             }
                     }
@@ -57,18 +57,18 @@ struct BeruGlassButton: View {
             .contentShape(Capsule())
             .opacity(enabled ? 1 : 0.45)
             .onHover { isHovered = $0 }
-            .beruHoverEase(hovered)
-            .beruHoverHelp(help, isVisible: hovered && !parentHovered)
+            .enhancifyHoverEase(hovered)
+            .enhancifyHoverHelp(help, isVisible: hovered && !parentHovered)
             .accessibilityLabel(help.isEmpty ? title : help)
         } else {
-            BeruGlassControl(
+            EnhancifyGlassControl(
                 kind: prominent ? .prominent : .plain,
                 enabled: enabled,
                 size: controlSize,
                 action: action
             ) {
                 labelStack
-                    .padding(.horizontal, BeruSpace.sm)
+                    .padding(.horizontal, EnhancifySpace.sm)
                     .frame(height: height)
                     .contentShape(Capsule())
             }
@@ -80,15 +80,15 @@ struct BeruGlassButton: View {
     }
 
     private var labelStack: some View {
-        HStack(spacing: BeruSpace.xxs) {
+        HStack(spacing: EnhancifySpace.xxs) {
             if let leadingIcon {
-                BeruIcon(name: leadingIcon, size: iconSize)
+                EnhancifyIcon(name: leadingIcon, size: iconSize)
             }
             Text(title)
                 .font(font)
                 .lineLimit(1)
             if let trailingIcon {
-                BeruIcon(name: trailingIcon, size: iconSize)
+                EnhancifyIcon(name: trailingIcon, size: iconSize)
             }
         }
     }
@@ -98,15 +98,15 @@ struct BeruGlassButton: View {
     }
 
     private var font: Font {
-        size == .compact ? BeruType.footnote : BeruType.control
+        size == .compact ? EnhancifyType.footnote : EnhancifyType.control
     }
 
     private var iconSize: CGFloat {
-        size == .compact ? BeruMetrics.iconSizeCompact : BeruMetrics.iconSize
+        size == .compact ? EnhancifyMetrics.iconSizeCompact : EnhancifyMetrics.iconSize
     }
 
     private var height: CGFloat {
-        size == .compact ? BeruMetrics.pillHeightSm : BeruMetrics.pillHeight
+        size == .compact ? EnhancifyMetrics.pillHeightSm : EnhancifyMetrics.pillHeight
     }
 }
 
@@ -119,54 +119,54 @@ struct BeruGlassButton: View {
 /// The accent fill is a shared `matchedGeometryEffect` highlight (Animate UI
 /// `layoutId`). Type still cross-fades as two baked layers so it never
 /// interpolates through muddy midtones.
-struct BeruGlassChip: View {
+struct EnhancifyGlassChip: View {
     let title: String
     let icon: String
     var isSelected: Bool
     var isHovered: Bool = false
     var highlightNamespace: Namespace.ID
 
-    private var chipShape: RoundedRectangle { BeruRadius.shape(BeruRadius.sm2) }
+    private var chipShape: RoundedRectangle { EnhancifyRadius.shape(EnhancifyRadius.sm2) }
 
     var body: some View {
         ZStack {
             // Neutral, like a macOS segmented control: the accent is kept for
             // the one thing that should pop (send), not for which tab is on.
             if isSelected {
-                chipShape.fill(BeruColor.hoverFill)
+                chipShape.fill(EnhancifyColor.hoverFill)
                     .matchedGeometryEffect(id: "tabHighlight", in: highlightNamespace)
             }
 
-            chipLabel(BeruColor.textSecondary)
+            chipLabel(EnhancifyColor.textSecondary)
                 .compositingGroup()
                 .opacity(isSelected ? 0 : 1)
 
-            chipLabel(BeruColor.textPrimary)
+            chipLabel(EnhancifyColor.textPrimary)
                 .compositingGroup()
                 .opacity(isSelected ? 1 : 0)
         }
-        .frame(height: BeruMetrics.tabHeight)
+        .frame(height: EnhancifyMetrics.tabHeight)
         .contentShape(chipShape)
         .opacity(isSelected || isHovered ? 1 : 0.92)
-        .beruTabSwitchEase(isSelected)
+        .enhancifyTabSwitchEase(isSelected)
     }
 
     private func chipLabel(_ color: Color) -> some View {
-        BeruLabel(title: title, icon: icon, iconSize: BeruMetrics.iconSizeCompact, strokeWidth: 2)
+        EnhancifyLabel(title: title, icon: icon, iconSize: EnhancifyMetrics.iconSizeCompact, strokeWidth: 2)
             .labelStyle(.titleAndIcon)
-            .font(BeruType.footnoteMedium)
+            .font(EnhancifyType.footnoteMedium)
             .foregroundStyle(color)
-            .padding(.horizontal, BeruSpace.sm)
-            .frame(height: BeruMetrics.tabHeight)
+            .padding(.horizontal, EnhancifySpace.sm)
+            .frame(height: EnhancifyMetrics.tabHeight)
     }
 }
 
 /// Accent-gradient circle. Composer send — a fill, not a glass lens, so it
 /// does not refract against the well or the window slab.
-struct BeruFilledCircleButton: View {
+struct EnhancifyFilledCircleButton: View {
     let icon: String
-    var frameSize: CGFloat = BeruMetrics.sendButton
-    var iconSize: CGFloat = BeruMetrics.iconSize
+    var frameSize: CGFloat = EnhancifyMetrics.sendButton
+    var iconSize: CGFloat = EnhancifyMetrics.iconSize
     var enabled: Bool = true
     let help: String
     let action: () -> Void
@@ -174,9 +174,9 @@ struct BeruFilledCircleButton: View {
     var body: some View {
         Button(action: action) {
             ZStack {
-                Circle().fill(enabled ? AnyShapeStyle(BeruColor.accentGradient) : AnyShapeStyle(BeruColor.disabledFill))
-                BeruIcon(name: icon, size: iconSize)
-                    .foregroundStyle(enabled ? BeruColor.onAccent : BeruColor.textTertiary)
+                Circle().fill(enabled ? AnyShapeStyle(EnhancifyColor.accentGradient) : AnyShapeStyle(EnhancifyColor.disabledFill))
+                EnhancifyIcon(name: icon, size: iconSize)
+                    .foregroundStyle(enabled ? EnhancifyColor.onAccent : EnhancifyColor.textTertiary)
             }
             .frame(width: frameSize, height: frameSize)
             .contentShape(Circle())
@@ -190,11 +190,11 @@ struct BeruFilledCircleButton: View {
 
 /// Shared panel button chrome. Panel hit targets wrap this with
 /// `allowsHitTesting(false)` so window-drag does not swallow the click.
-struct BeruGlassControl<Label: View>: View {
-    var kind: BeruGlassKind = .plain
+struct EnhancifyGlassControl<Label: View>: View {
+    var kind: EnhancifyGlassKind = .plain
     var circular: Bool = false
     /// Slightly rounded rect instead of a capsule. Tabs use this so all
-    /// four corners share `BeruRadius.sm`.
+    /// four corners share `EnhancifyRadius.sm`.
     var rounded: Bool = false
     var enabled: Bool = true
     var size: ControlSize = .small
@@ -211,7 +211,7 @@ struct BeruGlassControl<Label: View>: View {
             button
                 .buttonBorderShape(prominentShape)
                 .buttonStyle(.glassProminent)
-                .tint(BeruColor.accent)
+                .tint(EnhancifyColor.accent)
         case .plain:
             button.buttonStyle(.plain)
         }
@@ -219,25 +219,25 @@ struct BeruGlassControl<Label: View>: View {
 
     private var prominentShape: ButtonBorderShape {
         if circular { return .circle }
-        if rounded { return .roundedRectangle(radius: BeruRadius.sm) }
+        if rounded { return .roundedRectangle(radius: EnhancifyRadius.sm) }
         return .capsule
     }
 }
 
 extension View {
     /// Solid capsule on a glass slab (toast, token chip). Not a second lens.
-    func beruOverlayCapsule() -> some View {
-        modifier(BeruOverlayCapsule())
+    func enhancifyOverlayCapsule() -> some View {
+        modifier(EnhancifyOverlayCapsule())
     }
 }
 
-private struct BeruOverlayCapsule: ViewModifier {
+private struct EnhancifyOverlayCapsule: ViewModifier {
     func body(content: Content) -> some View {
         content.background {
             Capsule()
-                .fill(BeruColor.panelSolid)
+                .fill(EnhancifyColor.panelSolid)
                 .overlay {
-                    Capsule().strokeBorder(BeruColor.strongBorder, lineWidth: BeruMetrics.hairline)
+                    Capsule().strokeBorder(EnhancifyColor.strongBorder, lineWidth: EnhancifyMetrics.hairline)
                 }
         }
     }

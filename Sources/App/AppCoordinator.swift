@@ -2,7 +2,7 @@ import AppKit
 import KeyboardShortcuts
 import os.log
 
-private let logger = Logger(subsystem: "com.rahul.beru", category: "coordinator")
+private let logger = Logger(subsystem: "com.rahul.enhancify", category: "coordinator")
 
 @MainActor
 final class AppCoordinator {
@@ -41,15 +41,15 @@ final class AppCoordinator {
         engine.onStreamingEnded = { [weak self] in
             self?.panelController.streamingDidEnd()
         }
-        KeyboardShortcuts.onKeyDown(for: .invokeBeru) { [weak self] in
+        KeyboardShortcuts.onKeyDown(for: .invokeEnhancify) { [weak self] in
             logger.notice("hotkey fired")
             self?.handleInvokeHotkey()
         }
-        KeyboardShortcuts.onKeyDown(for: .dictateToBeru) { [weak self] in
+        KeyboardShortcuts.onKeyDown(for: .dictateToEnhancify) { [weak self] in
             logger.notice("dictate hotkey fired")
             self?.invokeVoiceAsk()
         }
-        let invoke = KeyboardShortcuts.getShortcut(for: .invokeBeru)?.description ?? "nil"
+        let invoke = KeyboardShortcuts.getShortcut(for: .invokeEnhancify)?.description ?? "nil"
         logger.notice("invoke shortcut bound = \(invoke, privacy: .public)")
 
         engine.onRequestDictationPermission = { [weak self] in

@@ -27,7 +27,7 @@ enum DashboardRoute: String, Identifiable, CaseIterable, Hashable {
         }
     }
 
-    /// Stored icon id (may be Lucide kebab-case). `BeruIcon` maps it to SF Symbols.
+    /// Stored icon id (may be Lucide kebab-case). `EnhancifyIcon` maps it to SF Symbols.
     var lucideIcon: String {
         switch self {
         case .general: return "settings"

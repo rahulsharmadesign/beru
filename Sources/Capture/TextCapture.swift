@@ -2,7 +2,7 @@ import AppKit
 import ApplicationServices
 import os.log
 
-private let logger = Logger(subsystem: "com.rahul.beru", category: "capture")
+private let logger = Logger(subsystem: "com.rahul.enhancify", category: "capture")
 
 enum CaptureResult {
     case text(String)

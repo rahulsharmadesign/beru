@@ -7,7 +7,7 @@ struct GlassSlabBackground: ViewModifier {
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
     func body(content: Content) -> some View {
-        content.background(reduceTransparency ? BeruColor.canvas : Color.clear)
+        content.background(reduceTransparency ? EnhancifyColor.canvas : Color.clear)
     }
 }
 

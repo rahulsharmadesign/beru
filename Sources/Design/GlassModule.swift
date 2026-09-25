@@ -5,7 +5,7 @@ import SwiftUI
 /// Inner cards are fills and hairlines, not a second blur. Reduce Transparency
 /// still paints a surface so text stays readable.
 struct GlassModule: ViewModifier {
-    var radius: CGFloat = BeruRadius.md
+    var radius: CGFloat = EnhancifyRadius.md
     var focusRing: Bool = false
     var scrim: ScrimWeight = .chrome
     /// When nil, content draws a hairline. Wells always get a light hairline
@@ -25,22 +25,22 @@ struct GlassModule: ViewModifier {
     }
 
     private var shape: RoundedRectangle {
-        BeruRadius.shape(radius)
+        EnhancifyRadius.shape(radius)
     }
 
     private var fill: Color {
         switch scrim {
         case .base, .chrome, .well: return Color.clear
-        case .content: return BeruColor.surface
+        case .content: return EnhancifyColor.surface
         }
     }
 
     private var wellFill: Color {
-        reduceTransparency ? BeruColor.panelSolid : BeruColor.composerWell
+        reduceTransparency ? EnhancifyColor.panelSolid : EnhancifyColor.composerWell
     }
 
     private var border: Color {
-        BeruColor.border
+        EnhancifyColor.border
     }
 
     private var showsBorder: Bool {
@@ -61,7 +61,7 @@ struct GlassModule: ViewModifier {
                     }
                     .clipShape(shape)
                     .overlay {
-                        shape.strokeBorder(BeruColor.border, lineWidth: BeruMetrics.hairline)
+                        shape.strokeBorder(EnhancifyColor.border, lineWidth: EnhancifyMetrics.hairline)
                     }
             } else {
                 filledChrome(content)
@@ -72,8 +72,8 @@ struct GlassModule: ViewModifier {
         // Resting Haze e2 lift on the composer well only: contact shadow
         // plus soft lift. Render-only, never measured. Chrome and result
         // cards stay flat on the plate.
-        .shadow(color: wellShadow(BeruColor.liftShadow), radius: BeruSpace.lg, y: BeruSpace.xs)
-        .shadow(color: wellShadow(BeruColor.contactShadow), radius: BeruSpace.hair, y: 1)
+        .shadow(color: wellShadow(EnhancifyColor.liftShadow), radius: EnhancifySpace.lg, y: EnhancifySpace.xs)
+        .shadow(color: wellShadow(EnhancifyColor.contactShadow), radius: EnhancifySpace.hair, y: 1)
     }
 
     /// Wells are the only modules that float. Anything else returns clear.
@@ -92,12 +92,12 @@ struct GlassModule: ViewModifier {
                 if showsBorder {
                     filled
                         .clipShape(shape)
-                        .overlay { shape.strokeBorder(border, lineWidth: BeruMetrics.hairline) }
+                        .overlay { shape.strokeBorder(border, lineWidth: EnhancifyMetrics.hairline) }
                 } else {
                     filled.clipShape(shape)
                 }
             } else if showsBorder {
-                filled.overlay { shape.strokeBorder(border, lineWidth: BeruMetrics.hairline) }
+                filled.overlay { shape.strokeBorder(border, lineWidth: EnhancifyMetrics.hairline) }
             } else {
                 filled
             }
@@ -108,8 +108,8 @@ struct GlassModule: ViewModifier {
     private var focusEdge: some View {
         if focusRing {
             shape
-                .strokeBorder(BeruColor.accent, lineWidth: BeruMetrics.hairline)
-                .shadow(color: BeruColor.focusGlow, radius: BeruMetrics.focusHalo)
+                .strokeBorder(EnhancifyColor.accent, lineWidth: EnhancifyMetrics.hairline)
+                .shadow(color: EnhancifyColor.focusGlow, radius: EnhancifyMetrics.focusHalo)
         }
     }
 }
@@ -117,7 +117,7 @@ struct GlassModule: ViewModifier {
 extension View {
     /// Makes the receiver an overlay module on a glass slab.
     func glassModule(
-        radius: CGFloat = BeruRadius.md,
+        radius: CGFloat = EnhancifyRadius.md,
         focusRing: Bool = false,
         scrim: GlassModule.ScrimWeight = .chrome,
         bordered: Bool? = nil

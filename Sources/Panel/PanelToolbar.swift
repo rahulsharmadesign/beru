@@ -5,7 +5,7 @@ import SwiftUI
 
 extension PanelView {
     var toolbar: some View {
-        VStack(alignment: .leading, spacing: BeruSpace.xs) {
+        VStack(alignment: .leading, spacing: EnhancifySpace.xs) {
             verbRow
             if appState.selectedActionID == EnhancementAction.grammarID {
                 grammarStyleRow
@@ -23,12 +23,12 @@ extension PanelView {
     }
 
     var verbRow: some View {
-        HStack(spacing: BeruSpace.xs) {
+        HStack(spacing: EnhancifySpace.xs) {
             ForEach(panelTabs) { action in
                 chip(for: action)
             }
         }
-        .frame(height: BeruMetrics.tabPillHeight)
+        .frame(height: EnhancifyMetrics.tabPillHeight)
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
@@ -69,7 +69,7 @@ private struct PanelTabChip: View {
 
     var body: some View {
         PanelHitCapsule(help: help, accessibilityLabel: title, action: action) {
-            BeruGlassChip(
+            EnhancifyGlassChip(
                 title: title,
                 icon: icon,
                 isSelected: isSelected,
@@ -78,8 +78,8 @@ private struct PanelTabChip: View {
             )
         }
         .onHover { isHovered = $0 }
-        .beruHoverEase(isHovered)
+        .enhancifyHoverEase(isHovered)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
-        .frame(height: BeruMetrics.tabPillHeight)
+        .frame(height: EnhancifyMetrics.tabPillHeight)
     }
 }
