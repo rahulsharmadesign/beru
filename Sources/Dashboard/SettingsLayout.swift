@@ -13,35 +13,6 @@ struct SettingsHeaderRule: View {
     }
 }
 
-struct SettingsVRule: View {
-    var body: some View {
-        Rectangle()
-            .fill(BeruColor.border)
-            .frame(width: BeruMetrics.hairline)
-            .frame(maxHeight: .infinity)
-    }
-}
-
-/// Fixed sidebar + flexible detail. `HSplitView` collapses the detail pane on
-/// macOS when a child also asks for `maxWidth`.
-struct SettingsSplitView<Sidebar: View, Detail: View>: View {
-    var sidebarWidth: CGFloat = BeruMetrics.workspaceListWidth
-    @ViewBuilder var sidebar: Sidebar
-    @ViewBuilder var detail: Detail
-
-    var body: some View {
-        HStack(spacing: 0) {
-            sidebar
-                .frame(width: sidebarWidth)
-                .frame(maxHeight: .infinity)
-            SettingsVRule()
-            detail
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-}
-
 struct SettingsPage<Content: View>: View {
     let title: String
     let subtitle: String
@@ -84,39 +55,6 @@ struct SettingsPage<Content: View>: View {
         .padding(.horizontal, BeruMetrics.contentPadding)
         .padding(.top, BeruSpace.xl)
         .frame(maxHeight: .infinity, alignment: .top)
-    }
-}
-
-struct SettingsWorkspace<Content: View>: View {
-    let title: String
-    let subtitle: String
-    var icon: String?
-    var content: Content
-
-    init(
-        title: String,
-        subtitle: String = "",
-        icon: String? = nil,
-        @ViewBuilder content: () -> Content
-    ) {
-        self.title = title
-        self.subtitle = subtitle
-        self.icon = icon
-        self.content = content()
-    }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            SettingsPageHeader(title: title, subtitle: subtitle, icon: icon)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, BeruMetrics.workspaceChromeInset)
-                .padding(.top, BeruSpace.xl)
-                .padding(.bottom, BeruMetrics.headerContentSpacing)
-            SettingsHeaderRule()
-            content
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 }
 
@@ -292,86 +230,6 @@ struct SettingsRow<Control: View>: View {
     }
 }
 
-struct SettingsWorkspaceToolbar<Content: View>: View {
-    @ViewBuilder var content: Content
-
-    var body: some View {
-        VStack(spacing: 0) {
-            ViewThatFits(in: .horizontal) {
-                toolbarContent
-                ScrollView(.horizontal, showsIndicators: false) {
-                    toolbarContent
-                }
-            }
-            .padding(.horizontal, BeruMetrics.workspaceChromeInset)
-            .padding(.vertical, BeruMetrics.workspaceChromePadding)
-            .frame(maxWidth: .infinity, minHeight: BeruMetrics.workspaceChromeMinHeight, alignment: .leading)
-            .fixedSize(horizontal: false, vertical: true)
-            SettingsHeaderRule()
-        }
-    }
-
-    private var toolbarContent: some View {
-        HStack(alignment: .center, spacing: BeruSpace.sm) {
-            content
-        }
-    }
-}
-
-struct SettingsListFooter<Content: View>: View {
-    @ViewBuilder var content: Content
-
-    var body: some View {
-        VStack(spacing: 0) {
-            SettingsHeaderRule()
-            HStack(spacing: BeruSpace.xs) {
-                content
-                Spacer(minLength: 0)
-            }
-            .buttonStyle(.plain)
-            .foregroundStyle(BeruColor.textPrimary)
-            .padding(.horizontal, BeruMetrics.workspaceChromeInset)
-            .padding(.vertical, BeruMetrics.workspaceChromePadding)
-            .frame(maxWidth: .infinity, minHeight: BeruMetrics.workspaceChromeMinHeight, alignment: .leading)
-            .fixedSize(horizontal: false, vertical: true)
-            .background(DashboardChrome.sidebarSurface)
-        }
-        .fixedSize(horizontal: false, vertical: true)
-    }
-}
-
 extension View {
-    func settingsWorkspacePane() -> some View {
-        frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-    }
 
-    func settingsSidebarList() -> some View {
-        listStyle(.sidebar)
-            .scrollContentBackground(.hidden)
-            .contentMargins(.horizontal, BeruMetrics.workspaceListInset, for: .scrollContent)
-    }
-
-    /// Inset list-row highlight so selection pills do not touch column edges.
-    func settingsListRowBackground(
-        isHighlighted: Bool,
-        fill: some ShapeStyle = BeruColor.accent
-    ) -> some View {
-        listRowBackground(
-            BeruRadius.shape(BeruRadius.md)
-                .fill(isHighlighted ? AnyShapeStyle(fill) : AnyShapeStyle(Color.clear))
-                .padding(.horizontal, BeruMetrics.workspaceListInset)
-        )
-    }
-
-    func settingsEditorSurface() -> some View {
-        padding(BeruSpace.sm)
-            .background {
-                BeruRadius.shape(BeruRadius.md)
-                    .fill(BeruColor.input)
-                    .overlay {
-                        BeruRadius.shape(BeruRadius.md)
-                            .strokeBorder(BeruColor.border, lineWidth: BeruMetrics.hairline)
-                    }
-            }
-    }
 }

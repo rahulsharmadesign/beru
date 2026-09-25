@@ -33,30 +33,8 @@ final class TargetProfileTests: XCTestCase {
     }
 
     func testTargetAppliesOnlyToEnhance() {
-        XCTAssertTrue(Prompts.targetApplies(
-            actionID: EnhancementAction.enhanceID, role: .enhance, usesBuiltInPrompt: true
-        ))
-        XCTAssertFalse(Prompts.targetApplies(
-            actionID: EnhancementAction.grammarID, role: .grammar, usesBuiltInPrompt: true
-        ))
-        XCTAssertFalse(Prompts.targetApplies(
-            actionID: EnhancementAction.describeID, role: .enhance, usesBuiltInPrompt: true
-        ))
-        XCTAssertFalse(Prompts.targetApplies(
-            actionID: "tone-friendly", role: .enhance, usesBuiltInPrompt: false
-        ))
-    }
-
-    /// A target fragment extends the built-in Enhance prompt and assumes its job.
-    /// Bolted onto a prompt that says the opposite — the retired custom skill
-    /// prompt ended "never expand the text" while the Cursor fragment demanded a
-    /// coding work order with file paths and a verification command — it produces
-    /// one system prompt with two contradictory jobs, and a small local model
-    /// splits the difference into something that is neither.
-    func testTargetIsSuppressedWhenThePromptIsNotTheBuiltInOne() {
-        XCTAssertFalse(Prompts.targetApplies(
-            actionID: EnhancementAction.enhanceID, role: .enhance, usesBuiltInPrompt: false
-        ))
+        XCTAssertTrue(Prompts.targetApplies(actionID: EnhancementAction.enhanceID))
+        XCTAssertFalse(Prompts.targetApplies(actionID: EnhancementAction.grammarID))
     }
 
     func testBundleSeedingRecognizesKnownAndForkedApps() {

@@ -124,7 +124,6 @@ struct OpenAICompatProvider: LLMProvider {
         user: String,
         role: ModelRole,
         suppressThinking: Bool,
-        expectsRationale: Bool,
         actionID: String = ""
     ) -> [String: Any] {
         var body: [String: Any] = [
@@ -135,11 +134,7 @@ struct OpenAICompatProvider: LLMProvider {
             // seed, which makes even nonzero temperatures produce identical
             // output for identical input.
             "seed": Int.random(in: 0..<Int(Int32.max)),
-            "max_tokens": ProviderTuning.maxTokens(
-                for: role,
-                input: user,
-                expectsRationale: expectsRationale
-            ),
+            "max_tokens": ProviderTuning.maxTokens(for: role, input: user),
             "messages": [
                 ["role": "system", "content": system],
                 ["role": "user", "content": user]
@@ -164,7 +159,6 @@ struct OpenAICompatProvider: LLMProvider {
         system: String,
         user: String,
         role: ModelRole,
-        expectsRationale: Bool,
         actionID: String
     ) -> AsyncThrowingStream<StreamChunk, Error> {
         AsyncThrowingStream { continuation in
@@ -188,7 +182,6 @@ struct OpenAICompatProvider: LLMProvider {
                                 user: user,
                                 role: role,
                                 suppressThinking: suppressThinking,
-                                expectsRationale: expectsRationale,
                                 actionID: actionID
                             )
                         )

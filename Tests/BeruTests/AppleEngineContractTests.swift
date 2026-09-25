@@ -11,7 +11,6 @@ final class AppleEngineContractTests: XCTestCase {
         PromptBudget.onDevice(
             system: system,
             role: role,
-            expectsRationale: false,
             input: input,
             contextSize: contextSize
         )

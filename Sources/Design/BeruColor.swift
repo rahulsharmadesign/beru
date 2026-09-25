@@ -190,11 +190,7 @@ enum BeruColor {
     }
     static var menuBarGlyph: Color { Color(nsColor: menuBarGlyphNSColor) }
 
-    /// Glyph on a colored sidebar tile. Always white so it reads on every
-    /// System Settings–style squircle, independent of the selected accent.
-    static var onTile: Color { .white }
-
-    /// Markdown links in search answers and vault preview. System link color so
+    /// Links in Settings. System link color so
     /// it stays a distinct hue from `textPrimary` in both appearances.
     static var link: Color { Color(nsColor: .linkColor) }
 
@@ -207,10 +203,6 @@ enum BeruColor {
     /// AppKit surfaces that cannot read the store on the main actor, such as a
     /// window's own background.
     static var accentNSColor: NSColor { PrimaryColor.selected.nsColor }
-    static var accentDeepNSColor: NSColor {
-        accentNSColor.blended(withFraction: 0.25, of: .black) ?? accentNSColor
-    }
-    static var accentDeep: Color { Color(nsColor: accentDeepNSColor) }
     /// Label color on top of `accent`. Reads from the selected primary rather
     /// than assuming indigo, so a lighter accent can pair with dark glyphs.
     @MainActor
@@ -220,9 +212,6 @@ enum BeruColor {
 
     // MARK: - States
 
-    static var selectedRow: Color {
-        Color(nsColor: accentNSColor.withAlphaComponent(0.10))
-    }
     static var badge: Color { surface2 }
     static var hoverFill: Color { surface3 }
     /// A filled control that is currently unavailable, such as the panel's send
@@ -281,33 +270,6 @@ enum BeruColor {
         })
     }
 
-    /// 170° panel wash over the blurred plate. Haze `--g-panel`.
-    static var panelGradient: LinearGradient {
-        LinearGradient(
-            colors: [panelGradientTop, panelGradientBottom],
-            startPoint: UnitPoint(x: 0.42, y: 0),
-            endPoint: UnitPoint(x: 0.58, y: 1)
-        )
-    }
-
-    static var panelGradientTop: Color {
-        Color(nsColor: NSColor(name: "BeruPanelTop") { appearance in
-            let dark = appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
-            return dark
-                ? NSColor(srgbRed: 40 / 255, green: 41 / 255, blue: 45 / 255, alpha: 0.96)
-                : NSColor.white.withAlphaComponent(0.96)
-        })
-    }
-
-    static var panelGradientBottom: Color {
-        Color(nsColor: NSColor(name: "BeruPanelBottom") { appearance in
-            let dark = appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
-            return dark
-                ? NSColor(srgbRed: 30 / 255, green: 31 / 255, blue: 34 / 255, alpha: 0.90)
-                : NSColor.white.withAlphaComponent(0.82)
-        })
-    }
-
     /// 170° primary fill for pills and the send disc. Haze `--g-accent`.
     @MainActor
     static var accentGradient: LinearGradient {
@@ -320,51 +282,9 @@ enum BeruColor {
         )
     }
 
-    /// Soft accent wash for tonal pills and selected rows.
-    /// Haze `--accent-soft` at 10% light, 16% dark.
-    @MainActor
-    static var accentSoft: Color { accent.opacity(0.10) }
-
     /// Soft 3pt halo used as the focus ring. Haze `--glow`.
     @MainActor
     static var focusGlow: Color { accent.opacity(0.14) }
-
-    /// Track of the loading ring at 50% opacity so it does not read as a black disc.
-    static var loaderTrack: Color {
-        Color(nsColor: NSColor(name: "BeruLoaderTrack") { appearance in
-            let dark = appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
-            return dark
-                ? NSColor(srgbRed: 35 / 255, green: 35 / 255, blue: 38 / 255, alpha: 0.5)
-                : NSColor(srgbRed: 0.90, green: 0.90, blue: 0.91, alpha: 0.5)
-        })
-    }
-
-    // MARK: - Fixed appearance pairs
-
-    /// For surfaces that must pick a side explicitly rather than follow the
-    /// dynamic canvas, such as the panel's glass chips.
-    enum Light {
-        static let canvas = Color(red: 242 / 255, green: 243 / 255, blue: 246 / 255)
-        static let surface = Color.white
-        static let border = Color(red: 17 / 255, green: 20 / 255, blue: 24 / 255).opacity(0.07)
-    }
-
-    enum Dark {
-        static let canvas = Color(red: 20 / 255, green: 21 / 255, blue: 23 / 255)
-        static let surface = Color(red: 32 / 255, green: 33 / 255, blue: 36 / 255)
-        static let border = Color.white.opacity(0.08)
-    }
-
-    /// Contrast-tuned status colors for small text sitting on the panel's own
-    /// surface. Hand-picked per appearance rather than using system green and
-    /// orange, whose values are bright enough that 11pt text over a light card
-    /// falls well short of a readable contrast ratio.
-    enum Status {
-        static let leanerLight = Color(red: 0.07, green: 0.42, blue: 0.18)
-        static let leanerDark = Color(red: 0.44, green: 0.86, blue: 0.54)
-        static let longerLight = Color(red: 0.56, green: 0.32, blue: 0.02)
-        static let longerDark = Color(red: 1.00, green: 0.74, blue: 0.38)
-    }
 
     /// The panel's close disc, drawn in AppKit. Fixed rather than dynamic: this
     /// is the traffic-light red users expect in a window corner, and it has to

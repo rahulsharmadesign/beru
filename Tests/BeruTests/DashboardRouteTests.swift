@@ -32,48 +32,8 @@ final class DashboardRouteTests: XCTestCase {
         }
     }
 
-    func testWorkspaceRoutesAreTheOnesGroupedBelowSettings() {
-        XCTAssertEqual(
-            Set(DashboardRoute.allCases.filter(\.isWorkspace)),
-            [.vault, .runs, .actions, .targets]
-        )
-    }
-
-    func testEmptyQueryMatchesEverythingSoTheSidebarIsNeverBlank() {
-        for route in DashboardRoute.allCases {
-            XCTAssertTrue(route.matches(""))
-            XCTAssertTrue(route.matches("   "))
-        }
-    }
-
-    func testSearchMatchesTitleCaseInsensitively() {
-        XCTAssertTrue(DashboardRoute.models.matches("MODELS"))
-        XCTAssertTrue(DashboardRoute.models.matches("mod"))
-        XCTAssertFalse(DashboardRoute.models.matches("zzzz"))
-    }
-
-    func testSearchMatchesSubtitleText() {
-        XCTAssertTrue(
-            DashboardRoute.permissions.matches("dictation"),
-            "subtitles are searchable, which is why they must not be empty"
-        )
-    }
-
-    /// The Tip card's CTA sends people to Models, and "tip" is how they look for
-    /// it again afterwards.
-    func testAboutIsFindableByItsExtraSearchTerms() {
-        XCTAssertTrue(DashboardRoute.about.matches("tip"))
-        XCTAssertTrue(DashboardRoute.about.matches("version"))
-        XCTAssertTrue(DashboardRoute.about.matches("update"))
-    }
-
-    @MainActor
-    func testOpenVaultNoteJumpsToVaultAndSelectsTheNote() {
-        let model = DashboardModel()
-        model.route = .runs
-        model.openVaultNote("note-42")
-        XCTAssertEqual(model.route, .vault)
-        XCTAssertEqual(model.pendingVaultNoteID, "note-42")
+    func testSettingsKeepsToTheFourPages() {
+        XCTAssertEqual(DashboardRoute.allCases, [.general, .models, .permissions, .about])
     }
 
     func testRouteIDMatchesRawValueSoSelectionSurvivesEncoding() {

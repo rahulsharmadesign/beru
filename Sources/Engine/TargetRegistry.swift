@@ -76,19 +76,6 @@ final class TargetRegistry {
         profiles.first { $0.id == id }
     }
 
-    func addCustom(name: String, icon: String, fragment: String) {
-        profiles.append(
-            TargetProfile(
-                id: "target-custom-\(UUID().uuidString)",
-                name: name,
-                icon: icon,
-                promptFragment: fragment,
-                isBuiltIn: false
-            )
-        )
-        persist()
-    }
-
     func update(_ profile: TargetProfile) {
         guard let index = profiles.firstIndex(where: { $0.id == profile.id }) else { return }
         // Editing a built-in opts it out of shipped-wording refreshes. Recorded
@@ -101,51 +88,11 @@ final class TargetRegistry {
         persist()
     }
 
-    func resetToDefault(id: String) {
-        guard let shipped = TargetProfile.builtInDefaults.first(where: { $0.id == id }),
-              let index = profiles.firstIndex(where: { $0.id == id }) else { return }
-        // Reset hands the profile back to the shipped wording, which also means
-        // handing back future improvements to it.
-        userEditedIDs.remove(id)
-        profiles[index] = shipped
-        persist()
-    }
-
     /// True when the stored copy has drifted from what shipped.
     func isModifiedFromDefault(id: String) -> Bool {
         guard let shipped = TargetProfile.builtInDefaults.first(where: { $0.id == id }),
               let current = profile(withID: id) else { return false }
         return shipped != current
-    }
-
-    func removeCustom(id: String) {
-        profiles.removeAll { $0.id == id && !$0.isBuiltIn }
-        persist()
-    }
-
-    /// Serialises custom targets for sharing or import. Built-ins are excluded:
-    /// they ship from code, and round-tripping them through JSON would freeze a
-    /// snapshot of the fragment as the shipped text.
-    func exportCustomTargets() -> Data? {
-        let custom = profiles.filter { !$0.isBuiltIn }
-        guard !custom.isEmpty else { return nil }
-        return try? JSONEncoder().encode(custom)
-    }
-
-    /// Merges a JSON array of custom targets into the registry, skipping any
-    /// whose id already exists so a re-import doesn't duplicate. Returns the
-    /// number added.
-    @discardableResult
-    func importCustomTargets(from data: Data) -> Int {
-        guard let decoded = try? JSONDecoder().decode([TargetProfile].self, from: data) else {
-            return 0
-        }
-        let existing = Set(profiles.map(\.id))
-        let additions = decoded.filter { !$0.isBuiltIn && !existing.contains($0.id) }
-        guard !additions.isEmpty else { return 0 }
-        profiles.append(contentsOf: additions)
-        persist()
-        return additions.count
     }
 
     /// Which target to pre-select. Pure and side-effect free so it can be

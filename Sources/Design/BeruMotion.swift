@@ -64,12 +64,6 @@ extension View {
         modifier(BeruEase(value: isHovered, duration: 0.12))
     }
 
-    /// Eases selection color melts (accent washes, borders) to match the
-    /// panel chips' cross-fade.
-    func beruColorEase(_ value: Bool) -> some View {
-        modifier(BeruEase(value: value, duration: 0.25))
-    }
-
     /// Chip selection + highlight travel. Scoped to the chip so the panel
     /// window does not animate its height on a tab change.
     func beruTabSwitchEase(_ isSelected: Bool) -> some View {

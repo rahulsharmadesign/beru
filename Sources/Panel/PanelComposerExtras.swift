@@ -1,16 +1,14 @@
 import SwiftUI
 
-// Focused-mode composer collapse, plus the footer's vote and provenance
-// helpers. Split out of PanelComposer.swift to keep it under 400 lines.
+// Composer collapse, the footer hint, and the footer's icon button.
 
 extension PanelView {
-    /// Focused mode hides the composer while there is a selection to work on:
-    /// the result and its actions are the whole panel. It comes back when
-    /// there is nothing selected (it is the input then), when you type or
-    /// dictate, or on ⌘L / Refine.
+    /// The composer hides while there is a selection to work on: the result
+    /// and its actions are the whole panel. It comes back when there is
+    /// nothing selected (it is the input then), when you type or dictate, or
+    /// on ⌘L / Refine.
     var composerCollapsed: Bool {
-        PanelMode.isFocused
-            && hasCapturedText
+        hasCapturedText
             && appState.describeInstruction.isEmpty
             && !composerExpanded
             && !DictationService.shared.isRecording
@@ -38,26 +36,24 @@ extension PanelView {
             .frame(maxWidth: .infinity, alignment: .leading)
             .allowsHitTesting(false)
     }
+}
 
-    /// Footer vote: same toggle-and-log as search turns, keyed by action.
-    /// Likes on Smart Reply and Grammar additionally teach the stored
-    /// preference inside `recordResultVote`; dislikes clear a match.
-    func setResultVoteFooter(liked: Bool) {
-        let actionID = appState.selectedActionID
-        guard let text = appState.acceptedText() else { return }
-        if appState.resultFeedback[actionID] == liked {
-            appState.resultFeedback.removeValue(forKey: actionID)
-        } else {
-            appState.resultFeedback[actionID] = liked
-            engine.recordResultVote(actionID: actionID, liked: liked, text: text)
-        }
-    }
+/// Icon-only outcome control: copy, regenerate, refine. Plain glyph on the
+/// slab — a glass disc here is a second lens.
+struct OutcomeIconButton: View {
+    let icon: String
+    let help: String
+    var tint: Color? = nil
+    let action: () -> Void
 
-    var contextProvenance: String? {
-        guard let context = appState.contextApplications[appState.selectedActionID] else { return nil }
-        if let playbook = context.playbook { return "Playbook: \(playbook.name)" }
-        if !context.rules.isEmpty { return "Rules: \(context.rules.count)" }
-        if let workspace = context.workspace, workspace.hasMemory { return "Workspace: \(workspace.name)" }
-        return context.glossary.isEmpty ? nil : "Glossary"
+    var body: some View {
+        BeruIconButton(
+            icon: icon,
+            size: BeruMetrics.iconSize,
+            frameSize: BeruMetrics.roundButtonSm,
+            tint: tint ?? BeruColor.textSecondary,
+            help: help,
+            action: action
+        )
     }
 }

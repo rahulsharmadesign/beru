@@ -43,27 +43,6 @@ final class GrammarSuggestionsTests: XCTestCase {
         XCTAssertEqual(GrammarSuggestions.body(in: suggestions, matching: .tighter), "corrected")
     }
 
-    @MainActor
-    func testAcceptedTextUsesTheSelectedGrammarKind() {
-        let state = AppState()
-        state.selectAction(EnhancementAction.grammarID)
-        state.setResult(.done("corrected"), for: EnhancementAction.grammarID)
-        state.grammarSuggestions = [
-            GrammarSuggestion(kind: .corrected, body: "corrected"),
-            GrammarSuggestion(kind: .clearer, body: "clearer"),
-            GrammarSuggestion(kind: .tighter, body: "tighter")
-        ]
-        state.selectedGrammarKind = .tighter
-        XCTAssertEqual(state.acceptedText(), "tighter")
-        state.selectGrammarKind(.clearer)
-        XCTAssertEqual(state.acceptedText(), "clearer")
-        if case .done(let text) = state.resultState(for: EnhancementAction.grammarID) {
-            XCTAssertEqual(text, "clearer")
-        } else {
-            XCTFail("result field should show the selected body")
-        }
-    }
-
     func testPromptAsksForThreeTaggedKinds() {
         XCTAssertTrue(Prompts.grammar.contains("kind=\"corrected\""))
         XCTAssertTrue(Prompts.grammar.contains("kind=\"clearer\""))

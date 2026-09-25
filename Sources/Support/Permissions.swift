@@ -21,12 +21,6 @@ enum Permissions {
         open(Self.accessibilityURLs)
     }
 
-    /// Microphone pane. Speech Recognition is the neighbouring row, so this
-    /// lands the user close enough to fix either.
-    static func openPrivacySettings() {
-        openMicrophoneSettings()
-    }
-
     static func openMicrophoneSettings() {
         open(Self.microphoneURLs)
     }

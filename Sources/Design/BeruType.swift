@@ -24,12 +24,10 @@ enum BeruType {
 
     static let rowTitle = font(bodySize)
     static let control = font(bodySize)
-    static let controlMedium = font(bodySize, weight: .medium)
     static let controlSemibold = font(bodySize, weight: .semibold)
     static let search = font(14)
     static let sidebar = font(14)
     static let sidebarSelected = font(14, weight: .medium)
-    static let sidebarHeader = font(12, weight: .medium)
 
     // MARK: Content
 
@@ -43,14 +41,8 @@ enum BeruType {
 
     /// Result text, composer input, error copy.
     static let body = font(bodySize)
-    static let bodyMedium = font(bodySize, weight: .medium)
-    /// Long-form printed text (AI Search, diffs, suggestion bodies).
+    /// Long-form printed text (results and diffs).
     static let resultBody = font(bodySize)
-    static let resultBodyBold = font(bodySize, weight: .semibold)
-    /// Markdown heading scale for search answers and vault preview.
-    static let heading1 = font(22, weight: .bold)
-    static let heading2 = font(20, weight: .semibold)
-    static let heading3 = font(bodySize, weight: .semibold)
     /// Row captions and secondary list lines.
     static let footnote = font(12)
     static let footnoteMedium = font(12, weight: .medium)
@@ -63,7 +55,7 @@ enum BeruType {
     // MARK: Panel empty states
 
     /// Floating panel's empty-state block: a heading over one line of helper
-    /// copy ("Ask a question" / "Type below and press Return."). A step above
+    /// copy ("Type below and press Return."). A step above
     /// the panel body so the idle state reads as an invitation, not a caption.
     static let placeholderTitle = font(17, weight: .medium)
     static let placeholderHelper = font(14)

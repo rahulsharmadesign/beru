@@ -11,20 +11,6 @@ struct GlassSlabBackground: ViewModifier {
     }
 }
 
-/// Selected-row overlay on a glass slab. Not a second `glassEffect`.
-struct GlassSelectedFill: View {
-    var isSelected: Bool
-    var radius: CGFloat = BeruRadius.md
-
-    var body: some View {
-        if isSelected {
-            BeruRadius.shape(radius).fill(BeruColor.selectedRow)
-        } else {
-            Color.clear
-        }
-    }
-}
-
 extension View {
     /// Overlay chrome on the window glass slab. Not a second glass card.
     func glassSlabBackground() -> some View {

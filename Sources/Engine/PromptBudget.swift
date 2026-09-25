@@ -35,16 +35,13 @@ struct PromptBudget: Equatable, Sendable {
     static func onDevice(
         system: String,
         role: ModelRole,
-        expectsRationale: Bool,
         input: String,
         contextSize: Int = SystemLanguageModel.default.contextSize
     ) -> PromptBudget {
         PromptBudget(
             contextSize: contextSize,
             systemTokens: TokenEstimate.tokens(in: system),
-            requestedOutputTokens: ProviderTuning.maxTokens(
-                for: role, input: input, expectsRationale: expectsRationale
-            )
+            requestedOutputTokens: ProviderTuning.maxTokens(for: role, input: input)
         )
     }
 

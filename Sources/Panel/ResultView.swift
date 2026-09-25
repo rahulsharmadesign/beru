@@ -2,9 +2,6 @@ import SwiftUI
 
 struct ResultView: View {
     let state: ResultState
-    /// AI Search answers render as markdown (headings, bold, links). Other
-    /// actions stay plain so prompt hashes like `# Task` are not restyled.
-    var usesMarkdown: Bool = false
 
     var body: some View {
         Group {
@@ -29,11 +26,7 @@ struct ResultView: View {
             } else if case .streaming(let text) = state {
                 StreamingPrintedText(text: text, isLive: true)
             } else if case .done(let text) = state {
-                if usesMarkdown {
-                    BeruMarkdown(text: text)
-                } else {
-                    StreamingPrintedText(text: text, isLive: false)
-                }
+                StreamingPrintedText(text: text, isLive: false)
             } else if case .error(let message) = state {
                 Text(message)
                     .beruPrintedText()

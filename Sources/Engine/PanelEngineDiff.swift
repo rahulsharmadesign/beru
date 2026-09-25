@@ -1,7 +1,7 @@
 import Foundation
 import os
 
-// Post-stream work: the word diff and the usage-log outcome records.
+// Post-stream work: the word diff and cleaning model output.
 
 extension PanelEngine {
     /// How much of the result must survive from the original for a diff to be
@@ -59,49 +59,6 @@ extension PanelEngine {
     ///
     /// Nonisolated: an immutable threshold also read from nonisolated tests.
     nonisolated static let grammarParaphraseCeiling = OutputQuality.grammarParaphraseCeiling
-
-    /// Separates the result from its explanation.
-    ///
-    /// MUST run in the engine, before `.done(...)` — never in the view. Replace
-    /// pastes the result string verbatim into the user's document, so a split
-    /// that happened at render time would eventually paste "here's why I
-    /// changed your wording" into somebody's Slack message.
-    ///
-    /// An unterminated opening tag (cancelled or truncated stream) still counts
-    /// as a split: everything from the tag onward becomes the rationale, so the
-    /// markup cannot survive into the result under any circumstances.
-    static func splitRationale(_ text: String) -> (result: String, rationale: String?) {
-        guard let open = text.range(of: Prompts.rationaleOpenTag) else {
-            return (text, nil)
-        }
-        let result = String(text[..<open.lowerBound])
-        var rationale = String(text[open.upperBound...])
-        if let close = rationale.range(of: Prompts.rationaleCloseTag) {
-            rationale = String(rationale[..<close.lowerBound])
-        }
-        let trimmed = rationale.trimmingCharacters(in: .whitespacesAndNewlines)
-        return (
-            result.trimmingCharacters(in: .whitespacesAndNewlines),
-            trimmed.isEmpty ? nil : trimmed
-        )
-    }
-
-    /// The portion of a partial stream that is safe to display. Drops anything
-    /// from the rationale tag onward, and also any incomplete prefix of it, so
-    /// the user never watches "<wh" appear and then vanish mid-stream.
-    static func visibleWhileStreaming(_ text: String) -> String {
-        if let open = text.range(of: Prompts.rationaleOpenTag) {
-            return String(text[..<open.lowerBound])
-        }
-        var partial = Prompts.rationaleOpenTag.dropLast()
-        while !partial.isEmpty {
-            if text.hasSuffix(partial) {
-                return String(text.dropLast(partial.count))
-            }
-            partial = partial.dropLast()
-        }
-        return text
-    }
 
     /// Container tags a model added that the user never wrote.
     ///
@@ -183,59 +140,6 @@ extension PanelEngine {
             }
         }
         return result.trimmingCharacters(in: .whitespacesAndNewlines)
-    }
-
-    /// Search answers used to render as plain text, so ATX headings (`### Yes`)
-    /// printed as hashes. The panel now styles those lines as headings; this
-    /// remains for tests and any caller that still needs the stripped form.
-    nonisolated static func strippedSearchChrome(_ text: String) -> String {
-        let lines = text.components(separatedBy: "\n").map { line -> String in
-            let trimmed = line.trimmingCharacters(in: .whitespaces)
-            guard trimmed.hasPrefix("#") else { return line }
-            let hashes = trimmed.prefix { $0 == "#" }.count
-            guard (1...6).contains(hashes) else { return line }
-            let rest = trimmed.dropFirst(hashes)
-            guard rest.first?.isWhitespace == true else { return line }
-            return rest.trimmingCharacters(in: .whitespaces)
-        }
-        return lines.joined(separator: "\n")
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-    }
-
-    /// Builds a generation-outcome history record. Output text is stored only
-    /// here (once per generation); terminal events reference it by digest.
-    static func recordOutcome(
-        _ kind: UsageEventKind,
-        invocationID: UUID,
-        actionID: String,
-        attempt: Int,
-        ttfbMs: Int? = nil,
-        totalMs: Int,
-        reasoningChunks: Int,
-        output: String? = nil,
-        savings: TokenSavings? = nil,
-        rationale: String? = nil,
-        errorMessage: String? = nil
-    ) {
-        UsageLog.record {
-            UsageEvent(
-                invocationID: invocationID,
-                kind: kind,
-                actionID: actionID,
-                attempt: attempt,
-                outputText: output,
-                outputChars: output?.count,
-                outputDigest: output.map { UsageLog.digest($0) },
-                inputTokens: savings?.inputTokens,
-                outputTokens: savings?.outputTokens,
-                savedTokens: savings?.savedTokens,
-                rationale: rationale,
-                ttfbMs: ttfbMs,
-                totalMs: totalMs,
-                reasoningChunks: reasoningChunks,
-                errorMessage: errorMessage
-            )
-        }
     }
 
     static func milliseconds(_ duration: Duration) -> Int {

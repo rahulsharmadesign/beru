@@ -1,12 +1,11 @@
 import Foundation
 
-// Whether a model id is a good fit for Beru's text roles (Enhance, Grammar,
-// Smart Reply). Pure name matching, so it is unit-testable and runs without
-// touching the server.
+// Whether a model id is a good fit for Beru's text roles (Enhance, Grammar).
+// Pure name matching, so it is unit-testable and runs without touching the
+// server.
 //
 // Vision, embedding, speech, and guard models all pull cleanly from Ollama
-// and then fail Beru's jobs in confusing ways: a vision model drafts replies
-// from its prompt vocabulary ("smart reply footer") and ignores bans the
+// and then fail Beru's jobs in confusing ways: a vision model ignores the bans the
 // tagged formats rely on. Flagging the mismatch where the model is picked
 // beats debugging the output later.
 

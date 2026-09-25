@@ -54,11 +54,6 @@ extension AppCoordinator {
         }
 
         if appState.isPanelVisible {
-            if !PanelMode.isFocused {
-                appState.selectAction(EnhancementAction.searchID)
-            } else if !PanelMode.focusedActionIDs.contains(appState.selectedActionID) {
-                appState.selectAction(EnhancementAction.enhanceID)
-            }
             beginVoiceAsk()
             return
         }
@@ -76,13 +71,13 @@ extension AppCoordinator {
                 with: text,
                 targetElement: targetElement,
                 host: host,
-                openOnSearch: true
+                waitsForInput: true
             )
             beginVoiceAsk()
         }
     }
 
-    /// Opens the panel in Ask and starts dictating a question.
+    /// Opens the panel and starts dictating.
     func dictateNewText() {
         invokeVoiceAsk()
     }
@@ -96,8 +91,7 @@ extension AppCoordinator {
             with: "",
             targetElement: targetElement,
             host: host,
-            recordEmptySelection: true,
-            openOnSearch: true
+            waitsForInput: true
         )
     }
 
@@ -117,7 +111,7 @@ extension AppCoordinator {
         }
     }
 
-    /// Start listening into the Ask field.
+    /// Start listening into the composer.
     func beginVoiceAsk() {
         dictationDestination = .instruction
         let service = DictationService.shared
@@ -171,22 +165,6 @@ extension AppCoordinator {
         appState.dismiss()
     }
 
-    /// Existing installs stored Space as the dictate shortcut. Toggle-to-talk
-    /// cannot use a bare Space, so move that old default to Control-Option-Command-L
-    /// once. A shortcut the user actually chose is left alone.
-    func migrateDictateShortcutIfNeeded() {
-        let key = "migratedDictateShortcutFromSpace"
-        guard !UserDefaults.standard.bool(forKey: key) else { return }
-        UserDefaults.standard.set(true, forKey: key)
-        let current = KeyboardShortcuts.getShortcut(for: .dictateToBeru)
-        let oldDefault = KeyboardShortcuts.Shortcut(.space)
-        guard current == nil || current == oldDefault else { return }
-        KeyboardShortcuts.setShortcut(
-            KeyboardShortcuts.Shortcut(.l, modifiers: [.control, .option, .command]),
-            for: .dictateToBeru
-        )
-    }
-
     func showOnboarding() {
         if onboardingWindow == nil {
             onboardingWindow = OnboardingWindowController { [weak self] in
@@ -196,17 +174,13 @@ extension AppCoordinator {
         onboardingWindow?.show()
     }
 
-    /// Closes Get Started and shows the panel. Used by the Start Beru button
+    /// Closes Get Started and shows the panel. Used by the Start button
     /// and by the live shortcut while that window is key.
     func openPanelAfterGetStarted() {
         guard !openingPanelAfterGetStarted else { return }
         openingPanelAfterGetStarted = true
         onboardingWindow?.finish()
-        presentPanel(
-            with: "",
-            recordEmptySelection: true,
-            openOnSearch: true
-        )
+        presentPanel(with: "", waitsForInput: true)
         DispatchQueue.main.async { [weak self] in
             self?.openingPanelAfterGetStarted = false
         }
@@ -216,22 +190,8 @@ extension AppCoordinator {
     /// opens it pays nothing for it.
     func showDashboard(route: DashboardRoute? = nil) {
         if dashboardWindow == nil {
-            dashboardWindow = DashboardWindowController(
-                enhanceText: { [weak self] text in self?.enhanceText(text) },
-                enhanceNote: { [weak self] id in self?.enhanceNote(id: id) }
-            )
+            dashboardWindow = DashboardWindowController()
         }
         dashboardWindow?.show(route: route)
-    }
-
-    /// Apply from a vault note: bring Settings back on that note.
-    func revealVaultNote(_ id: String) {
-        if dashboardWindow == nil {
-            dashboardWindow = DashboardWindowController(
-                enhanceText: { [weak self] text in self?.enhanceText(text) },
-                enhanceNote: { [weak self] id in self?.enhanceNote(id: id) }
-            )
-        }
-        dashboardWindow?.revealVaultNote(id)
     }
 }

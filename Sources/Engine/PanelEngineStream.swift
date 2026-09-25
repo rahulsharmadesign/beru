@@ -1,42 +1,30 @@
 import Foundation
 import os
 
-/// One request, fully resolved. `start` decides all of this up front; the stream
-/// only reads it. They used to share a 405-line function and a dozen captured
-/// locals, which is why the split needed a value to hand across.
+/// One request, fully resolved. `start` decides all of this up front; the
+/// stream only reads it.
 struct PanelRequest {
     let actionID: String
-    let actionName: String
     let role: ModelRole
     let provider: LLMProvider
     let systemPrompt: String
     let userMessage: String
     let capturedText: String
-    /// What the user typed on this run, held so the recorded turn reflects the
-    /// request rather than whatever the field says when the stream finishes.
-    let threadInstruction: String
-    let hostBundleID: String?
-    let invocationID: UUID
-    let attempt: Int
+    /// The refinement typed on this run, carried into a quality retry.
+    let instruction: String
     let generation: Int
-    let explainsChanges: Bool
-    let isQuickSearch: Bool
-    /// `SessionThread.epoch` at `start`. A chip-clear during the stream must
-    /// not let this request append after the user already forgot the thread.
-    let threadEpoch: UInt64
     /// Grammar's style at `start`. A rewrite style returns one plain document.
-    var grammarStyle: GrammarStyle = .proofread
+    let grammarStyle: GrammarStyle
 }
 
-// Running a request: consuming the stream, coalescing publishes, cleaning the
-// output, and recording what happened.
+// Running a request: consuming the stream, coalescing publishes, and
+// cleaning the output.
 
 extension PanelEngine {
     func runStream(_ request: PanelRequest) {
         let task = Task { [weak self] in
-            // Paired with `streamEnded()` in the defer below. Without this the
-            // assertion was never taken, so App Nap could throttle the very
-            // stream the release call was written to protect.
+            // Paired with `streamEnded()` in the defer below, so App Nap
+            // cannot throttle the stream.
             self?.powerActivity.streamBegan()
             self?.onStreamingStarted?()
             defer {
@@ -55,7 +43,6 @@ extension PanelEngine {
                     system: request.systemPrompt,
                     user: request.userMessage,
                     role: request.role,
-                    expectsRationale: request.explainsChanges,
                     actionID: request.actionID
                 )
                 for try await chunk in stream {
@@ -88,96 +75,61 @@ extension PanelEngine {
                         continue
                     }
                     lastPublish = now
-                    // Never stream the rationale markup into view. Once the
-                    // model starts the explanation the visible text simply
-                    // stops growing, which reads as "finished".
-                    let visible = Self.visibleWhileStreaming(accumulated)
-                    if !visible.isEmpty {
-                        self.publish(.streaming(visible), for: request.actionID, generation: request.generation)
+                    // Grammar's proofread output is tagged; show it once parsed.
+                    if request.actionID == EnhancementAction.grammarID, !request.grammarStyle.isRewrite {
+                        continue
                     }
+                    self.publish(.streaming(accumulated), for: request.actionID, generation: request.generation)
                 }
 
                 // A cancelled byte stream finishes cleanly rather than
-                // throwing — the SSE reader swallows the error by design — so
-                // "no content" here means superseded just as often as it means
-                // the model said nothing. Check before interpreting it as a
-                // failure, or every regenerate and every action switch logs a
-                // phantom error and flashes one into the panel.
+                // throwing, so "no content" here means superseded as often as
+                // it means the model said nothing. Check before treating it
+                // as a failure, or every regenerate flashes a phantom error.
                 guard !Task.isCancelled, self.isLive(request.generation, for: request.actionID) else {
                     engineLogger.notice("stream superseded for \(request.actionID)")
-                    Self.recordOutcome(
-                        .generationCancelled, invocationID: request.invocationID, actionID: request.actionID,
-                        attempt: request.attempt, totalMs: Self.milliseconds(clock.now - requestStart),
-                        reasoningChunks: reasoningChunks,
-                        output: accumulated.isEmpty ? nil : accumulated
-                    )
                     return
                 }
-                // Split BEFORE stripping the wrapping: strippedWrapping inspects
-                // the prefix and suffix, and a trailing rationale block would
-                // hide a closing code fence or quote from it.
-                let (body, rationale) = Self.splitRationale(
-                    accumulated.trimmingCharacters(in: .whitespacesAndNewlines)
-                )
                 // Scaffolding last: strippedWrapping matches on prefix and
                 // suffix, so removing an opening <context> first would hide the
                 // outer wrapping from it.
                 var final = Self.strippedScaffolding(
-                    Self.strippedWrapping(body),
+                    Self.strippedWrapping(accumulated.trimmingCharacters(in: .whitespacesAndNewlines)),
                     input: request.capturedText
                 )
                 let totalMs = Self.milliseconds(clock.now - requestStart)
-                let ttfbMs = firstTokenAt.map { Self.milliseconds($0 - requestStart) }
                 engineLogger.notice("stream done for \(request.actionID), length = \(final.count), total = \(totalMs) ms, reasoning chunks discarded = \(reasoningChunks)")
-                if final.isEmpty {
+                guard !final.isEmpty else {
                     self.publish(
                         .error("The model returned an empty response — try Regenerate"),
                         for: request.actionID, generation: request.generation
-                    )
-                    Self.recordOutcome(
-                        .generationFailed, invocationID: request.invocationID, actionID: request.actionID,
-                        attempt: request.attempt, totalMs: totalMs, reasoningChunks: reasoningChunks,
-                        errorMessage: "empty response"
                     )
                     return
                 }
 
                 // A rewrite style is one plain document meant to differ from
-                // the source: nothing to parse, and the paraphrase ceiling
-                // that protects proofreading would reject it on sight.
-                if request.grammarStyle.isRewrite {
-                    if self.isLive(request.generation, for: request.actionID) {
-                        self.appState.grammarSuggestions = []
-                    }
-                } else {
-                    /// Grammar and Reply recover a mangled tag format by retrying
-                    /// with `OutputQuality.parseHint`. That hint names a contract
-                    /// the Apple on-device prompts deliberately do not have — they
-                    /// return one plain document and the parser's fallback path is
-                    /// the design, not a failure. Let the unchanged-echo retry run
-                    /// (a fresh attempt is the only recovery a weak model gets),
-                    /// but turn the parse-hint retry into a plain regenerate.
-                    let retriesTagFormat = SettingsStore.shared.activeProvider != .apple
+                // the source: nothing to parse, and the paraphrase ceiling that
+                // protects proofreading would reject it on sight.
+                if !request.grammarStyle.isRewrite {
                     var decision = OutputQuality.evaluate(
                         actionID: request.actionID,
                         raw: final,
                         source: request.capturedText,
-                        selectedReplyTone: self.appState.selectedReplyTone,
-                        preferredGrammarKind: SettingsStore.shared.interactionProfile.preferredGrammarKind,
                         canRetry: self.canQualityRetry(for: request.actionID)
                     )
-                    if !retriesTagFormat,
-                       case .retry(let previous, let hint) = decision.outcome,
-                       hint != nil {
+                    // The parse hint names a tag contract the Apple on-device
+                    // prompts deliberately do not have; there a retry is a
+                    // plain regenerate.
+                    if SettingsStore.shared.activeProvider == .apple,
+                       case .retry(let previous, let hint) = decision.outcome, hint != nil {
                         decision.outcome = .retry(previousResult: previous, hint: nil)
                     }
                     switch decision.outcome {
                     case .retry(let previous, let hint):
-                        guard self.isLive(request.generation, for: request.actionID) else { return }
                         self.markQualityRetry(for: request.actionID)
                         self.publish(.loading, for: request.actionID, generation: request.generation)
                         let actionID = request.actionID
-                        let instruction = request.threadInstruction.isEmpty ? nil : request.threadInstruction
+                        let instruction = request.instruction.isEmpty ? nil : request.instruction
                         Task { @MainActor [weak self] in
                             self?.start(
                                 actionID: actionID,
@@ -188,90 +140,15 @@ extension PanelEngine {
                             )
                         }
                         return
-                    case .reject(let message):
-                        self.publish(.error(message), for: request.actionID, generation: request.generation)
-                        Self.recordOutcome(
-                            .generationFailed, invocationID: request.invocationID, actionID: request.actionID,
-                            attempt: request.attempt, totalMs: totalMs, reasoningChunks: reasoningChunks,
-                            errorMessage: message
-                        )
-                        return
                     case .publish:
-                        if request.actionID == EnhancementAction.replyID,
-                           self.isLive(request.generation, for: request.actionID) {
-                            self.appState.replySuggestions = decision.replySuggestions
-                            if let tone = decision.selectedReplyTone {
-                                self.appState.selectedReplyTone = tone
-                            }
-                        }
-                        // Proofread shows one result — the Corrected text —
-                        // the same way every other tab does: plain text, a
-                        // light change marker, and the footer's Replace. The
-                        // card with Clearer/Tighter variants is gone; Shorten
-                        // in the style row covers "tighter".
-                        if request.actionID == EnhancementAction.grammarID {
-                            if self.isLive(request.generation, for: request.actionID) {
-                                self.appState.grammarSuggestions = []
-                            }
-                            final = GrammarSuggestions.body(in: decision.grammarSuggestions, matching: .corrected)
-                                ?? decision.text
-                        } else {
-                            final = decision.text
-                        }
+                        final = decision.text
                     }
                 }
 
-                if final.isEmpty {
-                    self.publish(
-                        .error("The model returned an empty response — try Regenerate"),
-                        for: request.actionID, generation: request.generation
-                    )
-                    Self.recordOutcome(
-                        .generationFailed, invocationID: request.invocationID, actionID: request.actionID,
-                        attempt: request.attempt, totalMs: totalMs, reasoningChunks: reasoningChunks,
-                        errorMessage: "empty response"
-                    )
-                } else {
-                    let savings = TokenSavings(input: request.capturedText, output: final)
-                    self.appState.savings[request.actionID] = savings
-                    if let rationale, self.isLive(request.generation, for: request.actionID) {
-                        self.appState.rationales[request.actionID] = rationale
-                    }
-                    self.publish(.done(final), for: request.actionID, generation: request.generation)
-                    // Recorded only for a result that actually reached the
-                    // panel. A superseded request.generation never became something the
-                    // user saw, so it is not part of the conversation.
-                    if self.isLive(request.generation, for: request.actionID) {
-                        SessionThread.shared.record(
-                            actionID: request.actionID,
-                            actionName: request.actionName,
-                            instruction: request.threadInstruction,
-                            input: request.capturedText,
-                            output: final,
-                            bundleID: request.hostBundleID,
-                            expectedEpoch: request.threadEpoch
-                        )
-                    }
-                    if request.isQuickSearch, self.isLive(request.generation, for: request.actionID) {
-                        self.appState.describeInstruction = ""
-                    }
-                    Self.recordOutcome(
-                        .generationFinished, invocationID: request.invocationID, actionID: request.actionID,
-                        attempt: request.attempt, ttfbMs: ttfbMs, totalMs: totalMs,
-                        reasoningChunks: reasoningChunks, output: final, savings: savings,
-                        rationale: rationale
-                    )
-                    // Every action gets a diff, not just Grammar: seeing what a
-                    // tone rewrite actually touched is the point of the feature.
-                    await self.computeDiff(actionID: request.actionID, original: request.capturedText, revised: final)
-                }
+                self.publish(.done(final), for: request.actionID, generation: request.generation)
+                await self.computeDiff(actionID: request.actionID, original: request.capturedText, revised: final)
             } catch is CancellationError {
                 engineLogger.notice("stream cancelled for \(request.actionID)")
-                Self.recordOutcome(
-                    .generationCancelled, invocationID: request.invocationID, actionID: request.actionID,
-                    attempt: request.attempt, totalMs: Self.milliseconds(clock.now - requestStart),
-                    reasoningChunks: reasoningChunks, output: accumulated.isEmpty ? nil : accumulated
-                )
             } catch let error as ProviderError {
                 if case .cancelled = error { return }
                 engineLogger.notice("stream failed for \(request.actionID): \(error.userMessage)")
@@ -280,22 +157,12 @@ extension PanelEngine {
                 if error.needsModelSetup {
                     self.appState.errorNeedsModelSetup.insert(request.actionID)
                 }
-                Self.recordOutcome(
-                    .generationFailed, invocationID: request.invocationID, actionID: request.actionID,
-                    attempt: request.attempt, totalMs: Self.milliseconds(clock.now - requestStart),
-                    reasoningChunks: reasoningChunks, errorMessage: error.userMessage
-                )
             } catch {
+                // localizedDescription only: NSError.userInfo can carry the
+                // base URL, which may embed credentials.
                 engineLogger.notice("stream failed for \(request.actionID): \(error.localizedDescription)")
                 self.publish(.error(error.localizedDescription), for: request.actionID, generation: request.generation)
                 self.appState.errorProviders[request.actionID] = SettingsStore.shared.activeProvider
-                // localizedDescription only: NSError.userInfo can carry the
-                // base URL, which may embed credentials.
-                Self.recordOutcome(
-                    .generationFailed, invocationID: request.invocationID, actionID: request.actionID,
-                    attempt: request.attempt, totalMs: Self.milliseconds(clock.now - requestStart),
-                    reasoningChunks: reasoningChunks, errorMessage: error.localizedDescription
-                )
             }
         }
         appState.registerStreamTask(task, for: request.actionID)

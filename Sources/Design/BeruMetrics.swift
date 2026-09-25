@@ -21,21 +21,9 @@ enum BeruMetrics {
     /// `BeruRadius.sm` so the well is a rounded square, not a circle.
     static let sidebarTileBox: CGFloat = 28
     static let sidebarTileGlyph: CGFloat = 16
-    static let sidebarTileRadius: CGFloat = 8
-    /// Secondary list column inside a workspace page (Actions, Targets, Vault).
-    static let workspaceListWidth: CGFloat = 280
-    static let workspaceListInset = BeruSpace.md
 
-    /// Horizontal inset for workspace title, toolbar, list rows, inspector
-    /// bars, and list footers. Settings *form* pages keep `contentPadding`.
-    static let workspaceChromeInset = BeruSpace.md
-    /// Vertical padding inside those chrome bars. Same on the list footer and
-    /// the inspector footer so their hairlines meet across the split.
-    static let workspaceChromePadding = BeruSpace.xs
     /// Shared height for toolbar, list footer, and inspector bars.
     static let workspaceChromeMinHeight = BeruSpace.xxl
-    /// Padding inside the inspector body (editor, form, pin preview).
-    static let workspaceInspectorPadding = BeruSpace.md
 
     static let contentPadding = BeruSpace.xl
     static let headerContentSpacing = BeruSpace.md
@@ -79,14 +67,8 @@ enum BeruMetrics {
     static let tabHeight: CGFloat = 32
     /// Haze float menu width.
     static let menuWidth: CGFloat = 230
-    /// In-window float menu padding. 6pt sits off the grid on purpose.
-    static let floatMenuPadding: CGFloat = 6
-    /// Haze dialog max width.
-    static let dialogMaxWidth: CGFloat = 440
     /// Menu-bar dropdown width. Fits hero + rows without wrapping.
     static let menuDropdownWidth: CGFloat = 320
-    /// Brand mark in the menu-bar header. Off the grid on purpose.
-    static let brandMark: CGFloat = 30
     /// Status-item glyph. 22.5pt — the 18pt macOS standard plus 25%, per
     /// request, so the mark reads next to neighboring icons. Off the 4pt
     /// grid on purpose. The SVG carries its own ~10% internal padding, so the
@@ -103,12 +85,6 @@ enum BeruMetrics {
     /// Haze hairline. 1pt rules and strokes live here so Panel and
     /// Dashboard never inline the off-grid literal.
     static let hairline: CGFloat = 1
-    /// Haze toggle. 40×24 track, 18pt thumb.
-    static let toggleWidth: CGFloat = 40
-    static let toggleHeight: CGFloat = 24
-    static let toggleThumb: CGFloat = 18
-    /// Vault toolbar search field width.
-    static let toolbarSearchWidth: CGFloat = 260
     /// Wide settings field (URLs, keys, model ids). Off the grid on purpose.
     static let wideFieldWidth: CGFloat = 260
     /// About hero brand mark. Off the grid on purpose.
@@ -123,37 +99,14 @@ enum BeruMetrics {
     /// dot stretches to 18pt.
     static let onboardingDotHeight: CGFloat = 6
     static let onboardingDotWidth: CGFloat = 18
-    /// Savings meter bar height. Haze bars run 6pt, not the 8pt grid.
-    static let meterHeight: CGFloat = 6
-    /// Token pill meter on the panel outcome strip. 20×3, off the grid with
-    /// the rest of the Haze pill furniture.
-    static let savingsMeterWidth: CGFloat = 20
-    static let savingsMeterHeight: CGFloat = 3
     /// Haze metapill height for status pills on the panel.
     static let metapillHeight: CGFloat = 26
     /// Lift the hover helper so it sits above the control. The footer row
     /// clips a pill parked underneath (composer well covers it). Tracks the
     /// compact helper height, not the control pill.
     static var helpPillOffset: CGFloat { metapillHeight + BeruSpace.xs }
-    /// Minimum height for workspace source-list rows, so one-line and
-    /// two-line rows keep the same vertical rhythm.
-    static let workspaceRowMinHeight: CGFloat = 48
-    /// Pin-link sheet width and its fields. Dialog geometry, not spacing.
-    static let sheetWidth: CGFloat = 420
-    static let sheetFieldWidth: CGFloat = 364
-    /// Multiline editor floor in workspace inspectors.
-    static let editorMinHeight: CGFloat = 220
-    /// Read-only prompt preview floor.
-    static let previewMinHeight: CGFloat = 180
     /// Haze focus halo. 3pt ring, not a spacing step.
     static let focusHalo: CGFloat = 3
-    /// Border beam riding a busy surface. 2pt ribbon, ~3.2s lap, 5pt bloom.
-    /// Off the grid on purpose.
-    static let beamWidth: CGFloat = 2
-    static let beamPeriod: Double = 3.2
-    static let beamGlowBlur: CGFloat = 5
-    /// Seconds to fade the beam after it completes its laps.
-    static let beamFadeOut: Double = 0.35
     /// Pixel-grid loader: a 3×3 field of 4pt cells with staggered delays.
     /// Cell/gap sit off the grid on purpose (sub-glyph furniture).
     static let pixelCell: CGFloat = 4

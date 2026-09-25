@@ -54,3 +54,19 @@ final class ComposerSubmitTests: XCTestCase {
         XCTAssertEqual(state.describeInstruction, "keep my tone")
     }
 }
+
+final class ResolveInputTests: XCTestCase {
+    func testTypedTextIsTheSourceWhenNothingIsSelected() {
+        let resolved = EnhancementAction.resolveInput(capturedText: "", composerText: "write a parser")
+        XCTAssertEqual(resolved.sourceText, "write a parser")
+        XCTAssertEqual(resolved.extraInstruction, "")
+        XCTAssertTrue(resolved.usedComposerAsSource)
+    }
+
+    func testTypedTextRefinesASelection() {
+        let resolved = EnhancementAction.resolveInput(capturedText: "draft", composerText: "shorter")
+        XCTAssertEqual(resolved.sourceText, "draft")
+        XCTAssertEqual(resolved.extraInstruction, "shorter")
+        XCTAssertFalse(resolved.usedComposerAsSource)
+    }
+}

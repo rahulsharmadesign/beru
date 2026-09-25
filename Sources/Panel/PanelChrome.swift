@@ -91,41 +91,6 @@ struct PanelHitCapsule<Label: View>: View {
     }
 }
 
-/// AppKit click target so the panel's window-drag hit test leaves footer icons
-/// alone — the same reason the mic is an `NSView` instead of a SwiftUI `Button`.
-struct PanelIconHitButton: View {
-    let icon: String
-    let help: String
-    var hint: String = ""
-    var enabled: Bool = true
-    let action: () -> Void
-
-    @State private var isHovered = false
-
-    var body: some View {
-        ZStack {
-            DictationPressView(onToggle: { if enabled { action() } })
-            BeruIcon(name: icon, size: BeruMetrics.iconSize)
-                .foregroundStyle(BeruColor.textPrimary)
-                .opacity(enabled ? 1 : 0.45)
-                .frame(width: BeruMetrics.hitTarget, height: BeruMetrics.hitTarget)
-                .background {
-                    BeruRadius.shape(BeruRadius.sm)
-                        .fill(isHovered && enabled ? BeruColor.hoverFill : Color.clear)
-                }
-                .allowsHitTesting(false)
-        }
-        .frame(width: BeruMetrics.hitTarget, height: BeruMetrics.hitTarget)
-        .contentShape(Rectangle())
-        .onHover { isHovered = $0 }
-        .beruHoverEase(isHovered)
-        .help(help)
-        .accessibilityLabel(help)
-        .accessibilityHint(hint)
-        .accessibilityAddTraits(.isButton)
-    }
-}
-
 /// Empty chrome that reports itself as the window-move target. Sits behind
 /// chips and text so those keep their clicks.
 struct PanelDragRegion: NSViewRepresentable {

@@ -1,11 +1,8 @@
 import SwiftUI
 
-/// Settings shell: grouped sidebar + detail. Same nine routes and behavior,
-/// rebuilt around Haze rows — plain glyphs, group headers, neutral selection.
+/// Settings shell: sidebar + detail. Plain glyphs, neutral selection.
 struct DashboardView: View {
     @Bindable var model: DashboardModel
-    @State private var query = ""
-    @AppStorage(PanelMode.showAllActionsKey) private var showAllActions = false
     @Bindable private var updates = AppUpdateService.shared
     @Bindable private var appearance = AppearanceObserver.shared
 
@@ -46,72 +43,29 @@ struct DashboardView: View {
         .font(BeruType.control)
     }
 
-    private var filteredMenu: [DashboardRoute] {
-        DashboardRoute.visibleMenu(showAll: showAllActions).filter { $0.matches(query) }
-    }
-
-    private var filteredFooter: [DashboardRoute] {
-        DashboardRoute.footer.filter { $0.matches(query) }
-    }
-
-    private var settingsMenu: [DashboardRoute] {
-        filteredMenu.filter { !$0.isWorkspace }
-    }
-
-    private var workspaceMenu: [DashboardRoute] {
-        filteredMenu.filter(\.isWorkspace)
-    }
-
-    /// Hide the tip while sidebar search is filtering.
-    private var searchIsEmpty: Bool {
-        query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-    }
-
     private var sidebar: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // Four pages need no search box.
-            if showAllActions {
-                SettingsSearchField(text: $query)
-                    .padding(.horizontal, BeruMetrics.workspaceListInset)
-                    .padding(.top, BeruSpace.md)
-                    .padding(.bottom, BeruSpace.sm)
-            } else {
-                Color.clear.frame(height: BeruSpace.md)
+            Color.clear.frame(height: BeruSpace.md)
+            // Custom rows, not a List: AppKit draws List selection with the
+            // system accent and ignores SwiftUI tint.
+            VStack(alignment: .leading, spacing: BeruSpace.xs) {
+                sidebarGroup(title: "Settings", routes: DashboardRoute.menu)
             }
-            if filteredMenu.isEmpty && filteredFooter.isEmpty {
-                sidebarNoMatches
-                Spacer(minLength: 0)
-            } else {
-                // Custom rows, not a List: AppKit draws List selection with
-                // the system accent (blue) and ignores SwiftUI tint, so the
-                // selected row could never follow Beru's accent. Buttons
-                // with an accent pill do, and stay accessible.
-                ScrollView {
-                    VStack(alignment: .leading, spacing: BeruSpace.xs) {
-                        sidebarGroup(title: "Settings", routes: settingsMenu)
-                        sidebarGroup(title: "Workspace", routes: workspaceMenu)
-                    }
-                    .padding(.horizontal, BeruSpace.xs)
+            .padding(.horizontal, BeruSpace.xs)
+            Spacer(minLength: 0)
+            VStack(spacing: 0) {
+                SettingsHeaderRule()
+                ForEach(DashboardRoute.footer) { route in
+                    sidebarButton(route)
                 }
-                .scrollBounceBehavior(.basedOnSize)
-                Spacer(minLength: 0)
-            }
-            if searchIsEmpty || !filteredFooter.isEmpty {
-                VStack(spacing: 0) {
-                    SettingsHeaderRule()
-                    ForEach(filteredFooter) { route in
-                        sidebarButton(route)
-                    }
-                    .padding(.horizontal, BeruSpace.xs)
-                    .padding(.vertical, BeruSpace.xxs)
-                    .frame(maxWidth: .infinity, minHeight: BeruMetrics.workspaceChromeMinHeight)
-                }
+                .padding(.horizontal, BeruSpace.xs)
+                .padding(.vertical, BeruSpace.xxs)
+                .frame(maxWidth: .infinity, minHeight: BeruMetrics.workspaceChromeMinHeight)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         // Inset panel: 4pt of glass around the sidebar, clipped to the same
-        // rounded enclosure as the window so rows and selection never bleed
-        // square to the edge.
+        // rounded enclosure as the window.
         .padding(BeruSpace.xxs)
         .clipShape(BeruRadius.shape(BeruRadius.sm))
     }
@@ -166,25 +120,12 @@ struct DashboardView: View {
         .contentShape(RoundedRectangle(cornerRadius: BeruRadius.md, style: .continuous))
     }
 
-    private var sidebarNoMatches: some View {
-        Text("No matches")
-            .font(BeruType.footnote)
-            .foregroundStyle(BeruColor.textSecondary)
-            .frame(maxWidth: .infinity, alignment: .center)
-            .padding(.top, BeruSpace.xl)
-    }
-
     private var detail: some View {
         Group {
             switch model.route {
             case .general: GeneralSettingsTab()
             case .models: ModelsView()
             case .permissions: PermissionsSettingsTab()
-            case .data: HistorySettingsTab()
-            case .vault: VaultView(model: model)
-            case .runs: RunsView(dashboard: model)
-            case .actions: ActionsView()
-            case .targets: TargetsView()
             case .about: AboutSettingsTab()
             }
         }

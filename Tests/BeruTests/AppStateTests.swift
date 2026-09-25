@@ -16,19 +16,12 @@ final class AppStateTests: XCTestCase {
         state.capturedElement = nil
         state.hostBundleID = "com.apple.mail"
         state.hostAppName = "Mail"
-        state.clipboardText = "clipboard"
-        state.includeClipboard = true
         state.describeInstruction = "make it shorter"
         state.truncationNotice = true
-        state.vaultNoteID = "note-1"
-        state.isQuickSearch = true
         state.copiedFeedback = true
-        state.pinnedFeedback = true
         state.replacedFeedback = "Replaced in Mail"
         state.setResult(.done("result"), for: EnhancementAction.enhanceID)
-        state.savings[EnhancementAction.enhanceID] = TokenSavings(input: "aaa", output: "b")
         state.diffs[EnhancementAction.enhanceID] = [.equal("x")]
-        state.rationales[EnhancementAction.enhanceID] = "because"
         state.errorProviders[EnhancementAction.enhanceID] = .ollama
         state.errorNeedsModelSetup.insert(EnhancementAction.enhanceID)
         state.grammarStyle = .pirate
@@ -37,17 +30,11 @@ final class AppStateTests: XCTestCase {
 
     private func assertContentCleared(_ state: AppState, _ message: String = "") {
         XCTAssertTrue(state.results.isEmpty, "results \(message)")
-        XCTAssertTrue(state.savings.isEmpty, "savings \(message)")
         XCTAssertTrue(state.diffs.isEmpty, "diffs \(message)")
-        XCTAssertTrue(state.rationales.isEmpty, "rationales \(message)")
-        XCTAssertTrue(state.contextApplications.isEmpty, "contextApplications \(message)")
         XCTAssertTrue(state.errorProviders.isEmpty, "errorProviders \(message)")
         XCTAssertTrue(state.errorNeedsModelSetup.isEmpty, "errorNeedsModelSetup \(message)")
-        XCTAssertNil(state.clipboardText, "clipboardText \(message)")
-        XCTAssertFalse(state.includeClipboard, "includeClipboard \(message)")
         XCTAssertEqual(state.describeInstruction, "", "describeInstruction \(message)")
         XCTAssertFalse(state.truncationNotice, "truncationNotice \(message)")
-        XCTAssertNil(state.vaultNoteID, "vaultNoteID \(message)")
         XCTAssertNil(state.capturedElement, "capturedElement \(message)")
         XCTAssertEqual(state.grammarStyle, .proofread, "grammarStyle \(message)")
     }
@@ -59,9 +46,7 @@ final class AppStateTests: XCTestCase {
         XCTAssertEqual(state.capturedText, "fresh capture")
         XCTAssertNil(state.hostBundleID)
         XCTAssertNil(state.hostAppName)
-        XCTAssertFalse(state.isQuickSearch)
         XCTAssertFalse(state.copiedFeedback)
-        XCTAssertFalse(state.pinnedFeedback)
         XCTAssertNil(state.replacedFeedback)
     }
 
@@ -78,13 +63,11 @@ final class AppStateTests: XCTestCase {
         XCTAssertNil(state.replacedFeedback)
     }
 
-    func testResetIssuesNewSessionAndInvocationIdentity() {
+    func testResetIssuesANewSession() {
         let state = AppState()
         let session = state.panelSessionID
-        let invocation = state.invocationID
         state.reset(withCapturedText: "text")
         XCTAssertNotEqual(state.panelSessionID, session)
-        XCTAssertNotEqual(state.invocationID, invocation)
     }
 
     func testResetCancelsInFlightStreams() {
@@ -103,15 +86,11 @@ final class AppStateTests: XCTestCase {
         XCTAssertTrue(first.isCancelled)
     }
 
-    func testGrammarWithoutCardsGetsTheRegularFooter() {
+    func testFooterShowsOnceAResultIsDone() {
         let state = AppState()
+        XCTAssertFalse(state.showsFooter(for: EnhancementAction.grammarID))
         state.setResult(.done("Arr, the meetin' be at noon."), for: EnhancementAction.grammarID)
-        XCTAssertTrue(
-            state.showsFooter(for: EnhancementAction.grammarID),
-            "one Grammar result, like every tab: Replace lives in the footer"
-        )
-        state.grammarSuggestions = [GrammarSuggestion(kind: .corrected, body: "x")]
-        XCTAssertFalse(state.showsFooter(for: EnhancementAction.grammarID), "cards own their actions")
+        XCTAssertTrue(state.showsFooter(for: EnhancementAction.grammarID), "Replace lives in the footer")
     }
 
     func testResultStateDefaultsToIdleAndHasStartedTracksIt() {
@@ -121,74 +100,24 @@ final class AppStateTests: XCTestCase {
         state.setResult(.loading, for: EnhancementAction.enhanceID)
         XCTAssertTrue(state.hasStarted(EnhancementAction.enhanceID))
     }
-
-    func testSelectingQuickSearchSetsTheFlagAndOtherActionsClearIt() {
-        let state = AppState()
-        state.selectAction(EnhancementAction.searchID)
-        XCTAssertTrue(state.isQuickSearch)
-        state.selectAction(EnhancementAction.enhanceID)
-        XCTAssertFalse(state.isQuickSearch)
-    }
 }
 
 final class OutcomeCopyTests: XCTestCase {
     func testReplaceNamesTheHost() {
         XCTAssertEqual(
-            OutcomeCopy.replaceToast(hostAppName: "Cursor", isVault: false, isInsert: false),
+            OutcomeCopy.replaceToast(hostAppName: "Cursor"),
             "Replaced in Cursor"
-        )
-    }
-
-    func testInsertUsesInserted() {
-        XCTAssertEqual(
-            OutcomeCopy.replaceToast(hostAppName: "Mail", isVault: false, isInsert: true),
-            "Inserted in Mail"
-        )
-    }
-
-    func testVaultApplyDoesNotUseTheHost() {
-        XCTAssertEqual(
-            OutcomeCopy.replaceToast(hostAppName: "Cursor", isVault: true, isInsert: false),
-            "Applied to note"
         )
     }
 
     func testMissingHostFallsBackToMac() {
         XCTAssertEqual(
-            OutcomeCopy.replaceToast(hostAppName: nil, isVault: false, isInsert: false),
+            OutcomeCopy.replaceToast(hostAppName: nil),
             "Replaced in Mac"
         )
         XCTAssertEqual(
-            OutcomeCopy.replaceToast(hostAppName: "  ", isVault: false, isInsert: false),
+            OutcomeCopy.replaceToast(hostAppName: "  "),
             "Replaced in Mac"
         )
-    }
-}
-
-@MainActor
-final class VaultApplyTrailTests: XCTestCase {
-    func testCompleteReplaceRevealsTheVaultNoteAfterDismiss() async {
-        let state = AppState()
-        state.vaultNoteID = "note-xyz"
-        var dismissed = false
-        var revealed: String?
-        let engine = PanelEngine(appState: state) { dismissed = true }
-        engine.onRevealVaultNote = { revealed = $0 }
-        engine.replace(text: "applied body")
-        engine.replaceToastTask?.cancel()
-        await engine.completeReplace()
-        XCTAssertTrue(dismissed)
-        XCTAssertEqual(revealed, "note-xyz")
-        XCTAssertNil(engine.pendingReplaceVaultNoteID)
-    }
-
-    func testHostReplaceDoesNotStashAVaultNoteID() {
-        let state = AppState()
-        state.vaultNoteID = nil
-        let engine = PanelEngine(appState: state) {}
-        engine.replace(text: "host body")
-        XCTAssertNil(engine.pendingReplaceVaultNoteID)
-        XCTAssertFalse(engine.pendingReplaceIsVault)
-        engine.resetForNewInvocation()
     }
 }

@@ -4,22 +4,14 @@ import SwiftUI
 
 extension KeyboardShortcuts.Name {
     static let invokeBeru = Self("invokeBeru", default: .init(.p, modifiers: [.control, .option, .command]))
-    /// Toggle dictation. Defaults to Control-Option-Command-L. Opens Beru in
-    /// Ask and starts listening. Press again to stop.
+    /// Toggle dictation. Defaults to Control-Option-Command-L. Opens the panel
+    /// and starts listening. Press again to stop.
     static let dictateToBeru = Self("dictateToBeru", default: .init(.l, modifiers: [.control, .option, .command]))
 }
 
 @main
 struct BeruApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
-
-    init() {
-        #if DEBUG
-        MainActor.assumeIsolated {
-            DesignSnapshot.runIfRequested()
-        }
-        #endif
-    }
 
     var body: some Scene {
         MenuBarExtra {

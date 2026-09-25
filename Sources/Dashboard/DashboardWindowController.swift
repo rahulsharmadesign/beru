@@ -9,26 +9,9 @@ import SwiftUI
 @Observable
 final class DashboardModel {
     var route: DashboardRoute
-    /// Opens the panel on arbitrary text (vault notes, pinned runs).
-    let enhanceText: (String) -> Void
-    /// Opens the panel on a vault note and writes Replace back into that note.
-    let enhanceNote: (String) -> Void
-    /// When set, Vault selects this note on the next appear.
-    var pendingVaultNoteID: String?
 
-    init(
-        route: DashboardRoute = .general,
-        enhanceText: @escaping (String) -> Void = { _ in },
-        enhanceNote: @escaping (String) -> Void = { _ in }
-    ) {
+    init(route: DashboardRoute = .general) {
         self.route = route
-        self.enhanceText = enhanceText
-        self.enhanceNote = enhanceNote
-    }
-
-    func openVaultNote(_ id: String) {
-        pendingVaultNoteID = id
-        route = .vault
     }
 }
 
@@ -53,14 +36,8 @@ final class DashboardWindowController: NSWindowController, NSWindowDelegate {
     /// though `deinit` itself is nonisolated.
     nonisolated(unsafe) private var materialObserver: NSObjectProtocol?
 
-    init(
-        enhanceText: @escaping (String) -> Void,
-        enhanceNote: @escaping (String) -> Void
-    ) {
-        model = DashboardModel(
-            enhanceText: enhanceText,
-            enhanceNote: enhanceNote
-        )
+    init() {
+        model = DashboardModel()
         let window = NSWindow(
             contentRect: NSRect(
                 x: 0,
@@ -231,12 +208,6 @@ final class DashboardWindowController: NSWindowController, NSWindowDelegate {
         }, completionHandler: { [weak window] in
             window?.contentView?.layer?.removeAllAnimations()
         })
-    }
-
-    /// Apply from a vault note: select that note and bring Vault forward.
-    func revealVaultNote(_ id: String) {
-        model.openVaultNote(id)
-        show(route: .vault)
     }
 
     /// Drop back to accessory so closing the dashboard removes the Dock icon

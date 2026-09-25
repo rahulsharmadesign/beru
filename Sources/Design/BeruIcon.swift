@@ -146,49 +146,6 @@ enum IconNames {
     ]
 }
 
-/// Empty-state placeholder with an SF Symbol.
-///
-/// One shared layout for every "nothing selected / nothing here" moment in
-/// the dashboard, so icon size, spacing, and typography never drift between
-/// pages. `actions` is optional for pages (Vault) that offer a way out of
-/// the empty state, e.g. "New Note".
-struct BeruEmptyState<Actions: View>: View {
-    let icon: String
-    let title: String
-    let message: String
-    @ViewBuilder var actions: Actions
-
-    init(
-        icon: String,
-        title: String,
-        message: String,
-        @ViewBuilder actions: () -> Actions = { EmptyView() }
-    ) {
-        self.icon = icon
-        self.title = title
-        self.message = message
-        self.actions = actions()
-    }
-
-    var body: some View {
-        VStack(spacing: BeruSpace.sm) {
-            BeruIcon(name: icon, size: 32, strokeWidth: 1.5)
-                .foregroundStyle(BeruColor.textSecondary)
-            Text(title)
-                .font(BeruType.section)
-                .foregroundStyle(BeruColor.textPrimary)
-            Text(message)
-                .font(BeruType.footnote)
-                .foregroundStyle(BeruColor.textSecondary)
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
-            actions
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(BeruSpace.md)
-    }
-}
-
 /// Menu-bar mark: the ant SVG baked to exact pixels as a *template* image,
 /// so the system tints it for the bar's actual luminance — black on a light
 /// bar, white on a dark one — at draw time, on every frame.
@@ -230,20 +187,5 @@ struct BeruMenuBarIcon: View {
         // variant (Black/White solid on transparent) yields the same mask.
         image.isTemplate = true
         return image
-    }
-}
-
-/// Menu-bar mark on a Search question. Template fill follows appearance:
-/// near-black in light mode, near-white in dark mode. Vector asset, so
-/// size it like other template glyphs — do not wrap `NSImage`.
-struct BeruResponseMark: View {
-    var body: some View {
-        Image("MenuBarIcon")
-            .renderingMode(.template)
-            .resizable()
-            .scaledToFit()
-            .frame(width: BeruMetrics.iconSize, height: BeruMetrics.iconSize)
-            .foregroundStyle(BeruColor.textPrimary)
-            .accessibilityLabel("Enhancify")
     }
 }

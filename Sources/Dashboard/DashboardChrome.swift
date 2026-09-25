@@ -7,16 +7,7 @@ import SwiftUI
 /// canvas full-bleed. Grouped sections stay as inset cards on that one ground —
 /// System Settings style, no floating column.
 enum DashboardChrome {
-    /// Overlay on the system window material. A second canvas fill here is
-    /// what flattened Tahoe glass into a grey card.
-    static var sidebarSurface: Color { Color.clear }
 }
 
 extension View {
-    func dashboardEditorCanvas() -> some View {
-        self
-            .scrollContentBackground(.hidden)
-            .scrollIndicators(.never)
-            .background(Color.clear)
-    }
 }

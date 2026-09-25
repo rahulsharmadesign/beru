@@ -18,8 +18,7 @@ final class PanelEngine {
     var onStreamingStarted: (() -> Void)?
 
     /// Set by the coordinator to open the dashboard's Permissions screen when
-    /// dictation is denied or unavailable. First-use TCC is requested from the
-    /// mic itself after activating the app, so the system dialog can appear.
+    /// dictation is denied or unavailable.
     var onRequestDictationPermission: (() -> Void)?
 
     func requestDictationPermission() {
@@ -51,22 +50,11 @@ final class PanelEngine {
         start(actionID: EnhancementAction.grammarID)
     }
 
-    func applyGrammarKind(_ kind: GrammarKind) {
-        appState.selectGrammarKind(kind)
-        guard let body = appState.acceptedText(for: EnhancementAction.grammarID) else { return }
-        Task { await computeDiff(actionID: EnhancementAction.grammarID, original: appState.capturedText, revised: body) }
-    }
-
-    /// After Apply on a vault note, reopen Vault on that note.
-    var onRevealVaultNote: ((String) -> Void)?
-
     let powerActivity = PowerActivity()
-    var lastDescribeInstruction: String?
     /// Regeneration count per action within the current invocation.
     var attempts: [String: Int] = [:]
-    /// Silent quality re-runs (parse / language / paraphrase / unchanged).
-    /// Capped at one per action per user-initiated start so a stubborn model
-    /// cannot loop. Reset when the user starts or regenerates, not when we retry.
+    /// Silent quality re-runs (parse / paraphrase / unchanged). Capped at one
+    /// per action per user-initiated start so a stubborn model cannot loop.
     var qualityRetries: [String: Int] = [:]
 
     /// Monotonic for the life of the process, never reset: a token that came
@@ -80,11 +68,9 @@ final class PanelEngine {
     var replaceToastTask: Task<Void, Never>?
     var pendingReplaceText: String?
     var pendingReplaceTarget: AXUIElement?
-    /// The app Beru was invoked over, carried to the clipboard fallback so
-    /// Replace can reactivate it when there is no captured AX element.
+    /// The app the panel was invoked over, carried to the clipboard fallback
+    /// so Replace can reactivate it when there is no captured AX element.
     var pendingReplaceHostBundleID: String?
-    var pendingReplaceIsVault = false
-    var pendingReplaceVaultNoteID: String?
 
     /// Called when a new panel session begins, so attempt numbering restarts.
     func resetForNewInvocation() {
@@ -94,14 +80,11 @@ final class PanelEngine {
         // than reassigning matters: an in-flight task holds a token that now
         // matches no entry, so it can no longer publish.
         liveGeneration.removeAll()
-        lastDescribeInstruction = nil
         replaceToastTask?.cancel()
         replaceToastTask = nil
         pendingReplaceText = nil
         pendingReplaceTarget = nil
         pendingReplaceHostBundleID = nil
-        pendingReplaceIsVault = false
-        pendingReplaceVaultNoteID = nil
     }
 
     func beginGeneration(for actionID: String) -> Int {
@@ -126,14 +109,10 @@ final class PanelEngine {
     ///
     /// A superseded stream ends with nothing accumulated, which is
     /// indistinguishable from a genuinely empty model response — without this
-    /// guard it paints "empty response" over the run that replaced it, and the
-    /// panel shows an error while a perfectly good result is still streaming.
+    /// guard it paints "empty response" over the run that replaced it.
     func publish(_ state: ResultState, for actionID: String, generation: Int) {
         guard isLive(generation, for: actionID) else { return }
         appState.setResult(state, for: actionID)
-        if actionID == EnhancementAction.searchID {
-            appState.updateLiveSearchTurn(state)
-        }
     }
 
     init(appState: AppState, onDismiss: @escaping () -> Void) {
@@ -146,131 +125,60 @@ final class PanelEngine {
         start(actionID: actionID)
     }
 
+    /// Regenerate after a successful result means "give me a different take":
+    /// the previous output is passed so the model must diverge from it. Retry
+    /// after an error is a plain re-attempt.
+    ///
+    /// While a stream is in flight the footer stays mounted (dimmed), and a
+    /// tap there must not restart the run under itself.
     func retry(actionID: String) {
-        // Regenerate after a successful result means "give me a different
-        // take" — pass the previous output so the model must diverge from it.
-        // Retry after an error is a plain re-attempt.
-        // Search / describe need the last question even if the composer was cleared.
-        //
-        // While a stream is in flight the footer stays mounted (dimmed) so
-        // the chrome does not collapse and bounce the composer — and a tap
-        // there must not restart the run under itself.
         switch appState.resultState(for: actionID) {
         case .loading, .thinking, .streaming:
             return
-        case .done:
+        case .done(let previous):
             appState.reloadingActions.insert(actionID)
+            start(actionID: actionID, previousResult: previous)
         default:
-            break
-        }
-        let instruction: String? = {
-            if actionID == EnhancementAction.searchID
-                || actionID == EnhancementAction.describeID {
-                let live = appState.describeInstruction.trimmingCharacters(in: .whitespacesAndNewlines)
-                if !live.isEmpty { return live }
-                return lastDescribeInstruction
-            }
-            return nil
-        }()
-        if case .done(let previous) = appState.resultState(for: actionID) {
-            start(actionID: actionID, previousResult: previous, instruction: instruction)
-        } else {
-            start(actionID: actionID, instruction: instruction)
+            start(actionID: actionID)
         }
     }
 
-    /// Runs the free-form "Describe your change" instruction. Both the text
-    /// field's onSubmit and the panel's Return handler call this, so a single
-    /// keystroke can arrive twice; without the in-flight guard the second call
-    /// would cancel the first stream and look exactly like a hang.
+    /// Return in the composer. With nothing selected, the typed text is the
+    /// source document; with a selection, it refines the result.
+    ///
+    /// Both the text field's onSubmit and the panel's Return handler call
+    /// this, so a keystroke can arrive twice; the in-flight guard stops the
+    /// second call from cancelling the first stream.
     func runDescribe(instruction: String) {
         let trimmed = instruction.trimmingCharacters(in: .whitespacesAndNewlines)
-        let current = appState.selectedActionID
         guard !trimmed.isEmpty else { return }
-        let capturedEmpty = appState.capturedText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        // Quick search (no selection) still uses the one-off instruction path.
-        // Otherwise stay on the chip the user is on — switching to describe
-        // looked like a jump to Enhance (same sparkles icon).
-        let actionID: String = {
-            if current == EnhancementAction.searchID { return EnhancementAction.searchID }
-            if appState.isQuickSearch && capturedEmpty { return EnhancementAction.searchID }
-            if current == EnhancementAction.describeID { return EnhancementAction.describeID }
-            if ActionRegistry.shared.action(withID: current) != nil { return current }
-            return EnhancementAction.searchID
-        }()
-        if trimmed == lastDescribeInstruction {
-            switch appState.resultState(for: actionID) {
-            case .loading, .thinking, .streaming:
-                return
-            default:
-                break
-            }
+        let actionID = appState.selectedActionID
+        switch appState.resultState(for: actionID) {
+        case .loading, .thinking, .streaming:
+            return
+        default:
+            break
         }
-        lastDescribeInstruction = trimmed
-        if actionID == EnhancementAction.searchID || actionID == EnhancementAction.describeID {
-            appState.selectAction(actionID)
-        }
-        /// Typed text on a verb chip with no selection is the source document,
-        /// not an instruction — Grammar/Enhance must run on it. Handing it to
-        /// `start` as `instruction` mixes the two roles: the run reads it as
-        /// the source via `composerSnapshot`, but the field-clear below skips
-        /// verbs, so the text stays put and the composer never frees up.
-        /// Promote it here: stash it as the capture, clear the field, then run.
-        let typedIsSource = actionID != EnhancementAction.searchID
-            && actionID != EnhancementAction.describeID
-            && capturedEmpty
+        let typedIsSource = appState.capturedText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         if typedIsSource {
             appState.capturedText = trimmed
         }
-        start(actionID: actionID, instruction: typedIsSource ? nil : trimmed)
-        // The question is consumed: clear the field at submit so it is ready
-        // for the next input. Retry and regenerate fall back to
-        // lastDescribeInstruction, and rewrite extras (a selection is
-        // present) stay put for tweaking. The end-of-stream clear in
-        // runStream is now just a safety net. Deferred to the next runloop:
-        // this is called from the composer's Return handler, and writing the
-        // bound text mid-`insertNewline` races `textDidChange` and resurrects
-        // the cleared string.
-        if actionID == EnhancementAction.searchID || actionID == EnhancementAction.describeID || typedIsSource {
+        // An empty instruction, not nil: nil falls back to the composer text,
+        // which still holds the source until the deferred clear below.
+        start(actionID: actionID, instruction: typedIsSource ? "" : trimmed)
+        // The source is consumed: clear the field so it is ready for a
+        // refinement. A refinement stays put for tweaking. Deferred to the
+        // next runloop: this runs inside the composer's Return handler, and
+        // writing the bound text mid-`insertNewline` races `textDidChange`
+        // and resurrects the cleared string.
+        if typedIsSource {
             Task { @MainActor [weak appState] in
                 appState?.describeInstruction = ""
             }
         }
     }
 
-    /// Regenerates one search turn from its row. The latest turn rewrites in
-    /// place (the composer's Regenerate path); an older turn re-asks as a
-    /// fresh turn so answered history is never destroyed.
-    func regenerateSearchTurn(id: UUID) {
-        guard let index = appState.searchThread.firstIndex(where: { $0.id == id }),
-              case .done(let previous) = appState.searchThread[index].answer
-        else { return }
-        let question = appState.searchThread[index].question
-        if index == appState.searchThread.count - 1 {
-            // In-place rewrite of a finished answer: same reload semantics
-            // as retry — the footer stays mounted while the new answer streams.
-            appState.reloadingActions.insert(EnhancementAction.searchID)
-            start(actionID: EnhancementAction.searchID, previousResult: previous, instruction: question)
-        } else {
-            runQuickSearch(query: question)
-        }
-    }
-
-    /// Runs a question through Beru’s selected AI provider on the AI Search tab.
-    /// Clears the composer at submit: the question is snapshotted above, and
-    /// retry falls back to lastDescribeInstruction.
-    func runQuickSearch(query: String) {
-        let question = query.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !question.isEmpty else { return }
-        appState.selectAction(EnhancementAction.searchID)
-        start(actionID: EnhancementAction.searchID, instruction: question)
-        appState.describeInstruction = ""
-    }
-
-    /// Minimum interval between streaming UI publishes. Local models can emit
-    /// 100+ chunks per second; re-laying-out the full text for each one wastes
-    /// main-thread time with no visible benefit.
-    /// Coalesce UI publishes. Tighter than this re-lays out the panel (height
-    /// preferences, glass, shadow) dozens of times per second and heats the Mac.
+    /// Coalesce UI publishes. Local models can emit 100+ chunks per second;
+    /// re-laying-out the panel for each one heats the Mac for no visible gain.
     static let streamPublishInterval: Duration = .milliseconds(100)
 }

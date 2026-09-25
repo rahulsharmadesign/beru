@@ -41,29 +41,6 @@ enum HostApp {
         return frontmost
     }
 
-    /// Title of the system-wide focused window, when readable. Used only to
-    /// recognize an Instagram / YouTube / X tab for invoke routing — never a
-    /// URL and never page content. Returns nil for anything unreadable.
-    static func focusedWindowTitle() -> String? {
-        let systemWide = AXUIElementCreateSystemWide()
-        var window: AnyObject?
-        guard AXUIElementCopyAttributeValue(
-            systemWide,
-            kAXFocusedWindowAttribute as CFString,
-            &window
-        ) == .success, let window else { return nil }
-        var titleValue: AnyObject?
-        guard AXUIElementCopyAttributeValue(
-            window as! AXUIElement,
-            kAXTitleAttribute as CFString,
-            &titleValue
-        ) == .success,
-              let title = titleValue as? String,
-              !title.isEmpty
-        else { return nil }
-        return title
-    }
-
     /// "Cursor Helper (Renderer)" → "Cursor"
     static func helperStem(_ name: String) -> String {
         name.replacingOccurrences(of: #"\s*Helper.*$"#, with: "", options: .regularExpression)

@@ -120,31 +120,3 @@ final class ScaffoldingStripTests: XCTestCase {
         XCTAssertEqual(result, "Move the section.")
     }
 }
-
-final class SearchChromeStripTests: XCTestCase {
-    func testStripsATXHeadingMarkersAndKeepsTheWords() {
-        let output = """
-        ### Yes
-        Elon Musk is a well-known entrepreneur.
-        """
-        XCTAssertEqual(
-            PanelEngine.strippedSearchChrome(output),
-            """
-            Yes
-            Elon Musk is a well-known entrepreneur.
-            """
-        )
-    }
-
-    func testLeavesHashWithoutAFollowingSpaceAlone() {
-        XCTAssertEqual(PanelEngine.strippedSearchChrome("#include <stdio.h>"), "#include <stdio.h>")
-        XCTAssertEqual(PanelEngine.strippedSearchChrome("C# is a language."), "C# is a language.")
-    }
-
-    func testLeavesNonHeadingTextAlone() {
-        XCTAssertEqual(
-            PanelEngine.strippedSearchChrome("Yes. Elon Musk founded SpaceX."),
-            "Yes. Elon Musk founded SpaceX."
-        )
-    }
-}

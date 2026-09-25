@@ -8,282 +8,79 @@ final class InvokeActionTests: XCTestCase {
     private let slack = HostApp.Info(bundleID: "com.tinyspeck.slackmacgap", name: "Slack")
     private let mail = HostApp.Info(bundleID: "com.apple.mail", name: "Mail")
 
-    func testHotkeyWithoutCaptureOpensAISearchEverywhere() {
-        for host in [nil, chrome, cursor, slack] {
-            XCTAssertEqual(
-                AppCoordinator.initialActionID(
-                    openOnSearch: false, needsSetup: false, host: host,
-                    hasCapture: false, source: "hotkey"
-                ),
-                EnhancementAction.searchID,
-                host?.name ?? "no host"
-            )
-        }
-    }
-
-    func testUnconfiguredInstallStaysOnAISearch() {
-        XCTAssertEqual(
-            AppCoordinator.initialActionID(
-                openOnSearch: false, needsSetup: true, host: cursor,
-                hasCapture: true, isEditableField: true, source: "hotkey"
-            ),
-            EnhancementAction.searchID
-        )
-    }
-
-    func testDictateOrMenuInvokeOpensAISearch() {
-        XCTAssertEqual(
-            AppCoordinator.initialActionID(
-                openOnSearch: true, needsSetup: false, host: chrome,
-                hasCapture: true, source: "hotkey"
-            ),
-            EnhancementAction.searchID
-        )
-    }
-
-    func testSelectionInLLMToolOpensEnhancePrompt() {
-        let hosts = [
-            HostApp.Info(bundleID: "com.anysphere.cursor", name: "Cursor"),
-            HostApp.Info(bundleID: "com.todesktop.230313mzl4w4u92", name: "Cursor"),
-            HostApp.Info(bundleID: "com.anthropic.claudefordesktop", name: "Claude"),
-            HostApp.Info(bundleID: "com.openai.chat", name: "ChatGPT"),
-            HostApp.Info(bundleID: "cn.moonshot.kimi", name: "Kimi")
-        ]
-        for host in hosts {
-            // With and without a readable editable-field role: Electron's AX
-            // tree is thin, so the role read must not be required.
-            for isEditable in [true, false] {
-                XCTAssertEqual(
-                    AppCoordinator.initialActionID(
-                        openOnSearch: false, needsSetup: false, host: host,
-                        hasCapture: true, isEditableField: isEditable,
-                        capturedText: "write a parser", source: "hotkey"
-                    ),
-                    EnhancementAction.enhanceID,
-                    "\(host.name ?? host.bundleID) editable=\(isEditable)"
-                )
-            }
-        }
-    }
-
-    func testSelectionInAnyOtherEditableFieldOpensGrammar() {
-        for host in [chrome, .init(bundleID: "com.apple.Notes", name: "Notes")] {
-            XCTAssertEqual(
-                AppCoordinator.initialActionID(
-                    openOnSearch: false, needsSetup: false, host: host,
-                    hasCapture: true, isEditableField: true, capturedText: "some draft text",
-                    source: "hotkey"
-                ),
-                EnhancementAction.grammarID,
-                host.name ?? host.bundleID
-            )
-        }
-    }
-
-    /// A draft you are writing is correction material even inside a chat or
-    /// mail app — the editable-field check must win over the chat-app rule.
-    func testOwnDraftInChatAndMailAppsOpensGrammar() {
-        for host in [slack, mail] {
-            XCTAssertEqual(
-                AppCoordinator.initialActionID(
-                    openOnSearch: false, needsSetup: false, host: host,
-                    hasCapture: true, isEditableField: true, capturedText: "my half-written draft",
-                    source: "hotkey"
-                ),
-                EnhancementAction.grammarID,
-                host.name ?? host.bundleID
-            )
-        }
-    }
-
-    /// A received message selected in a chat or mail app is reply material.
-    func testReceivedMessageSelectionInChatAndMailAppsOpensSmartReply() {
-        for host in [slack, mail] {
-            XCTAssertEqual(
-                AppCoordinator.initialActionID(
-                    openOnSearch: false, needsSetup: false, host: host,
-                    hasCapture: true, capturedText: "Long received message",
-                    source: "hotkey"
-                ),
-                EnhancementAction.replyID,
-                host.name ?? host.bundleID
-            )
-        }
-    }
-
-    /// Web selections land on Enhance Prompt whatever their length. Only an
-    /// Instagram / YouTube / X context routes to Smart Reply.
-    func testGenericWebSelectionAlwaysOpensEnhancePrompt() {
-        let comment = String(repeating: "Is this still available? ", count: 5)
-        XCTAssertTrue(comment.count <= 280)
-        XCTAssertEqual(
-            AppCoordinator.initialActionID(
-                openOnSearch: false, needsSetup: false, host: chrome,
-                hasCapture: true, capturedText: comment, source: "hotkey"
-            ),
-            EnhancementAction.enhanceID
-        )
-        let article = String(repeating: "word ", count: 80)
-        XCTAssertGreaterThan(article.count, 280)
-        XCTAssertEqual(
-            AppCoordinator.initialActionID(
-                openOnSearch: false, needsSetup: false, host: chrome,
-                hasCapture: true, capturedText: article, source: "hotkey"
-            ),
-            EnhancementAction.enhanceID
-        )
-    }
-
-    func testSocialFeedSelectionOpensSmartReply() {
-        // In the browser, only the window title gives the feed away.
-        let titles = [
-            "(1) Home / X",
-            "Elon Musk (@elonmusk) / X",
-            "My Video - YouTube",
-            "Instagram",
-            "Priya Sharma on Instagram: \"sunset vibes\""
-        ]
-        for title in titles {
-            XCTAssertEqual(
-                AppCoordinator.initialActionID(
-                    openOnSearch: false, needsSetup: false, host: chrome,
-                    hasCapture: true, capturedText: "a long comment worth answering",
-                    source: "hotkey", windowTitle: title
-                ),
-                EnhancementAction.replyID,
-                title
-            )
-        }
-        // And inside the native apps themselves.
-        let hosts = [
-            HostApp.Info(bundleID: "com.burbn.instagram", name: "Instagram"),
-            HostApp.Info(bundleID: "com.google.YouTube", name: "YouTube")
-        ]
-        for host in hosts {
-            XCTAssertEqual(
-                AppCoordinator.initialActionID(
-                    openOnSearch: false, needsSetup: false, host: host,
-                    hasCapture: true, capturedText: "any comment", source: "hotkey"
-                ),
-                EnhancementAction.replyID,
-                host.name ?? host.bundleID
-            )
-        }
-        // A draft composed there still gets corrected, not answered.
-        XCTAssertEqual(
-            AppCoordinator.initialActionID(
-                openOnSearch: false, needsSetup: false, host: hosts[0],
-                hasCapture: true, isEditableField: true, capturedText: "my comment draft",
-                source: "hotkey"
-            ),
-            EnhancementAction.grammarID
-        )
-        // An unrelated page whose content mentions YouTube stays on Summarize.
-        XCTAssertFalse(
-            AppCoordinator.isSocialFeedSelection(bundleID: "com.apple.Notes", windowTitle: nil)
-        )
-    }
-
-    func testClipboardAndVaultSourcesStayOnAISearch() {
-        for source in ["clipboard", "vault"] {
-            XCTAssertEqual(
-                AppCoordinator.initialActionID(
-                    openOnSearch: false, needsSetup: false, host: nil,
-                    hasCapture: true, capturedText: "pasted text", source: source
-                ),
-                EnhancementAction.searchID,
-                source
-            )
-        }
-    }
-
-    /// A hotkey invoke whose selection needed the Cmd-C fallback leaves no
-    /// pinned element and arrives with a nil source; it must still route as a
-    /// hotkey, not as a clipboard paste. A generic page routes to Summarize.
-    func testNilSourceRoutesLikeHotkeyNotClipboard() {
-        XCTAssertEqual(
-            AppCoordinator.initialActionID(
-                openOnSearch: false, needsSetup: false, host: chrome,
-                hasCapture: true, capturedText: "Is this still available?", source: nil
-            ),
-            EnhancementAction.enhanceID
-        )
-    }
-
-    func testCommunicationPrefixMatchingStaysConservative() {
-        XCTAssertTrue(AppCoordinator.isCommunicationApp("com.tinyspeck.slackmacgap"))
-        // "chat" must not catch ChatGPT.
-        XCTAssertFalse(AppCoordinator.isCommunicationApp("com.openai.chat"))
-        XCTAssertTrue(
-            AppCoordinator.isSocialFeedSelection(bundleID: "com.burbn.instagram", windowTitle: nil)
-        )
-        // "x" must not match every title containing the letter.
-        XCTAssertFalse(
-            AppCoordinator.isSocialFeedSelection(
-                bundleID: "com.google.Chrome",
-                windowTitle: "Fixing proxy settings - Docs"
-            )
-        )
-        XCTAssertTrue(
-            AppCoordinator.isSocialFeedSelection(bundleID: nil, windowTitle: "Home / X")
-        )
-        XCTAssertFalse(AppCoordinator.isSocialFeedSelection(bundleID: nil, windowTitle: nil))
-    }
-
-    // MARK: - Focused mode (Enhance + Grammar only)
-
-    private func focused(
+    private func landing(
         host: HostApp.Info?,
         hasCapture: Bool = true,
         isEditableField: Bool = false,
-        source: String? = "hotkey",
-        openOnSearch: Bool = false,
-        needsSetup: Bool = false
+        source: String? = "hotkey"
     ) -> String {
         AppCoordinator.initialActionID(
-            openOnSearch: openOnSearch, needsSetup: needsSetup, host: host,
-            hasCapture: hasCapture, isEditableField: isEditableField,
-            source: source, focused: true
+            host: host, hasCapture: hasCapture,
+            isEditableField: isEditableField, source: source
         )
     }
 
-    func testFocusedNeverLandsOnAHiddenTab() {
-        let hidden: Set<String> = [
-            EnhancementAction.searchID, EnhancementAction.describeID, EnhancementAction.replyID,
-            EnhancementAction.summarizeID, EnhancementAction.explainID
-        ]
+    func testEveryInvokeLandsOnOneOfTheTwoTabs() {
+        let tabs: Set<String> = [EnhancementAction.enhanceID, EnhancementAction.grammarID]
         for host in [nil, chrome, cursor, slack, mail] {
             for hasCapture in [true, false] {
                 for editable in [true, false] {
-                    for openOnSearch in [true, false] {
-                        let landing = focused(
-                            host: host, hasCapture: hasCapture,
-                            isEditableField: editable, openOnSearch: openOnSearch
-                        )
-                        XCTAssertFalse(hidden.contains(landing), "\(host?.name ?? "nil") → \(landing)")
+                    for source in ["hotkey", "clipboard", "dictate", nil] as [String?] {
+                        let id = landing(host: host, hasCapture: hasCapture, isEditableField: editable, source: source)
+                        XCTAssertTrue(tabs.contains(id), "\(host?.name ?? "nil") → \(id)")
                     }
                 }
             }
         }
     }
 
-    func testFocusedNoSelectionOpensEnhanceForATypedIdea() {
-        XCTAssertEqual(focused(host: chrome, hasCapture: false), EnhancementAction.enhanceID)
-        XCTAssertEqual(focused(host: nil, hasCapture: false), EnhancementAction.enhanceID)
+    func testNoSelectionOpensEnhanceForATypedIdea() {
+        XCTAssertEqual(landing(host: chrome, hasCapture: false), EnhancementAction.enhanceID)
+        XCTAssertEqual(landing(host: nil, hasCapture: false), EnhancementAction.enhanceID)
     }
 
-    func testFocusedAIToolOpensEnhanceEvenInItsEditor() {
-        XCTAssertEqual(focused(host: cursor, isEditableField: true), EnhancementAction.enhanceID)
+    func testSelectionInLLMToolOpensEnhanceEvenInItsEditor() {
+        let hosts = [
+            cursor,
+            HostApp.Info(bundleID: "com.todesktop.230313mzl4w4u92", name: "Cursor"),
+            HostApp.Info(bundleID: "com.anthropic.claudefordesktop", name: "Claude"),
+            HostApp.Info(bundleID: "com.openai.chat", name: "ChatGPT")
+        ]
+        for host in hosts {
+            for editable in [true, false] {
+                XCTAssertEqual(
+                    landing(host: host, isEditableField: editable),
+                    EnhancementAction.enhanceID,
+                    "\(host.name ?? host.bundleID) editable=\(editable)"
+                )
+            }
+        }
     }
 
-    func testFocusedOwnWritingOpensGrammar() {
-        XCTAssertEqual(focused(host: chrome, isEditableField: true), EnhancementAction.grammarID)
-        XCTAssertEqual(focused(host: slack), EnhancementAction.grammarID, "Electron chat apps hide the field role")
-        XCTAssertEqual(focused(host: mail), EnhancementAction.grammarID)
+    func testOwnWritingOpensGrammar() {
+        XCTAssertEqual(landing(host: chrome, isEditableField: true), EnhancementAction.grammarID)
+        XCTAssertEqual(landing(host: slack), EnhancementAction.grammarID, "Electron chat apps hide the field role")
+        XCTAssertEqual(landing(host: mail), EnhancementAction.grammarID)
     }
 
-    func testFocusedStaticSelectionOpensEnhance() {
-        XCTAssertEqual(focused(host: chrome), EnhancementAction.enhanceID)
+    func testStaticSelectionOpensEnhance() {
+        XCTAssertEqual(landing(host: chrome), EnhancementAction.enhanceID)
+    }
+
+    /// A Cmd-C fallback capture arrives with a nil source and still routes
+    /// as a hotkey, not a clipboard paste.
+    func testNilSourceRoutesLikeHotkey() {
+        XCTAssertEqual(landing(host: chrome, isEditableField: true, source: nil), EnhancementAction.grammarID)
+    }
+
+    func testClipboardOpensEnhance() {
+        XCTAssertEqual(landing(host: mail, isEditableField: true, source: "clipboard"), EnhancementAction.enhanceID)
+    }
+
+    func testCommunicationPrefixMatchingStaysConservative() {
+        XCTAssertTrue(AppCoordinator.isCommunicationApp("com.tinyspeck.slackmacgap"))
+        // "chat" must not catch ChatGPT.
+        XCTAssertFalse(AppCoordinator.isCommunicationApp("com.openai.chat"))
     }
 
     func testAIToolsReadTheSelectionWithCommandCFirst() {
@@ -293,15 +90,10 @@ final class InvokeActionTests: XCTestCase {
         XCTAssertFalse(AppCoordinator.prefersClipboardCapture(host: nil, isElectronHelper: false))
     }
 
-    func testVSCodeRoutesToEnhanceWhateverTheCase() {
+    func testVSCodeRoutesToEnhance() {
         let vscode = HostApp.Info(bundleID: "com.microsoft.VSCode", name: "Code")
-        XCTAssertEqual(focused(host: vscode), EnhancementAction.enhanceID)
+        XCTAssertEqual(landing(host: vscode), EnhancementAction.enhanceID)
         XCTAssertNotNil(TargetProfile.seededID(forBundleID: "com.microsoft.vscode"))
-    }
-
-    func testFocusedClipboardAndVaultOpenEnhance() {
-        XCTAssertEqual(focused(host: mail, isEditableField: true, source: "clipboard"), EnhancementAction.enhanceID)
-        XCTAssertEqual(focused(host: nil, source: "vault"), EnhancementAction.enhanceID)
     }
 }
 
@@ -369,39 +161,11 @@ final class ReloadFooterTests: XCTestCase {
         XCTAssertTrue(state.showsFooter(for: actionID))
     }
 
-    func testRowTabsHaveNoFooter() {
+    func testBothTabsGetTheFooter() {
         let state = AppState()
-        state.setResult(.done("old"), for: EnhancementAction.searchID)
-        XCTAssertFalse(state.showsFooter(for: EnhancementAction.searchID))
-        state.setResult(.done("old"), for: EnhancementAction.grammarID)
-        XCTAssertTrue(
-            state.showsFooter(for: EnhancementAction.grammarID),
-            "Grammar publishes one result like every tab; Replace lives in the footer"
-        )
-        state.grammarSuggestions = [GrammarSuggestion(kind: .corrected, body: "old")]
-        XCTAssertFalse(
-            state.showsFooter(for: EnhancementAction.grammarID),
-            "when cards are shown, they own every outcome"
-        )
-        state.setResult(.done("old"), for: EnhancementAction.replyID)
-        XCTAssertFalse(state.showsFooter(for: EnhancementAction.replyID))
-    }
-
-    func testGrammarReplyShellMountsOnlyForAppliedContext() {
-        let state = AppState()
-        // The card layout; without cards Grammar always has its footer.
-        state.grammarSuggestions = [GrammarSuggestion(kind: .corrected, body: "old")]
-        state.setResult(.done("old"), for: EnhancementAction.grammarID)
-        state.replacedFeedback = "Replaced in Notes"
-        XCTAssertFalse(
-            state.showsFooter(for: EnhancementAction.grammarID),
-            "the write-back toast floats and must not mount the strip"
-        )
-        state.replacedFeedback = nil
-        state.contextApplications[EnhancementAction.grammarID] = .empty
-        XCTAssertTrue(
-            state.showsFooter(for: EnhancementAction.grammarID),
-            "applied context has no row home"
-        )
+        for id in [EnhancementAction.enhanceID, EnhancementAction.grammarID] {
+            state.setResult(.done("old"), for: id)
+            XCTAssertTrue(state.showsFooter(for: id), id)
+        }
     }
 }

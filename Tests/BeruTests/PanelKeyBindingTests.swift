@@ -178,7 +178,7 @@ final class PanelKeyBindingTests: XCTestCase {
     // MARK: - Tab: Enhance ⇄ Grammar
 
     private let bothModes: Set<String> = [
-        EnhancementAction.searchID, EnhancementAction.enhanceID, EnhancementAction.grammarID
+        EnhancementAction.enhanceID, EnhancementAction.grammarID
     ]
 
     func testTabFromEnhanceGoesToGrammar() {
@@ -197,7 +197,7 @@ final class PanelKeyBindingTests: XCTestCase {
 
     func testTabFromAnyOtherTabGoesToEnhance() {
         XCTAssertEqual(
-            PanelKeyBinding.resolveTab(currentActionID: EnhancementAction.searchID, availableActionIDs: bothModes),
+            PanelKeyBinding.resolveTab(currentActionID: "unknown", availableActionIDs: bothModes),
             .switchAction(id: EnhancementAction.enhanceID)
         )
     }

@@ -45,44 +45,6 @@ struct SettingsPrimaryButton: View {
     }
 }
 
-/// Haze check: 16pt box, accent fill, Lucide check. Replaces `.checkbox`.
-struct SettingsTogglePill: View {
-    let title: String
-    @Binding var isOn: Bool
-
-    var body: some View {
-        Button { isOn.toggle() } label: {
-            HStack(spacing: BeruSpace.xs) {
-                ZStack {
-                    BeruRadius.shape(BeruRadius.sm)
-                        .fill(isOn ? AnyShapeStyle(BeruColor.accentGradient) : AnyShapeStyle(Color.clear))
-                        .overlay {
-                            if !isOn {
-                                BeruRadius.shape(BeruRadius.sm)
-                                    .strokeBorder(BeruColor.strongBorder, lineWidth: BeruMetrics.hairline)
-                            }
-                        }
-                    if isOn {
-                        BeruIcon(name: "check", size: BeruMetrics.iconSizeDense)
-                            .foregroundStyle(BeruColor.onAccent)
-                    }
-                }
-                .frame(width: BeruSpace.md, height: BeruSpace.md)
-                Text(title)
-                    .font(BeruType.control)
-                    .foregroundStyle(BeruColor.textPrimary)
-                    .lineLimit(1)
-            }
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .fixedSize()
-        .accessibilityLabel(title)
-        .accessibilityValue(isOn ? "On" : "Off")
-        .accessibilityAddTraits(isOn ? .isSelected : [])
-    }
-}
-
 /// Haze round button: outlined circle, hairline, Lucide glyph. Hover fills.
 struct SettingsIconButton: View {
     let icon: String
@@ -113,16 +75,6 @@ struct SettingsIconButton: View {
         .accessibilityLabel(help)
         .onHover { isHovered = $0 }
         .beruHoverEase(isHovered)
-    }
-}
-
-struct SettingsInlineButton: View {
-    let title: String
-    var role: ButtonRole?
-    let action: () -> Void
-
-    var body: some View {
-        BeruButton(title: title, variant: .inline, size: .regular, role: role, action: action)
     }
 }
 

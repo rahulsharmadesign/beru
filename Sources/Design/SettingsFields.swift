@@ -88,39 +88,3 @@ struct SettingsSecretField: View {
         .beruFocusEase(focused)
     }
 }
-
-/// Haze search: Lucide glyph, plain field, clear round. Replaces
-/// `NSSearchField` so settings search paints like every other well.
-struct SettingsSearchField: View {
-    @Binding var text: String
-    var placeholder: String = "Search settings..."
-
-    var body: some View {
-        HStack(spacing: BeruSpace.xs) {
-            BeruIcon(name: "search", size: BeruMetrics.iconSize)
-                .foregroundStyle(BeruColor.textSecondary)
-            TextField(placeholder, text: $text)
-                .textFieldStyle(.plain)
-                .font(BeruType.search)
-            if !text.isEmpty {
-                Button { text = "" } label: {
-                    BeruIcon(name: "x", size: BeruMetrics.iconSizeDense)
-                        .foregroundStyle(BeruColor.textSecondary)
-                }
-                .buttonStyle(.plain)
-                .help("Clear search")
-                .accessibilityLabel("Clear search")
-            }
-        }
-        .padding(.horizontal, BeruSpace.sm)
-        .frame(height: BeruMetrics.fieldHeight)
-        .background {
-            Capsule()
-                .fill(BeruColor.subtleFill)
-                .overlay {
-                    Capsule().strokeBorder(BeruColor.border, lineWidth: BeruMetrics.hairline)
-                }
-        }
-        .accessibilityLabel(placeholder)
-    }
-}

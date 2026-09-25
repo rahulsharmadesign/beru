@@ -49,53 +49,13 @@ final class SettingsStoreTests: XCTestCase {
         )
     }
 
-    func testSettingsThatDefaultOnSurviveAnUnsetKey() {
-        let store = SettingsStore(defaults: defaults)
-        XCTAssertTrue(store.explainChanges)
-        XCTAssertTrue(store.sessionContextEnabled)
-    }
-
-    func testRecordingIsOffUntilExplicitlyChosen() {
-        let store = SettingsStore(defaults: defaults)
-        XCTAssertFalse(
-            store.usageLoggingEnabled,
-            "selected text can contain secrets; recording must be opt-in"
-        )
-    }
-
-    func testAnExplicitOffIsNotOverwrittenByTheOnDefault() {
-        defaults.set(false, forKey: "explainChanges")
-        defaults.set(false, forKey: "sessionContextEnabled")
-        let store = SettingsStore(defaults: defaults)
-        XCTAssertFalse(store.explainChanges)
-        XCTAssertFalse(store.sessionContextEnabled)
-    }
-
-    func testAnExplicitOnIsPreserved() {
-        defaults.set(true, forKey: "usageLoggingEnabled")
-        XCTAssertTrue(SettingsStore(defaults: defaults).usageLoggingEnabled)
-    }
-
     func testRemainingDefaults() {
         let store = SettingsStore(defaults: defaults)
         XCTAssertEqual(store.primaryColorID, PrimaryColor.indigo.rawValue)
-        XCTAssertEqual(store.defaultActionID, EnhancementAction.grammarID)
         XCTAssertEqual(store.lastTargetID, TargetProfile.genericID)
-        XCTAssertEqual(store.historyRetentionDays, 90)
-        XCTAssertEqual(store.historyMaxMegabytes, 200)
-        XCTAssertEqual(store.userName, "")
         XCTAssertFalse(store.launchAtLogin)
         XCTAssertFalse(store.hasCompletedGetStarted)
         XCTAssertTrue(store.lastTargetByApp.isEmpty)
-    }
-
-    /// A zero would mean "keep nothing", which is never what an unset key means.
-    func testZeroRetentionFallsBackToTheShippedWindow() {
-        defaults.set(0, forKey: "historyRetentionDays")
-        defaults.set(0, forKey: "historyMaxMegabytes")
-        let store = SettingsStore(defaults: defaults)
-        XCTAssertEqual(store.historyRetentionDays, 90)
-        XCTAssertEqual(store.historyMaxMegabytes, 200)
     }
 
     // MARK: - Migrations
@@ -146,15 +106,9 @@ final class SettingsStoreTests: XCTestCase {
 
     func testWritesArePersistedToTheInjectedDomain() {
         let store = SettingsStore(defaults: defaults)
-        store.userName = "Rahul"
-        store.explainChanges = false
-        store.historyRetentionDays = 30
         store.primaryColorID = PrimaryColor.teal.rawValue
 
         let reloaded = SettingsStore(defaults: defaults)
-        XCTAssertEqual(reloaded.userName, "Rahul")
-        XCTAssertFalse(reloaded.explainChanges)
-        XCTAssertEqual(reloaded.historyRetentionDays, 30)
         XCTAssertEqual(reloaded.primaryColorID, PrimaryColor.teal.rawValue)
     }
 

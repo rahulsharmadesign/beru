@@ -13,24 +13,10 @@ enum ResultState: Equatable {
     case error(String)
 }
 
-/// One Q&A in the AI Search panel thread. Lives only while the widget is open.
-struct SearchThreadTurn: Identifiable, Equatable {
-    let id: UUID
-    let question: String
-    var answer: ResultState
-
-    init(id: UUID = UUID(), question: String, answer: ResultState = .loading) {
-        self.id = id
-        self.question = question
-        self.answer = answer
-    }
-}
-
 @MainActor
 @Observable
 final class AppState {
     var isPanelVisible: Bool = false
-    var panelOrigin: CGPoint = .zero
     /// When non-nil, the result module scrolls inside this height and the
     /// window is at the 75% viewport cap. Nil = result sizes intrinsically.
     /// Owned by `PanelController` from layout measures — views must not write it.
@@ -41,97 +27,35 @@ final class AppState {
     /// this element, not whatever is focused at replace time (our own panel
     /// holds key status by then).
     var capturedElement: AXUIElement?
-    /// The active action's id. Results are keyed by action id, including the
-    /// reserved `EnhancementAction.describeID` for one-off instructions.
-    var selectedActionID: String
+    /// Enhance or Grammar. Results are keyed by action id.
+    var selectedActionID: String = EnhancementAction.enhanceID
     var results: [String: ResultState] = [:]
-    /// AI Search Q&A stack for this panel open. Cleared on dismiss / reset —
-    /// not persisted. Soft-capped so a long session cannot balloon forever.
-    var searchThread: [SearchThreadTurn] = []
-    /// Like/dislike votes per search turn, keyed by turn id. Session-only
-    /// like the thread; each vote is also logged as training signal.
-    var searchFeedback: [UUID: Bool] = [:]
-    /// Like/dislike vote on the current result, keyed by action id. Cleared
-    /// on every new run so a vote never sticks to regenerated text, and on
-    /// dismiss / reset with everything else session-scoped.
-    var resultFeedback: [String: Bool] = [:]
-    /// Per-row Grammar votes, keyed by kind. The footer vote follows the
-    /// selection; a row vote follows its own row even when another is
-    /// selected. Session-only, cleared on dismiss / reset like the rest.
-    var grammarVote: [GrammarKind: Bool] = [:]
-    /// Per-row Smart Reply votes, keyed by tone. Same session semantics.
-    var replyVote: [ReplyTone: Bool] = [:]
-    /// Row showing the pin check: a search turn id, grammar kind raw value,
-    /// or reply tone raw value. The footer "Pinned" label is gone on those
-    /// tabs, so the row flashes instead. Cleared on dismiss / reset.
-    var pinnedRow: String? = nil
     /// Actions whose finished result is currently reloading (Regenerate after
     /// `.done`). The footer stays mounted while set so the window does not
     /// collapse and regrow on every refresh. Cleared the moment any terminal
     /// or idle state lands via `setResult`, and on dismiss / reset.
     var reloadingActions: Set<String> = []
-    /// Soft ceiling for stacked Search turns in one panel session.
-    /// Matches `SessionThread.storageCap` so the window can scroll as far
-    /// back as the model still remembers.
-    static let searchThreadMaxTurns = 100
-    /// The instruction text typed into the intent bar.
+    /// Text typed into the composer: the source with nothing selected, a
+    /// refinement otherwise.
     var describeInstruction: String = ""
     /// Which AI environment an enhanced prompt is being written for.
     var selectedTargetID: String = TargetProfile.genericID
     /// The app the current capture came from, used to remember its target.
     var hostBundleID: String?
     var hostAppName: String?
-    /// Pasteboard text snapped at panel present time, when it differs from the
-    /// selection. Shown as an opt-in context chip; never sent unless included.
-    var clipboardText: String?
-    /// When true, `clipboardText` is appended outside `<text>` in the user message.
-    var includeClipboard: Bool = false
     /// Changes on every invocation. The panel's NSHostingView is created once
     /// and reused, so SwiftUI would otherwise never rebuild the subtree —
     /// keying the root on this restores per-invocation onAppear/focus.
     private(set) var panelSessionID = UUID()
-    /// Correlates every history event produced by one panel session. Not
-    /// cleared on dismiss — the terminal event is recorded during dismissal.
-    private(set) var invocationID = UUID()
-    var showDiff: Bool = true
     var copiedFeedback: Bool = false
-    /// Footer confirmation after Replace / Insert / Apply. Nil when idle.
+    /// Footer confirmation after Replace. Nil when idle.
     var replacedFeedback: String? = nil
     var truncationNotice: Bool = false
-    /// Diff ops per completed action, computed once off-main when that stream
-    /// completes. Keyed like `results` and cleared with them; a missing entry
-    /// means still streaming, or the computation hasn't finished.
+    /// Diff ops per completed action, computed off-main when that stream
+    /// completes. A missing entry means still streaming or not computed yet.
     var diffs: [String: [DiffOp]] = [:]
-    /// The model's explanation of what it changed, per action. Keyed and cleared
-    /// like `results` — advice attached to a result that is no longer on screen
-    /// would describe the wrong text.
-    var rationales: [String: String] = [:]
-    /// Context sources that shaped each generated result, for transparent local provenance.
-    var contextApplications: [String: ContextApplication] = [:]
-    /// Estimated token accounting per completed action, for the footer pill.
-    /// Keyed like `results`, and cleared with them — a savings figure outliving
-    /// the result it describes would be attached to the wrong text.
-    var savings: [String: TokenSavings] = [:]
-    /// Parsed Smart Reply cards. Empty until a Reply stream finishes, and
-    /// cleared when that action re-runs.
-    var replySuggestions: [ReplySuggestion] = []
-    /// Which of the six tones Insert / Copy / Pin will send. Choosing a tone
-    /// does not re-run the model.
-    var selectedReplyTone: ReplyTone = .formal
-    /// Parsed Grammar bodies. Empty until a Grammar stream finishes.
-    var grammarSuggestions: [GrammarSuggestion] = []
-    /// Which Grammar body the result field and Replace send. Default is the
-    /// copy-edit; Clearer / Tighter are explicit picks.
-    var selectedGrammarKind: GrammarKind = .corrected
-    /// Grammar tab's rewrite style. Resets to Proofread on every open.
+    /// Grammar's rewrite style. Resets to Proofread on every open.
     var grammarStyle: GrammarStyle = .proofread
-    /// Search mode is the AI Search tab — a question, not a rewrite skill.
-    var isQuickSearch = false
-    /// When set, Replace writes the result back into this vault note instead of
-    /// the host app's selection.
-    var vaultNoteID: String?
-    /// Brief "Pinned" confirmation in the panel footer.
-    var pinnedFeedback: Bool = false
     /// Which provider produced the current error, per action. Lets the panel
     /// offer "Try with [other provider]" instead of the user opening Settings.
     var errorProviders: [String: ProviderKind] = [:]
@@ -141,22 +65,12 @@ final class AppState {
 
     private var streamTasks: [String: Task<Void, Never>] = [:]
 
-    init() {
-        let defaults = UserDefaults.standard
-        // Migrate the pre-actions "lastUsedTab" key if present.
-        let legacy = defaults.string(forKey: "lastUsedTab")
-        let saved = defaults.string(forKey: "lastUsedActionID") ?? legacy
-        self.selectedActionID = saved ?? EnhancementAction.grammarID
-    }
-
     func resultState(for actionID: String) -> ResultState {
         results[actionID] ?? .idle
     }
 
     func selectAction(_ actionID: String) {
         selectedActionID = actionID
-        isQuickSearch = actionID == EnhancementAction.searchID
-        UserDefaults.standard.set(actionID, forKey: "lastUsedActionID")
     }
 
     func selectTarget(_ targetID: String) {
@@ -167,96 +81,37 @@ final class AppState {
         }
     }
 
-    /// Starts a new Search Q&A. Regenerate rewrites the live turn instead.
-    func beginSearchTurn(question: String, regenerating: Bool) {
-        let trimmed = question.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return }
-        if regenerating, !searchThread.isEmpty {
-            searchThread[searchThread.count - 1].answer = .loading
-            return
-        }
-        searchThread.append(SearchThreadTurn(question: trimmed, answer: .loading))
-        if searchThread.count > Self.searchThreadMaxTurns {
-            searchThread.removeFirst(searchThread.count - Self.searchThreadMaxTurns)
-        }
-    }
-
-    func updateLiveSearchTurn(_ state: ResultState) {
-        guard !searchThread.isEmpty else { return }
-        searchThread[searchThread.count - 1].answer = state
-    }
-
     func reset(withCapturedText text: String) {
-        for task in streamTasks.values { task.cancel() }
-        streamTasks.removeAll()
-        results.removeAll()
-        searchThread.removeAll()
-        searchFeedback.removeAll()
-        resultFeedback.removeAll()
-        reloadingActions.removeAll()
-        grammarVote.removeAll()
-        replyVote.removeAll()
-        pinnedRow = nil
-        savings.removeAll()
+        clearSession()
         // Only on reset, never on dismiss: regenerating during the fade-out
         // would rebuild the view hierarchy mid-animation.
         panelSessionID = UUID()
-        invocationID = UUID()
         panelResultScrollHeight = nil
         capturedText = text
-        capturedElement = nil
         hostBundleID = nil
         hostAppName = nil
-        clipboardText = nil
-        includeClipboard = false
-        describeInstruction = ""
         copiedFeedback = false
-        pinnedFeedback = false
-        replacedFeedback = nil
-        truncationNotice = false
-        vaultNoteID = nil
-        isQuickSearch = false
-        diffs.removeAll()
-        rationales.removeAll()
-        contextApplications.removeAll()
-        errorProviders.removeAll()
-        errorNeedsModelSetup.removeAll()
-        replySuggestions = []
-        grammarSuggestions = []
-        selectedGrammarKind = .corrected
-        grammarStyle = .proofread
     }
 
     func dismiss() {
         isPanelVisible = false
+        clearSession()
+        capturedText = ""
+    }
+
+    /// Everything that belongs to one panel open.
+    private func clearSession() {
         for task in streamTasks.values { task.cancel() }
         streamTasks.removeAll()
         results.removeAll()
-        searchThread.removeAll()
-        searchFeedback.removeAll()
-        resultFeedback.removeAll()
         reloadingActions.removeAll()
-        grammarVote.removeAll()
-        replyVote.removeAll()
-        pinnedRow = nil
-        savings.removeAll()
-        capturedText = ""
         capturedElement = nil
-        clipboardText = nil
-        includeClipboard = false
         describeInstruction = ""
-        truncationNotice = false
-        vaultNoteID = nil
-        pinnedFeedback = false
         replacedFeedback = nil
+        truncationNotice = false
         diffs.removeAll()
-        rationales.removeAll()
-        contextApplications.removeAll()
         errorProviders.removeAll()
         errorNeedsModelSetup.removeAll()
-        replySuggestions = []
-        grammarSuggestions = []
-        selectedGrammarKind = .corrected
         grammarStyle = .proofread
     }
 
@@ -270,27 +125,12 @@ final class AppState {
         }
     }
 
-    /// The outcome strip stays mounted while a finished result reloads —
-    /// dimmed, actions inert — so Regenerate does not collapse the chrome
-    /// and bounce the composer mid-refresh.
-    ///
-    /// Search, Grammar, and Reply have no footer: their rows own every
-    /// action. The shell mounts there only for applied context, which has
-    /// no row home. Write-back confirmations float over the composer
-    /// instead of mounting anything, so Replace never resizes the chrome.
+    /// The outcome strip (Replace, Copy, Regenerate) shows once a result is
+    /// in, and stays — dimmed — while that result reloads, so Regenerate does
+    /// not collapse the chrome and bounce the composer mid-refresh.
     func showsFooter(for actionID: String) -> Bool {
-        switch actionID {
-        case EnhancementAction.searchID:
-            return false
-        case EnhancementAction.grammarID where grammarSuggestions.isEmpty:
-            if case .done = resultState(for: actionID) { return true }
-            return reloadingActions.contains(actionID)
-        case EnhancementAction.grammarID, EnhancementAction.replyID:
-            return contextApplications[actionID] != nil
-        default:
-            if case .done = resultState(for: actionID) { return true }
-            return reloadingActions.contains(actionID)
-        }
+        if case .done = resultState(for: actionID) { return true }
+        return reloadingActions.contains(actionID)
     }
 
     func registerStreamTask(_ task: Task<Void, Never>, for actionID: String) {
@@ -302,24 +142,9 @@ final class AppState {
         results[actionID] != nil
     }
 
-    /// Text Insert / Copy / Pin should send. Smart Reply uses the selected
-    /// card, not the tagged stream blob. Grammar uses the selected kind.
+    /// Text Replace / Copy should send.
     func acceptedText(for actionID: String? = nil) -> String? {
-        let id = actionID ?? selectedActionID
-        if id == EnhancementAction.replyID, !replySuggestions.isEmpty {
-            return ReplySuggestions.body(in: replySuggestions, matching: selectedReplyTone)
-        }
-        if id == EnhancementAction.grammarID, !grammarSuggestions.isEmpty {
-            return GrammarSuggestions.body(in: grammarSuggestions, matching: selectedGrammarKind)
-        }
-        if case .done(let text) = resultState(for: id) { return text }
+        if case .done(let text) = resultState(for: actionID ?? selectedActionID) { return text }
         return nil
-    }
-
-    func selectGrammarKind(_ kind: GrammarKind) {
-        selectedGrammarKind = kind
-        guard let body = GrammarSuggestions.body(in: grammarSuggestions, matching: kind) else { return }
-        setResult(.done(body), for: EnhancementAction.grammarID)
-        diffs.removeValue(forKey: EnhancementAction.grammarID)
     }
 }
