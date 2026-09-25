@@ -114,8 +114,10 @@ struct OpenAICompatProvider: LLMProvider {
         return nil
     }
 
-    /// How long Ollama should keep weights resident after a request.
-    static let keepAlive = "30m"
+    /// How long Ollama should keep weights resident after a warm-up. Matches
+    /// Ollama's own default: 30 minutes kept ~5 GB pinned long after the user
+    /// stopped, which on 16 GB Macs pushed everything else into swap.
+    static let keepAlive = "5m"
 
     func requestBody(
         system: String,

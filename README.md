@@ -18,6 +18,8 @@ Enhancify lives in the menu bar. It does not take over the app you are writing i
 2. Press **⌃⌥⌘P** (you can change this).
 3. Pick a chip. **Enhance Prompt** rewrites it as a clear prompt for that tool. **⌘↩ Replace** writes it back. **Copy** takes it to the clipboard.
 
+Press **Tab** in the panel to flip between **Enhance Prompt** and **Grammar** on the same selection.
+
 Too lazy to type? Press **⌃⌥⌘L**. Enhancify opens, listens on this Mac, and writes down what you say. Speak the rough idea; Enhance still turns it into a prompt. Press the shortcut again, or the mic, to stop. Audio is transcribed on-device and never leaves the machine.
 
 Pick the target (Cursor, Claude, ChatGPT, …) so the prompt matches how that model wants to be asked. Add Codex, Gemini, or your own in Settings → Targets.
@@ -36,9 +38,12 @@ Settings → Models warns you when Enhance or Grammar runs on a vision, embeddin
 
 | Model | Size | Note |
 |---|---|---|
-| **Qwen 2.5 7B** | ~4.7 GB | Default. No reasoning pass; faster first token. |
+| **Qwen 2.5 3B** | ~2 GB | Default on Macs with less than 24 GB of memory. |
+| **Qwen 2.5 7B** | ~4.7 GB | Default on 24 GB+. No reasoning pass; faster first token. |
 | **Qwen 3 8B** | ~5 GB | Strongest local pick. Reasoning suppressed automatically. |
 | **Gemma 3 1B** | ~815 MB | Lightweight. Works, but expect simpler output. |
+
+A loaded model shares memory with every other app. On a 16 GB Mac a 7B model next to an editor and a browser can push macOS into swap and stall the machine, so Settings → Models warns when the model is heavy for this Mac. Enhancify only loads the model when you press the shortcut (not at login) and lets Ollama unload it after 5 idle minutes. On 8 GB Macs, use Apple on-device or an API model.
 
 Cloud providers (Groq, Anthropic, …) sidestep this entirely — any current chat model follows the formats.
 

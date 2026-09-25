@@ -106,6 +106,12 @@ struct PanelView: View {
                     )
                 )
             }
+            // Tab / Shift-Tab: Enhance ⇄ Grammar. Reaches here when the
+            // composer is not focused; the composer forwards its own Tab via
+            // `onTab`, since an NSTextView consumes Tab before SwiftUI sees it.
+            .onKeyPress(keys: [.tab], phases: .down) { _ in
+                perform(resolveTabIntent())
+            }
             .onKeyPress(characters: CharacterSet(charactersIn: "c123456789"), phases: .down) { press in
                 guard let character = press.characters.first else { return .ignored }
                 return perform(
@@ -116,6 +122,13 @@ struct PanelView: View {
                     )
                 )
             }
+    }
+
+    func resolveTabIntent() -> PanelKeyIntent {
+        PanelKeyBinding.resolveTab(
+            currentActionID: appState.selectedActionID,
+            availableActionIDs: Set(panelTabs.map(\.id))
+        )
     }
 
     /// Applies a resolved intent. Returns the `onKeyPress` disposition so an
@@ -135,6 +148,8 @@ struct PanelView: View {
             let tabs = panelTabs
             guard index >= 1, index <= tabs.count else { return .ignored }
             selectTab(tabs[index - 1].id)
+        case .switchAction(let id):
+            selectTab(id)
         case .pass:
             return .ignored
         }

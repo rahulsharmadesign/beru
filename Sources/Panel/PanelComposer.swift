@@ -300,6 +300,10 @@ extension PanelView {
                         text: $appState.describeInstruction,
                         isFocused: describeFieldFocused,
                         onSubmit: { submitDescribe() },
+                        onTab: {
+                            if case .handled = perform(resolveTabIntent()) { return true }
+                            return false
+                        },
                         onFocusChange: { describeFieldFocused = $0 }
                     )
                     .frame(maxWidth: .infinity, alignment: .leading)

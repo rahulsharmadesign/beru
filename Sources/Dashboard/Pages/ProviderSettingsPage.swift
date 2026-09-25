@@ -93,6 +93,15 @@ struct ProviderSettingsSections: View {
     /// One local model for both roles, typed free so any installed id works.
     /// Writes both stored keys together: the per-role split only ever caused
     /// weight swaps and mismatched pickers, so editing unifies them.
+    private var localModelCaption: String {
+        let base = "One model serves Enhance and Grammar — two ids make Ollama swap weights on every tab switch. Any installed id works; pull new ones with `ollama pull <id>` in Terminal."
+        guard let advice = RecommendedOllamaModel.memoryAdvice(
+            model: settings.ollamaEnhanceModel,
+            physicalMemoryGB: RecommendedOllamaModel.thisMacMemoryGB
+        ) else { return base }
+        return advice + " " + base
+    }
+
     private var localModelBinding: Binding<String> {
         Binding(
             get: { settings.ollamaEnhanceModel },
@@ -125,7 +134,7 @@ struct ProviderSettingsSections: View {
             }
             SettingsRow(
                 title: "Local model",
-                caption: "One model serves Enhance and Grammar — two ids make Ollama swap weights on every tab switch. Any installed id works; pull new ones with `ollama pull <id>` in Terminal."
+                caption: localModelCaption
             ) {
                 SettingsField(placeholder: RecommendedOllamaModel.defaultID, text: localModelBinding, width: BeruMetrics.wideFieldWidth)
             }
