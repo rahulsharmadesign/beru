@@ -55,6 +55,12 @@ struct NativeMenuItem {
     var icon: String? = nil
     var isSelected: Bool = false
     var isEnabled: Bool = true
+    /// A non-selectable section title ("Tone", "Just for fun").
+    var isHeader: Bool = false
+
+    static func header(_ title: String) -> NativeMenuItem {
+        NativeMenuItem(id: "header-\(title)", title: title, isHeader: true)
+    }
 }
 
 private final class MenuActionTarget: NSObject {
@@ -82,6 +88,11 @@ extension PanelView {
         let menu = NSMenu()
         menu.minimumWidth = BeruMetrics.menuWidth
         for item in items {
+            if item.isHeader {
+                if !menu.items.isEmpty { menu.addItem(.separator()) }
+                menu.addItem(.sectionHeader(title: item.title))
+                continue
+            }
             let menuItem = NSMenuItem(
                 title: item.title,
                 action: #selector(MenuActionTarget.selected(_:)),

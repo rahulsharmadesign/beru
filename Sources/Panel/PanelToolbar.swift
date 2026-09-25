@@ -14,6 +14,9 @@ extension PanelView {
     var toolbar: some View {
         VStack(alignment: .leading, spacing: BeruSpace.xs) {
             verbRow
+            if appState.selectedActionID == EnhancementAction.grammarID {
+                grammarStyleRow
+            }
             if showsPriorTurnChip {
                 sessionContextChip
             }
