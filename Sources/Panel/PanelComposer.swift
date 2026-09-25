@@ -60,8 +60,8 @@ extension PanelView {
             if showsFooter {
                 footer
                     .opacity(footerReloading ? 0.5 : 1)
-            } else if composerCollapsed && !toastVisible {
-                refineHint
+            } else if let hint = footerHint, !toastVisible {
+                hintLine(hint)
             }
         }
         .frame(height: PanelMetrics.footerMinHeight)
@@ -338,7 +338,8 @@ extension PanelView {
         return EnhancementAction.composerPlaceholder(
             actionID: appState.selectedActionID,
             hasCapture: hasCapture,
-            isQuickSearch: appState.isQuickSearch
+            isQuickSearch: appState.isQuickSearch,
+            targetName: targetRegistry.profile(withID: appState.selectedTargetID)?.name
         )
     }
 

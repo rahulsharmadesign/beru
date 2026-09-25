@@ -71,6 +71,10 @@ enum PanelMetrics {
     /// placeholder swaps never change this height, so tab switches cannot
     /// crop the composer.
     static let resultIdleMinHeight: CGFloat = 172
+    /// Focused mode's empty state: the composer is the whole prompt, so the
+    /// result band only keeps a sliver. Must stay above 1pt — the controller
+    /// treats a smaller result as "not measured yet" and reuses the last one.
+    static let resultIdleCompactHeight: CGFloat = 8
     /// Composer card only — toolbar and result stay on `moduleRadius`.
     /// Haze composer radius.
     static let composerRadius: CGFloat = 22

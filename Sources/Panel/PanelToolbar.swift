@@ -14,7 +14,7 @@ extension PanelView {
     var toolbar: some View {
         VStack(alignment: .leading, spacing: BeruSpace.xs) {
             verbRow
-            if priorTurnCount > 0 {
+            if showsPriorTurnChip {
                 sessionContextChip
             }
         }
@@ -145,15 +145,25 @@ extension PanelView {
             Button {
                 thread.clear()
             } label: {
-                Text(turns == 1 ? "Using 1 prior turn" : "Using \(turns) prior turns")
-                    .font(BeruType.captionMedium)
-                    .foregroundStyle(BeruColor.textSecondary)
-                    .lineLimit(1)
+                HStack(spacing: BeruSpace.xxs) {
+                    Text(turns == 1 ? "Continuing from your last prompt" : "Continuing from your last \(turns) prompts")
+                        .font(BeruType.captionMedium)
+                        .lineLimit(1)
+                    BeruIcon(name: "x", size: 12)
+                }
+                .foregroundStyle(BeruColor.textSecondary)
             }
             .buttonStyle(.plain)
             .help("This request can build on your last \(turns) in this app. Click to forget them.")
-            .accessibilityLabel("Using \(turns) prior turns. Activate to clear.")
+            .accessibilityLabel("Continuing from your last \(turns) prompts. Activate to clear.")
         }
+    }
+
+    /// In focused mode the chip waits for something to act on: in an empty
+    /// panel "prior turns" had no referent and read as jargon.
+    var showsPriorTurnChip: Bool {
+        guard priorTurnCount > 0 else { return false }
+        return !(PanelMode.isFocused && showsIdlePlaceholderOnly)
     }
 
     var priorTurnCount: Int {

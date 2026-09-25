@@ -133,7 +133,22 @@ final class ActionRegistryTests: XCTestCase {
             EnhancementAction.composerPlaceholder(
                 actionID: EnhancementAction.grammarID, hasCapture: false, isQuickSearch: false
             ),
-            "Type or paste text"
+            "Type or paste text to fix…"
+        )
+        XCTAssertEqual(
+            EnhancementAction.composerPlaceholder(
+                actionID: EnhancementAction.enhanceID, hasCapture: false, isQuickSearch: false,
+                targetName: "Claude"
+            ),
+            "Rough idea for Claude…"
+        )
+        XCTAssertEqual(
+            EnhancementAction.composerPlaceholder(
+                actionID: EnhancementAction.enhanceID, hasCapture: false, isQuickSearch: false,
+                targetName: "Generic"
+            ),
+            "Rough idea to turn into a prompt…",
+            "Generic is not a destination worth naming"
         )
         XCTAssertEqual(
             EnhancementAction.composerPlaceholder(

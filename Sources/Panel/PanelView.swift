@@ -80,7 +80,7 @@ struct PanelView: View {
                     .padding(.top, PanelMetrics.moduleSpacing)
             }
             .overlay {
-                if showsIdlePlaceholderOnly {
+                if showsIdlePlaceholderOnly && !idleIsCompact {
                     idlePlaceholder(fillsBand: false)
                         .padding(.horizontal, PanelMetrics.moduleInset)
                         .offset(y: idleCopyOffsetY)
@@ -173,7 +173,7 @@ struct PanelView: View {
             // overlaid on the leftover gap between chips and composer so it
             // stays centered when the window is taller than chrome + idle.
             Color.clear
-                .frame(height: PanelMetrics.resultIdleMinHeight)
+                .frame(height: idleIsCompact ? PanelMetrics.resultIdleCompactHeight : PanelMetrics.resultIdleMinHeight)
                 .frame(maxWidth: .infinity)
                 .reportsPanelBand(.result)
         } else {
@@ -254,6 +254,15 @@ struct PanelView: View {
         }
         return appState.selectedActionID == EnhancementAction.describeID
             || appState.capturedText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    /// Focused mode drops the centered "Type or paste text" headline: it only
+    /// repeated the composer's own placeholder over a 172pt gap. Setup and
+    /// Accessibility notices still get the full band — they need the room.
+    var idleIsCompact: Bool {
+        PanelMode.isFocused
+            && a11y.isAccessibilityTrusted
+            && SettingsStore.shared.isConfigured(SettingsStore.shared.activeProvider)
     }
 
     /// Shift from the window center into the gap between top chrome and composer.
