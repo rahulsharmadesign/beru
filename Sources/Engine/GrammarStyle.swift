@@ -56,16 +56,6 @@ enum GrammarStyle: String, CaseIterable, Identifiable, Sendable {
         }
     }
 
-    var icon: String {
-        switch self {
-        case .proofread: return "circle-check"
-        case .shorten: return "minus"
-        case .english: return "globe"
-        case .humanize: return "person"
-        default: return "smile"
-        }
-    }
-
     /// What the rewrite should do. Empty for proofread, which keeps the
     /// built-in Grammar prompt.
     var instruction: String {

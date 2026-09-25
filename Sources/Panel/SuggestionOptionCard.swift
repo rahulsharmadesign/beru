@@ -41,7 +41,7 @@ struct SuggestionOptionCard: View {
                 VStack(alignment: .leading, spacing: BeruSpace.xxs) {
                     Text(title)
                         .font(BeruType.captionMedium)
-                        .foregroundStyle(isSelected ? BeruColor.accent : BeruColor.textSecondary)
+                        .foregroundStyle(BeruColor.textSecondary)
                     Text(bodyText)
                         .beruPrintedText()
                         .foregroundStyle(BeruColor.textPrimary)
@@ -121,11 +121,11 @@ struct SuggestionOptionCard: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background {
             BeruRadius.shape(BeruRadius.md)
-                .fill(isSelected ? BeruColor.accentSoft : (isHovered ? BeruColor.hoverFill : Color.clear))
+                .fill(isSelected ? BeruColor.subtleFill : (isHovered ? BeruColor.hoverFill : Color.clear))
                 .overlay {
                     if isSelected {
                         BeruRadius.shape(BeruRadius.md)
-                            .strokeBorder(BeruColor.accent, lineWidth: BeruMetrics.hairline)
+                            .strokeBorder(BeruColor.border, lineWidth: BeruMetrics.hairline)
                     }
                 }
         }
