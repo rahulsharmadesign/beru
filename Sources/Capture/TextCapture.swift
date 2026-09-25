@@ -13,7 +13,18 @@ enum TextCapture {
     /// Reads the current text selection: first via the Accessibility API, then
     /// falling back to a simulated Cmd-C for apps that don't expose AX selection
     /// (Electron apps, some web views).
-    static func captureSelection() async -> CaptureResult {
+    ///
+    /// `preferClipboard` flips the order for Electron / Chromium AI tools
+    /// (Cursor, Claude, ChatGPT). Their AX tree updates lazily, so
+    /// `kAXSelectedText` can hand back an earlier selection — Enhance then
+    /// ran on old text and looked like it returned a previous result. A real
+    /// Cmd-C always reflects what is selected now.
+    static func captureSelection(preferClipboard: Bool = false) async -> CaptureResult {
+        if preferClipboard, AXIsProcessTrusted(),
+           let clipboardText = await captureViaClipboard(), !clipboardText.isEmpty {
+            logger.notice("captured via clipboard (preferred for this host), length = \(clipboardText.count)")
+            return .text(clipboardText)
+        }
         if let axText = focusedSelectedText(), !axText.isEmpty {
             logger.notice("captured via AX, length = \(axText.count)")
             return .text(axText)
@@ -92,7 +103,30 @@ enum TextCapture {
         let changed = await ClipboardGuard.waitForChange(from: previousChangeCount, timeoutMS: 300)
         logger.notice("clipboard changed after simulated Cmd-C = \(changed)")
         guard changed else { return nil }
-
+        // VS Code and its forks (Cursor, Windsurf) copy the whole current
+        // line when nothing is selected, and say so on the pasteboard. That
+        // line is not a selection — treating it as one ran Enhance on a
+        // random line of code.
+        if isEmptySelectionEditorCopy(NSPasteboard.general) {
+            logger.notice("clipboard holds an editor's empty-selection line copy; ignoring")
+            return nil
+        }
         return NSPasteboard.general.string(forType: .string)
+    }
+
+    static var vsCodeEditorDataType: NSPasteboard.PasteboardType { .init("vscode-editor-data") }
+
+    static func isEmptySelectionEditorCopy(_ pasteboard: NSPasteboard) -> Bool {
+        guard let json = pasteboard.string(forType: vsCodeEditorDataType) else { return false }
+        return isEmptySelectionMarker(json)
+    }
+
+    /// Pure so it is testable without a pasteboard.
+    static func isEmptySelectionMarker(_ editorDataJSON: String) -> Bool {
+        guard let data = editorDataJSON.data(using: .utf8),
+              let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            return false
+        }
+        return object["isFromEmptySelection"] as? Bool == true
     }
 }

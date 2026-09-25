@@ -286,6 +286,19 @@ final class InvokeActionTests: XCTestCase {
         XCTAssertEqual(focused(host: chrome), EnhancementAction.enhanceID)
     }
 
+    func testAIToolsReadTheSelectionWithCommandCFirst() {
+        XCTAssertTrue(AppCoordinator.prefersClipboardCapture(host: cursor, isElectronHelper: false))
+        XCTAssertTrue(AppCoordinator.prefersClipboardCapture(host: nil, isElectronHelper: true))
+        XCTAssertFalse(AppCoordinator.prefersClipboardCapture(host: mail, isElectronHelper: false))
+        XCTAssertFalse(AppCoordinator.prefersClipboardCapture(host: nil, isElectronHelper: false))
+    }
+
+    func testVSCodeRoutesToEnhanceWhateverTheCase() {
+        let vscode = HostApp.Info(bundleID: "com.microsoft.VSCode", name: "Code")
+        XCTAssertEqual(focused(host: vscode), EnhancementAction.enhanceID)
+        XCTAssertNotNil(TargetProfile.seededID(forBundleID: "com.microsoft.vscode"))
+    }
+
     func testFocusedClipboardAndVaultOpenEnhance() {
         XCTAssertEqual(focused(host: mail, isEditableField: true, source: "clipboard"), EnhancementAction.enhanceID)
         XCTAssertEqual(focused(host: nil, source: "vault"), EnhancementAction.enhanceID)

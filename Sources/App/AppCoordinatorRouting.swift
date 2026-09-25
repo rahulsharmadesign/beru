@@ -1,3 +1,4 @@
+import ApplicationServices
 import Foundation
 
 // Invoke routing: which chip an invoke lands on. Pure host/selection/table
@@ -72,6 +73,21 @@ extension AppCoordinator {
         return Self.isSocialFeedSelection(bundleID: host?.bundleID, windowTitle: windowTitle)
             ? EnhancementAction.replyID
             : EnhancementAction.enhanceID
+    }
+
+    /// Whether to read the selection with a real Cmd-C before trying the
+    /// Accessibility API. Electron / Chromium AI tools keep a lazily updated
+    /// AX tree, so `kAXSelectedText` there can be an earlier selection.
+    static func prefersClipboardCapture(host: HostApp.Info?, element: AXUIElement?) -> Bool {
+        let electron = element.map { TextReplace.isElectronHelper($0) } ?? false
+        return prefersClipboardCapture(host: host, isElectronHelper: electron)
+    }
+
+    /// Pure half of the rule, for tests.
+    nonisolated static func prefersClipboardCapture(host: HostApp.Info?, isElectronHelper: Bool) -> Bool {
+        if isElectronHelper { return true }
+        guard let host else { return false }
+        return TargetProfile.seededID(forBundleID: host.bundleID, name: host.name) != nil
     }
 
     /// Focused mode (`PanelMode`): only Enhance and Grammar exist. First match

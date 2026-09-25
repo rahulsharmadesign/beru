@@ -225,8 +225,12 @@ extension PanelEngine {
         // What was asked in this app just before now. Its own scope rule, wider
         // than the target's: a follow-up makes sense for Describe and Search
         // too, not just Enhance.
+        // Only a typed follow-up ("shorter", "add tests") refers back to the
+        // last turn. A fresh selection is a new job: feeding it the previous
+        // request and result made small models answer the old one again.
         let threadTurns = SettingsStore.shared.sessionContextEnabled
             && Prompts.threadApplies(actionID: actionID)
+            && !resolved.extraInstruction.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             ? SessionThread.shared.turns(forBundleID: appState.hostBundleID)
                 // Search turns only feed Search. A question-and-answer is the
                 // wrong kind of history for prompt enhancement: small models

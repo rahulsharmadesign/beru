@@ -204,14 +204,20 @@ extension PanelEngine {
                                 self.appState.selectedReplyTone = tone
                             }
                         }
-                        if request.actionID == EnhancementAction.grammarID,
-                           self.isLive(request.generation, for: request.actionID) {
-                            self.appState.grammarSuggestions = decision.grammarSuggestions
-                            if let kind = decision.selectedGrammarKind {
-                                self.appState.selectedGrammarKind = kind
+                        // Proofread shows one result — the Corrected text —
+                        // the same way every other tab does: plain text, a
+                        // light change marker, and the footer's Replace. The
+                        // card with Clearer/Tighter variants is gone; Shorten
+                        // in the style row covers "tighter".
+                        if request.actionID == EnhancementAction.grammarID {
+                            if self.isLive(request.generation, for: request.actionID) {
+                                self.appState.grammarSuggestions = []
                             }
+                            final = GrammarSuggestions.body(in: decision.grammarSuggestions, matching: .corrected)
+                                ?? decision.text
+                        } else {
+                            final = decision.text
                         }
-                        final = decision.text
                     }
                 }
 

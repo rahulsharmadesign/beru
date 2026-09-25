@@ -282,7 +282,7 @@ final class AppState {
         switch actionID {
         case EnhancementAction.searchID:
             return false
-        case EnhancementAction.grammarID where grammarStyle.isRewrite:
+        case EnhancementAction.grammarID where grammarSuggestions.isEmpty:
             if case .done = resultState(for: actionID) { return true }
             return reloadingActions.contains(actionID)
         case EnhancementAction.grammarID, EnhancementAction.replyID:
