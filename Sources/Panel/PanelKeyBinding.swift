@@ -21,6 +21,8 @@ enum PanelKeyIntent: Equatable {
     case cancel
     /// Select the nth tab (1-based).
     case selectTab(index: Int)
+    /// Jump to a specific action tab by id (Tab: Enhance ⇄ Grammar).
+    case switchAction(id: String)
     /// Not ours — let the event travel on to the focused control.
     case pass
 }
@@ -83,6 +85,27 @@ enum PanelKeyBinding {
         }
 
         return .pass
+    }
+
+    /// Resolves Tab (and Shift-Tab): flips between the two writing modes.
+    ///
+    /// Enhance goes to Grammar; Grammar — or any other tab — goes to Enhance,
+    /// so Tab is always one press from the main job. Non-destructive: it only
+    /// changes the selected tab, which re-runs on the same selection.
+    ///
+    /// - Parameters:
+    ///   - currentActionID: the tab that is selected now.
+    ///   - availableActionIDs: tabs the panel is showing; a removed chip is
+    ///     never switched to.
+    static func resolveTab(
+        currentActionID: String,
+        availableActionIDs: Set<String>
+    ) -> PanelKeyIntent {
+        let target = currentActionID == EnhancementAction.enhanceID
+            ? EnhancementAction.grammarID
+            : EnhancementAction.enhanceID
+        guard target != currentActionID, availableActionIDs.contains(target) else { return .pass }
+        return .switchAction(id: target)
     }
 
     /// Escape always cancels; it is the one unmodified key with a side effect,

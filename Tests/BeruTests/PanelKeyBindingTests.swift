@@ -174,4 +174,42 @@ final class PanelKeyBindingTests: XCTestCase {
             XCTAssertNotEqual(intent, .replace, "'\(character)' without ⌘ resolved to .replace")
         }
     }
+
+    // MARK: - Tab: Enhance ⇄ Grammar
+
+    private let bothModes: Set<String> = [
+        EnhancementAction.searchID, EnhancementAction.enhanceID, EnhancementAction.grammarID
+    ]
+
+    func testTabFromEnhanceGoesToGrammar() {
+        XCTAssertEqual(
+            PanelKeyBinding.resolveTab(currentActionID: EnhancementAction.enhanceID, availableActionIDs: bothModes),
+            .switchAction(id: EnhancementAction.grammarID)
+        )
+    }
+
+    func testTabFromGrammarGoesBackToEnhance() {
+        XCTAssertEqual(
+            PanelKeyBinding.resolveTab(currentActionID: EnhancementAction.grammarID, availableActionIDs: bothModes),
+            .switchAction(id: EnhancementAction.enhanceID)
+        )
+    }
+
+    func testTabFromAnyOtherTabGoesToEnhance() {
+        XCTAssertEqual(
+            PanelKeyBinding.resolveTab(currentActionID: EnhancementAction.searchID, availableActionIDs: bothModes),
+            .switchAction(id: EnhancementAction.enhanceID)
+        )
+    }
+
+    func testTabPassesWhenTheOtherModeIsNotShown() {
+        XCTAssertEqual(
+            PanelKeyBinding.resolveTab(
+                currentActionID: EnhancementAction.enhanceID,
+                availableActionIDs: [EnhancementAction.enhanceID]
+            ),
+            .pass,
+            "Tab must fall through to focus movement when Grammar is not a tab."
+        )
+    }
 }

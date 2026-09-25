@@ -12,6 +12,9 @@ struct ComposerTextField: NSViewRepresentable {
     var font: NSFont = BeruType.bodyNSFont
     var maxLines: Int = 3
     var onSubmit: () -> Void
+    /// Tab / Shift-Tab. Return true when the panel used it (Enhance ⇄
+    /// Grammar); false falls back to moving focus like a field.
+    var onTab: () -> Bool = { false }
     var onFocusChange: (Bool) -> Void
 
     func makeCoordinator() -> Coordinator {
@@ -22,6 +25,7 @@ struct ComposerTextField: NSViewRepresentable {
         let textView = GrowingComposerTextView(frame: .zero)
         textView.font = font
         textView.onSubmit = onSubmit
+        textView.onTab = onTab
         textView.delegate = context.coordinator
         let scroll = ComposerScrollView()
         scroll.minHeight = GrowingComposerTextView.oneLineHeight(for: font)
@@ -33,6 +37,7 @@ struct ComposerTextField: NSViewRepresentable {
     func updateNSView(_ scroll: ComposerScrollView, context: Context) {
         guard let view = scroll.documentView as? GrowingComposerTextView else { return }
         view.onSubmit = onSubmit
+        view.onTab = onTab
         if view.string != text {
             view.string = text
             scroll.syncHeight()
@@ -107,9 +112,11 @@ final class ComposerScrollView: NSScrollView {
 
 /// Single-font plain-text view that never swallows the panel's keys. Return
 /// submits; Option-Return (insertLineBreak) falls through to a real newline;
-/// Tab moves focus like a field.
+/// Tab switches Enhance ⇄ Grammar when the panel takes it, and otherwise
+/// moves focus like a field.
 final class GrowingComposerTextView: NSTextView {
     var onSubmit: () -> Void = {}
+    var onTab: () -> Bool = { false }
 
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
@@ -167,10 +174,12 @@ final class GrowingComposerTextView: NSTextView {
     }
 
     override func insertTab(_ sender: Any?) {
+        if onTab() { return }
         window?.selectNextKeyView(self)
     }
 
     override func insertBacktab(_ sender: Any?) {
+        if onTab() { return }
         window?.selectPreviousKeyView(self)
     }
 

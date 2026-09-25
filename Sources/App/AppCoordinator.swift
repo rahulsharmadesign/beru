@@ -41,11 +41,6 @@ final class AppCoordinator {
         engine.onStreamingEnded = { [weak self] in
             self?.panelController.streamingDidEnd()
         }
-        // Switching to a local provider should start loading its weights now,
-        // not on the next hotkey press.
-        SettingsStore.shared.onProviderChanged = { [weak self] _ in
-            self?.warmUpProvider()
-        }
         KeyboardShortcuts.onKeyDown(for: .invokeBeru) { [weak self] in
             logger.notice("hotkey fired")
             self?.handleInvokeHotkey()
@@ -95,9 +90,9 @@ final class AppCoordinator {
 
         UsageLog.start()
 
-        // Pre-load local model weights so the first invocation streams
-        // immediately instead of paying a cold start.
-        warmUpProvider()
+        // No warm-up here: with launch at login that loaded a multi-GB local
+        // model into memory before the user asked for anything. The hotkey
+        // warms the model instead, overlapping the load with text capture.
         migrateDictateShortcutIfNeeded()
         AppUpdateService.shared.check()
     }
