@@ -18,8 +18,6 @@ enum BeruMotion {
     }
     /// One streamed word. Matches the print cadence of the typewriter.
     static let typewriterWord: TimeInterval = 0.055
-    /// Last-word blur settle.
-    static let typewriterBlur: TimeInterval = 0.15
     /// Caret blink. Off the typical 8pt rhythm on purpose — a cursor beat.
     static let typewriterCaret: TimeInterval = 0.53
 }

@@ -43,12 +43,16 @@ enum PanelMetrics {
     /// Layout only — never inflate to "fix" crop.
     static let moduleInset: CGFloat = 10
     static let moduleSpacing: CGFloat = 10
-    /// Smallest chrome that still contains close + composer + the outer inset
-    /// and the two spacings around the result. Incomplete band reports land
-    /// around 40pt (insets + spacings, GeometryReaders not yet in the tree).
-    /// Floor must stay below real chrome or the window sticks at seed height.
+    /// Smallest real chrome: close strip + the footer band (the collapsed
+    /// composer contributes nothing else) + the outer inset and the two
+    /// spacings around the result. Incomplete band reports land around 40pt
+    /// (insets + spacings, GeometryReaders not yet in the tree).
+    /// Floor must stay below real chrome or the window sticks at seed height —
+    /// it used to count the full composer, so once the composer could
+    /// collapse every report was rejected and long results ran under the
+    /// footer at the 280pt seed height.
     static var minimumChromeHeight: CGFloat {
-        moduleInset * 2 + closeStripHeight + composerMinHeight + moduleSpacing * 2
+        moduleInset * 2 + closeStripHeight + footerMinHeight + moduleSpacing * 2
     }
     /// All four inner cards share this outer radius. Haze card radius.
     static var moduleRadius: CGFloat { BeruRadius.md }

@@ -142,4 +142,21 @@ final class PanelViewportCapTests: XCTestCase {
         XCTAssertEqual(applied?.lastResult, 400)
         XCTAssertEqual(applied?.chrome, 220)
     }
+
+    /// With a selection the composer collapses and only the footer band is
+    /// left at the bottom. That chrome must still clear the floor, or the
+    /// window never resizes and a long result runs under the footer.
+    func testCollapsedComposerChromeStillResizesTheWindow() {
+        let top = PanelMetrics.closeStripHeight + PanelMetrics.moduleSpacing + BeruMetrics.tabPillHeight
+        let collapsed = PanelLayoutHeights.fromBands(
+            top: top,
+            bottom: PanelMetrics.footerMinHeight,
+            result: 400
+        )
+        XCTAssertNotNil(collapsed)
+        XCTAssertGreaterThanOrEqual(collapsed!.chrome, PanelMetrics.minimumChromeHeight)
+        let applied = PanelLayoutHeights.resolved(layout: collapsed!, lastChrome: 0, lastResult: 0)
+        XCTAssertNotNil(applied, "a collapsed-composer layout must size the window")
+        XCTAssertEqual(applied?.result, 400)
+    }
 }
