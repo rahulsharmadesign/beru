@@ -169,9 +169,12 @@ extension PanelView {
         return !(PanelMode.isFocused && showsIdlePlaceholderOnly)
     }
 
+    /// Matches the engine: prior turns only ride along with a typed follow-up.
     var priorTurnCount: Int {
         guard settings.sessionContextEnabled,
-              Prompts.threadApplies(actionID: appState.selectedActionID) else { return 0 }
+              Prompts.threadApplies(actionID: appState.selectedActionID),
+              !appState.describeInstruction.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        else { return 0 }
         return thread.turns(forBundleID: appState.hostBundleID).count
     }
 }

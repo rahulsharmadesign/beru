@@ -103,12 +103,15 @@ final class AppStateTests: XCTestCase {
         XCTAssertTrue(first.isCancelled)
     }
 
-    func testGrammarRewriteStyleGetsTheRegularFooter() {
+    func testGrammarWithoutCardsGetsTheRegularFooter() {
         let state = AppState()
         state.setResult(.done("Arr, the meetin' be at noon."), for: EnhancementAction.grammarID)
-        XCTAssertFalse(state.showsFooter(for: EnhancementAction.grammarID), "Proofread cards own their actions")
-        state.grammarStyle = .pirate
-        XCTAssertTrue(state.showsFooter(for: EnhancementAction.grammarID), "a rewrite has no cards, so Replace lives in the footer")
+        XCTAssertTrue(
+            state.showsFooter(for: EnhancementAction.grammarID),
+            "one Grammar result, like every tab: Replace lives in the footer"
+        )
+        state.grammarSuggestions = [GrammarSuggestion(kind: .corrected, body: "x")]
+        XCTAssertFalse(state.showsFooter(for: EnhancementAction.grammarID), "cards own their actions")
     }
 
     func testResultStateDefaultsToIdleAndHasStartedTracksIt() {

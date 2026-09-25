@@ -144,7 +144,8 @@ final class AppCoordinator {
             let host = HostApp.identify(from: targetElement)
             let isEditableField = TextCapture.isEditableElement(targetElement)
             let windowTitle = HostApp.focusedWindowTitle()
-            let result = await TextCapture.captureSelection()
+            let preferClipboard = Self.prefersClipboardCapture(host: host, element: targetElement)
+            let result = await TextCapture.captureSelection(preferClipboard: preferClipboard)
             switch result {
             case .text(let text):
                 logger.notice("captured text, length = \(text.count)")

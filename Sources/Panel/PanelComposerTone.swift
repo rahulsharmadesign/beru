@@ -23,10 +23,10 @@ extension PanelView {
         appState.selectedActionID == EnhancementAction.grammarID
     }
 
-    /// Proofread Grammar owns its outcomes on the cards; a rewrite style has
-    /// one result and uses the regular Replace / Copy footer.
+    /// Grammar cards own their outcomes. Grammar now publishes one result
+    /// (no cards), so this is false unless suggestions were populated.
     var isGrammarCards: Bool {
-        isGrammar && !appState.grammarStyle.isRewrite
+        isGrammar && !appState.grammarSuggestions.isEmpty
     }
 
     /// Savings is "this rewrite is cheaper to paste into an AI". Search,

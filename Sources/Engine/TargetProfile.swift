@@ -66,7 +66,12 @@ struct TargetProfile: Identifiable, Codable, Equatable, Sendable {
 
     /// Fallback for apps not in the seed map (helpers, forks, betas).
     static func seededID(forBundleID bundleID: String, name: String? = nil) -> String? {
-        if let exact = bundleSeeds[bundleID] { return exact }
+        // Case-insensitive: routing lowercases bundle ids, and the VS Code
+        // key is "com.microsoft.VSCode" — an exact lookup never matched it.
+        if let exact = bundleSeeds[bundleID]
+            ?? bundleSeeds.first(where: { $0.key.caseInsensitiveCompare(bundleID) == .orderedSame })?.value {
+            return exact
+        }
         let haystack = "\(bundleID) \(name ?? "")".lowercased()
         if haystack.contains("cursor") { return "target-cursor" }
         if haystack.contains("openai") || haystack.contains("chatgpt") { return "target-chatgpt" }
