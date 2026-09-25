@@ -31,6 +31,7 @@ final class AppStateTests: XCTestCase {
         state.rationales[EnhancementAction.enhanceID] = "because"
         state.errorProviders[EnhancementAction.enhanceID] = .ollama
         state.errorNeedsModelSetup.insert(EnhancementAction.enhanceID)
+        state.grammarStyle = .pirate
         return state
     }
 
@@ -48,6 +49,7 @@ final class AppStateTests: XCTestCase {
         XCTAssertFalse(state.truncationNotice, "truncationNotice \(message)")
         XCTAssertNil(state.vaultNoteID, "vaultNoteID \(message)")
         XCTAssertNil(state.capturedElement, "capturedElement \(message)")
+        XCTAssertEqual(state.grammarStyle, .proofread, "grammarStyle \(message)")
     }
 
     func testResetClearsEveryPieceOfPreviousInvocationContent() {
@@ -99,6 +101,14 @@ final class AppStateTests: XCTestCase {
         state.registerStreamTask(first, for: EnhancementAction.enhanceID)
         state.registerStreamTask(Task {}, for: EnhancementAction.enhanceID)
         XCTAssertTrue(first.isCancelled)
+    }
+
+    func testGrammarRewriteStyleGetsTheRegularFooter() {
+        let state = AppState()
+        state.setResult(.done("Arr, the meetin' be at noon."), for: EnhancementAction.grammarID)
+        XCTAssertFalse(state.showsFooter(for: EnhancementAction.grammarID), "Proofread cards own their actions")
+        state.grammarStyle = .pirate
+        XCTAssertTrue(state.showsFooter(for: EnhancementAction.grammarID), "a rewrite has no cards, so Replace lives in the footer")
     }
 
     func testResultStateDefaultsToIdleAndHasStartedTracksIt() {

@@ -162,7 +162,7 @@ extension PanelView {
     /// buttons here.
     @ViewBuilder
     var footerPrimaryAction: some View {
-        if !isSearchTab && !isGrammar && !isSmartReply && showsHostWriteAction {
+        if !isSearchTab && !isGrammarCards && !isSmartReply && showsHostWriteAction {
             PanelHitCapsule(
                 help: primaryFooterHoverHelp,
                 accessibilityLabel: primaryFooterTitle,
@@ -199,7 +199,7 @@ extension PanelView {
         if isSearchTab {
             // Turns own copy, regenerate, votes, and pin.
             EmptyView()
-        } else if isGrammar || isSmartReply {
+        } else if isGrammarCards || isSmartReply {
             // Rows own copy, regenerate, votes, write-back, and pin.
             EmptyView()
         } else {

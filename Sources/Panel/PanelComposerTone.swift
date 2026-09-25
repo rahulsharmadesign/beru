@@ -23,6 +23,12 @@ extension PanelView {
         appState.selectedActionID == EnhancementAction.grammarID
     }
 
+    /// Proofread Grammar owns its outcomes on the cards; a rewrite style has
+    /// one result and uses the regular Replace / Copy footer.
+    var isGrammarCards: Bool {
+        isGrammar && !appState.grammarStyle.isRewrite
+    }
+
     /// Savings is "this rewrite is cheaper to paste into an AI". Search,
     /// Smart Reply, and Grammar are not tighter prompts — Grammar's number
     /// reads as a correction count.

@@ -16,6 +16,7 @@ extension PanelEngine {
         if !isQualityRetry {
             qualityRetries[actionID] = 0
         }
+        let grammarStyle = actionID == EnhancementAction.grammarID ? appState.grammarStyle : .proofread
         let role: ModelRole
         var systemPrompt: String
         /// Whether the prompt about to run is one this app wrote. Gates the
@@ -48,10 +49,14 @@ extension PanelEngine {
             // saved — a shortener, in the case that prompted this. Either way the
             // button's label stopped describing what the button did. A saved
             // prompt now lives on its own chip, where its name says what it is.
-            role = action.role
+            // A Grammar rewrite style changes wording on purpose, so it takes
+            // the enhance role's sampling: Regenerate should give a new take.
+            role = grammarStyle.isRewrite ? .enhance : action.role
             // Shipped verbs always use the live Prompts.* text — the seeded
             // UserDefaults copy can lag behind prompt fixes.
-            systemPrompt = EnhancementAction.resolvedSystemPrompt(for: action)
+            systemPrompt = grammarStyle.isRewrite
+                ? grammarStyle.systemPrompt
+                : EnhancementAction.resolvedSystemPrompt(for: action)
             usesBuiltInPrompt = action.isBuiltIn
         } else {
             return
@@ -126,7 +131,7 @@ extension PanelEngine {
         /// provider quality gate below turns it into a plain regenerate.
         let useOnDevicePrompts = SettingsStore.shared.activeProvider == .apple && usesBuiltInPrompt
         if useOnDevicePrompts {
-            if actionID == EnhancementAction.grammarID {
+            if actionID == EnhancementAction.grammarID, !grammarStyle.isRewrite {
                 systemPrompt = Prompts.grammarOnDevice
             } else if actionID == EnhancementAction.enhanceID {
                 systemPrompt = Prompts.enhanceOnDevice
@@ -340,7 +345,8 @@ extension PanelEngine {
                 generation: generation,
                 explainsChanges: explainsChanges,
                 isQuickSearch: isQuickSearch,
-                threadEpoch: SessionThread.shared.epoch
+                threadEpoch: SessionThread.shared.epoch,
+                grammarStyle: grammarStyle
             )
         )
     }

@@ -123,6 +123,8 @@ final class AppState {
     /// Which Grammar body the result field and Replace send. Default is the
     /// copy-edit; Clearer / Tighter are explicit picks.
     var selectedGrammarKind: GrammarKind = .corrected
+    /// Grammar tab's rewrite style. Resets to Proofread on every open.
+    var grammarStyle: GrammarStyle = .proofread
     /// Search mode is the AI Search tab — a question, not a rewrite skill.
     var isQuickSearch = false
     /// When set, Replace writes the result back into this vault note instead of
@@ -222,6 +224,7 @@ final class AppState {
         replySuggestions = []
         grammarSuggestions = []
         selectedGrammarKind = .corrected
+        grammarStyle = .proofread
     }
 
     func dismiss() {
@@ -254,6 +257,7 @@ final class AppState {
         replySuggestions = []
         grammarSuggestions = []
         selectedGrammarKind = .corrected
+        grammarStyle = .proofread
     }
 
     func setResult(_ state: ResultState, for actionID: String) {
@@ -278,6 +282,9 @@ final class AppState {
         switch actionID {
         case EnhancementAction.searchID:
             return false
+        case EnhancementAction.grammarID where grammarStyle.isRewrite:
+            if case .done = resultState(for: actionID) { return true }
+            return reloadingActions.contains(actionID)
         case EnhancementAction.grammarID, EnhancementAction.replyID:
             return contextApplications[actionID] != nil
         default:

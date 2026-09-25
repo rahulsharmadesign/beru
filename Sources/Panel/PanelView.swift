@@ -19,6 +19,7 @@ struct PanelView: View {
     @State var targetAnchor = MenuAnchorHolder()
     @State var providerAnchor = MenuAnchorHolder()
     @State var toneAnchor = MenuAnchorHolder()
+    @State var styleAnchor = MenuAnchorHolder()
     /// Search answer showing the copied check. Resets after a beat.
     @State var copiedTurnID: UUID? = nil
     /// Identity of the composer first-run beam lap. Regenerated whenever the

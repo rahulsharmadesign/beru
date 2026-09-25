@@ -42,6 +42,15 @@ final class PanelEngine {
         onOpenSettings?()
     }
 
+    /// Grammar style row: re-run Grammar on the same text in the new style.
+    /// With nothing captured yet the style just waits for typed text.
+    func applyGrammarStyle(_ style: GrammarStyle) {
+        guard style != appState.grammarStyle else { return }
+        appState.grammarStyle = style
+        guard !appState.capturedText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+        start(actionID: EnhancementAction.grammarID)
+    }
+
     func applyGrammarKind(_ kind: GrammarKind) {
         appState.selectGrammarKind(kind)
         guard let body = appState.acceptedText(for: EnhancementAction.grammarID) else { return }

@@ -24,6 +24,8 @@ struct PanelRequest {
     /// `SessionThread.epoch` at `start`. A chip-clear during the stream must
     /// not let this request append after the user already forgot the thread.
     let threadEpoch: UInt64
+    /// Grammar's style at `start`. A rewrite style returns one plain document.
+    var grammarStyle: GrammarStyle = .proofread
 }
 
 // Running a request: consuming the stream, coalescing publishes, cleaning the
@@ -140,68 +142,77 @@ extension PanelEngine {
                     return
                 }
 
-                /// Grammar and Reply recover a mangled tag format by retrying
-                /// with `OutputQuality.parseHint`. That hint names a contract
-                /// the Apple on-device prompts deliberately do not have — they
-                /// return one plain document and the parser's fallback path is
-                /// the design, not a failure. Let the unchanged-echo retry run
-                /// (a fresh attempt is the only recovery a weak model gets),
-                /// but turn the parse-hint retry into a plain regenerate.
-                let retriesTagFormat = SettingsStore.shared.activeProvider != .apple
-                var decision = OutputQuality.evaluate(
-                    actionID: request.actionID,
-                    raw: final,
-                    source: request.capturedText,
-                    selectedReplyTone: self.appState.selectedReplyTone,
-                    preferredGrammarKind: SettingsStore.shared.interactionProfile.preferredGrammarKind,
-                    canRetry: self.canQualityRetry(for: request.actionID)
-                )
-                if !retriesTagFormat,
-                   case .retry(let previous, let hint) = decision.outcome,
-                   hint != nil {
-                    decision.outcome = .retry(previousResult: previous, hint: nil)
-                }
-                switch decision.outcome {
-                case .retry(let previous, let hint):
-                    guard self.isLive(request.generation, for: request.actionID) else { return }
-                    self.markQualityRetry(for: request.actionID)
-                    self.publish(.loading, for: request.actionID, generation: request.generation)
-                    let actionID = request.actionID
-                    let instruction = request.threadInstruction.isEmpty ? nil : request.threadInstruction
-                    Task { @MainActor [weak self] in
-                        self?.start(
-                            actionID: actionID,
-                            previousResult: previous,
-                            instruction: instruction,
-                            retryHint: hint,
-                            isQualityRetry: true
-                        )
+                // A rewrite style is one plain document meant to differ from
+                // the source: nothing to parse, and the paraphrase ceiling
+                // that protects proofreading would reject it on sight.
+                if request.grammarStyle.isRewrite {
+                    if self.isLive(request.generation, for: request.actionID) {
+                        self.appState.grammarSuggestions = []
                     }
-                    return
-                case .reject(let message):
-                    self.publish(.error(message), for: request.actionID, generation: request.generation)
-                    Self.recordOutcome(
-                        .generationFailed, invocationID: request.invocationID, actionID: request.actionID,
-                        attempt: request.attempt, totalMs: totalMs, reasoningChunks: reasoningChunks,
-                        errorMessage: message
+                } else {
+                    /// Grammar and Reply recover a mangled tag format by retrying
+                    /// with `OutputQuality.parseHint`. That hint names a contract
+                    /// the Apple on-device prompts deliberately do not have — they
+                    /// return one plain document and the parser's fallback path is
+                    /// the design, not a failure. Let the unchanged-echo retry run
+                    /// (a fresh attempt is the only recovery a weak model gets),
+                    /// but turn the parse-hint retry into a plain regenerate.
+                    let retriesTagFormat = SettingsStore.shared.activeProvider != .apple
+                    var decision = OutputQuality.evaluate(
+                        actionID: request.actionID,
+                        raw: final,
+                        source: request.capturedText,
+                        selectedReplyTone: self.appState.selectedReplyTone,
+                        preferredGrammarKind: SettingsStore.shared.interactionProfile.preferredGrammarKind,
+                        canRetry: self.canQualityRetry(for: request.actionID)
                     )
-                    return
-                case .publish:
-                    if request.actionID == EnhancementAction.replyID,
-                       self.isLive(request.generation, for: request.actionID) {
-                        self.appState.replySuggestions = decision.replySuggestions
-                        if let tone = decision.selectedReplyTone {
-                            self.appState.selectedReplyTone = tone
-                        }
+                    if !retriesTagFormat,
+                       case .retry(let previous, let hint) = decision.outcome,
+                       hint != nil {
+                        decision.outcome = .retry(previousResult: previous, hint: nil)
                     }
-                    if request.actionID == EnhancementAction.grammarID,
-                       self.isLive(request.generation, for: request.actionID) {
-                        self.appState.grammarSuggestions = decision.grammarSuggestions
-                        if let kind = decision.selectedGrammarKind {
-                            self.appState.selectedGrammarKind = kind
+                    switch decision.outcome {
+                    case .retry(let previous, let hint):
+                        guard self.isLive(request.generation, for: request.actionID) else { return }
+                        self.markQualityRetry(for: request.actionID)
+                        self.publish(.loading, for: request.actionID, generation: request.generation)
+                        let actionID = request.actionID
+                        let instruction = request.threadInstruction.isEmpty ? nil : request.threadInstruction
+                        Task { @MainActor [weak self] in
+                            self?.start(
+                                actionID: actionID,
+                                previousResult: previous,
+                                instruction: instruction,
+                                retryHint: hint,
+                                isQualityRetry: true
+                            )
                         }
+                        return
+                    case .reject(let message):
+                        self.publish(.error(message), for: request.actionID, generation: request.generation)
+                        Self.recordOutcome(
+                            .generationFailed, invocationID: request.invocationID, actionID: request.actionID,
+                            attempt: request.attempt, totalMs: totalMs, reasoningChunks: reasoningChunks,
+                            errorMessage: message
+                        )
+                        return
+                    case .publish:
+                        if request.actionID == EnhancementAction.replyID,
+                           self.isLive(request.generation, for: request.actionID) {
+                            self.appState.replySuggestions = decision.replySuggestions
+                            if let tone = decision.selectedReplyTone {
+                                self.appState.selectedReplyTone = tone
+                            }
+                        }
+                        if request.actionID == EnhancementAction.grammarID,
+                           self.isLive(request.generation, for: request.actionID) {
+                            self.appState.grammarSuggestions = decision.grammarSuggestions
+                            if let kind = decision.selectedGrammarKind {
+                                self.appState.selectedGrammarKind = kind
+                            }
+                        }
+                        final = decision.text
                     }
-                    final = decision.text
                 }
 
                 if final.isEmpty {
