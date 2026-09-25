@@ -23,6 +23,8 @@ enum PanelKeyIntent: Equatable {
     case selectTab(index: Int)
     /// Jump to a specific action tab by id (Tab: Enhance ⇄ Grammar).
     case switchAction(id: String)
+    /// Reveal the collapsed composer to refine the result (⌘L).
+    case showComposer
     /// Not ours — let the event travel on to the focused control.
     case pass
 }
@@ -79,6 +81,7 @@ enum PanelKeyBinding {
         guard modifiers.command else { return .pass }
 
         if character == "c" { return .copy }
+        if character == "l" { return .showComposer }
 
         if let digit = character.wholeNumberValue, digit >= 1, digit <= tabCount {
             return .selectTab(index: digit)

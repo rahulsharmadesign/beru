@@ -27,6 +27,9 @@ struct PanelView: View {
     /// Shared by verb chips so the accent fill can travel between them.
     @Namespace var tabHighlight
     /// Last measured chrome bands, used to center idle copy in leftover height.
+    /// Set by ⌘L or the Refine button to show the collapsed composer. Reset
+    /// on every open because the view is re-identified per panel session.
+    @State var composerExpanded = false
     @State var chromeTopHeight: CGFloat = 0
     @State var chromeBottomHeight: CGFloat = 0
 
@@ -112,7 +115,7 @@ struct PanelView: View {
             .onKeyPress(keys: [.tab], phases: .down) { _ in
                 perform(resolveTabIntent())
             }
-            .onKeyPress(characters: CharacterSet(charactersIn: "c123456789"), phases: .down) { press in
+            .onKeyPress(characters: CharacterSet(charactersIn: "cl123456789"), phases: .down) { press in
                 guard let character = press.characters.first else { return .ignored }
                 return perform(
                     PanelKeyBinding.resolveCharacter(
@@ -150,6 +153,9 @@ struct PanelView: View {
             selectTab(tabs[index - 1].id)
         case .switchAction(let id):
             selectTab(id)
+        case .showComposer:
+            guard composerCollapsed else { return .ignored }
+            composerExpanded = true
         case .pass:
             return .ignored
         }

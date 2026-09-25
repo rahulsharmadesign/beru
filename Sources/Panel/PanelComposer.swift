@@ -37,6 +37,12 @@ extension PanelView {
                 .frame(maxWidth: .infinity)
                 .clipped()
                 .fixedSize(horizontal: false, vertical: true)
+                // Collapsed to zero height, not removed: the text view stays
+                // the panel's first responder, so Escape, ⌘↩ and Tab keep
+                // working, and typing lands in it and expands it.
+                .frame(height: composerCollapsed ? 0 : nil, alignment: .top)
+                .clipped()
+                .accessibilityHidden(composerCollapsed)
                 .zIndex(1)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -54,6 +60,8 @@ extension PanelView {
             if showsFooter {
                 footer
                     .opacity(footerReloading ? 0.5 : 1)
+            } else if composerCollapsed && !toastVisible {
+                refineHint
             }
         }
         .frame(height: PanelMetrics.footerMinHeight)
@@ -220,6 +228,17 @@ extension PanelView {
             } label: {
                 SearchActionButton(icon: "rotate-cw", help: "Regenerate") {}
             }
+            if composerCollapsed {
+                PanelHitCapsule(
+                    help: "Refine (⌘L, or just type)",
+                    accessibilityLabel: "Refine",
+                    showsHelpPill: true
+                ) {
+                    composerExpanded = true
+                } label: {
+                    SearchActionButton(icon: "message-square", help: "Refine (⌘L, or just type)") {}
+                }
+            }
             PanelHitCapsule(
                 help: "Good result",
                 accessibilityLabel: "Like",
@@ -252,28 +271,6 @@ extension PanelView {
                 ) {}
             }
         }
-    }
-
-    /// Footer vote: same toggle-and-log as search turns, keyed by action.
-    /// Likes on Smart Reply and Grammar additionally teach the stored
-    /// preference inside `recordResultVote`; dislikes clear a match.
-    func setResultVoteFooter(liked: Bool) {
-        let actionID = appState.selectedActionID
-        guard let text = appState.acceptedText() else { return }
-        if appState.resultFeedback[actionID] == liked {
-            appState.resultFeedback.removeValue(forKey: actionID)
-        } else {
-            appState.resultFeedback[actionID] = liked
-            engine.recordResultVote(actionID: actionID, liked: liked, text: text)
-        }
-    }
-
-    var contextProvenance: String? {
-        guard let context = appState.contextApplications[appState.selectedActionID] else { return nil }
-        if let playbook = context.playbook { return "Playbook: \(playbook.name)" }
-        if !context.rules.isEmpty { return "Rules: \(context.rules.count)" }
-        if let workspace = context.workspace, workspace.hasMemory { return "Workspace: \(workspace.name)" }
-        return context.glossary.isEmpty ? nil : "Glossary"
     }
 
     var isErrorState: Bool {

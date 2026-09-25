@@ -20,6 +20,8 @@ Enhancify lives in the menu bar. It does not take over the app you are writing i
 
 Press **Tab** in the panel to flip between **Enhance Prompt** and **Grammar** on the same selection.
 
+By default the panel is focused: just Enhance Prompt and Grammar. Enhancify picks one from where you pressed the shortcut — Enhance in Cursor, Claude, ChatGPT and other AI tools, Grammar in text fields and chat or mail apps. With a selection there is no text box: the result is the panel. Start typing, press **⌘L**, or click Refine to add a note ("shorter", "mention the tests") and Return regenerates with it. With nothing selected, the text box is where you type or dictate the rough idea. Settings → General → **Show all actions** brings back AI Search, Smart Reply, Summarize, Explain, and custom actions.
+
 Too lazy to type? Press **⌃⌥⌘L**. Enhancify opens, listens on this Mac, and writes down what you say. Speak the rough idea; Enhance still turns it into a prompt. Press the shortcut again, or the mic, to stop. Audio is transcribed on-device and never leaves the machine.
 
 Pick the target (Cursor, Claude, ChatGPT, …) so the prompt matches how that model wants to be asked. Add Codex, Gemini, or your own in Settings → Targets.
